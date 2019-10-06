@@ -1,0 +1,2 @@
+# MAGit
+Implementation of git
