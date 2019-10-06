@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Main-Class: main.Main
+Class-Path: commons-codec-1.12.jar AncestorFinder.jar fxgraph-0.0.3.jar 
+ commons-io-2.6.jar
+

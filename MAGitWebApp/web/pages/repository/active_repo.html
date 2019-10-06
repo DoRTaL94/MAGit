@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="../../common/css/Theme.css"/>
+    <link rel="stylesheet" type="text/css" href="../../common/css/bootstrap.min.css">
+    <script type="text/javascript" src="../../common/js/jquery-3.4.1.js"></script>
+    <script type="text/javascript" src="../../common/js/popper.min.js"></script>
+    <script type="text/javascript" src="../../common/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="active_repo.js"></script>
+    <title>MAGit</title>
+</head>
+<body>
+<div class="Container">
+    <div class="Header">
+        <div class="Header-icon Header-item">
+            <img src="../../common/MAGit.png" alt="magit-icon"/>
+            <a href="active_repo.html" id="home-link">Home</a>
+        </div>
+        <div id="header-drop-downs">
+        <nav>
+            <ul>
+                <li>
+                    <div>
+                        <div class="Header-item">
+                            <img class="Notification-icon" src="../../common/notification-icon.svg" alt="notifications"/>
+                        </div>
+                    </div>
+                </li>
+                <li>
+                    <div class="Repo-options Header-item">
+                        <div class="Options-plus-sign">
+                            <div class="Bar Horizontal"></div>
+                            <div class="Bar Vertical"></div>
+                        </div>
+                        <span class="Dropdown-caret Repo"></span>
+                    </div>
+                    <ul>
+                        <li><a href="#">Create new repository</a></li>
+                        <li><a id="import-repo-xml" href="#">Import repository from xml</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <div class="User-options Header-item">
+                        <img src="../../common/user-icon.png" alt="user-icon"/>
+                        <span class="Dropdown-caret"></span>
+                    </div>
+                    <ul>
+                        <li><a href="#">My repositories</a></li>
+                        <li><a href="#">Settings</a></li>
+                        <li><a href="#">Help</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+        </div>
+    </div>
+    <div class="Content">
+
+        <div class="Repo-nav">
+            <div class="Repo-name Magit-body">
+                xDTalx / Repo1
+            </div>
+            <ul class="Nav-bar-tabs nav nav-tabs Magit-body" id="myTab" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="code-tab" data-toggle="tab" href="#code" role="tab" aria-controls="code" aria-selected="true"><> Code</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="pull-requests-tab" data-toggle="tab" href="#pullrequests" role="tab" aria-controls="pullrequests" aria-selected="false">Pull requests</a>
+                </li>
+            </ul>
+        </div>
+        <div class="tab-content Magit-body" id="myTabContent">
+            <div class="tab-pane fade show active" id="code" role="tabpanel" aria-labelledby="code-tab">
+                <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarNavDropdown">
+                        <ul class="navbar-nav">
+                            <li class="nav-item dropdown active">
+                                <a class="nav-link dropdown-toggle" href="#" id="branch-drop-down" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    Branch: master
+                                </a>
+                                <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                                    <a class="dropdown-item" href="#">master</a>
+                                    <a class="dropdown-item" href="#">example</a>
+                                </div>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="download-or-clone-dropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    Download or clone
+                                </a>
+                                <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                                    <a class="dropdown-item" href="#">Download</a>
+                                    <a class="dropdown-item" href="#">Clone</a>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+                <div class="list-group Commits-list">
+                    <a id="commit-list-header" class="list-group-item disabled">
+                        <table>
+                            <tr>
+                                <td class="Last-commit">
+                                    Last commit:
+                                </td>
+                                <td id="commiter-icon-container" class="Last-commit">
+                                    <img id="commiter-icon" src="../../common/user-icon.png" alt="commiter icon"/>
+                                    dor tal
+                                </td>
+                                <td id="commit-description" class="Last-commit">
+                                    initial commit
+                                </td>
+                                <td id="commit-sha1" class="Last-commit">
+                                    qwef231r2tuih4369346n84
+                                </td>
+                                <td id="commit-date" class="Last-commit">
+                                    12/3/2019
+                                </td>
+                            </tr>
+                        </table>
+                    </a>
+                    <a href="#" class="Commit-list-item list-group-item list-group-item-action active">
+                        <table>
+                            <tr>
+                                <td>
+                                    <img id="file-icon" src="../../common/file-icon.svg"/>
+                                    stam.txt
+                                </td>
+                                <td>
+                                    dor tal
+                                </td>
+                                <td>
+                                    123121231adsgarew2312
+                                </td>
+                                <td>
+                                    12/3/2019
+                                </td>
+                            </tr>
+                        </table>
+                    </a>
+                    <a href="#" class="Commit-list-item list-group-item list-group-item-action">
+                        <table>
+                            <tr>
+                                <td>
+                                    <img id="folder-icon" src="../../common/folder-icon.svg"/>
+                                    sss
+                                </td>
+                                <td>
+                                    administrator
+                                </td>
+                                <td>
+                                    12f2efqasdfg141rfwds
+                                </td>
+                                <td>
+                                    3/3/3
+                                </td>
+                            </tr>
+                        </table>
+                    </a>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="pullrequests" role="tabpanel" aria-labelledby="pull-requests-tab">
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
