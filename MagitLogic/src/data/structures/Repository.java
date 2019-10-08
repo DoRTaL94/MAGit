@@ -12,6 +12,13 @@ public class Repository {
     private Map<String, Branch> branches = null;
     private Branch headBranch = null;
     private String repoName = null;
+    private String owner = null;
+
+    public void setOwner(String i_Owner) {
+        owner = i_Owner;
+    }
+
+    public String getOwner() { return owner; }
 
     public String getLocationPath() {
         return locationPath;

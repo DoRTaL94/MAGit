@@ -6,6 +6,8 @@ import data.structures.Folder;
 import data.structures.IRepositoryFile;
 import data.structures.Repository;
 import magit.Engine;
+import users.UsersManager;
+import utils.ServletsUtils;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -18,17 +20,21 @@ import java.io.PrintWriter;
 public class UpdateRepoServlet extends HttpServlet {
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        Engine engine = Engine.Creator.getInstance();
-        Repository repository = engine.getActiveRepository();
-        String currentCommitSha1 = repository.getHeadBranch().getPointedCommitSha1();
-        Commit currCommit = repository.getCommits().get(currentCommitSha1);
-        Folder root = repository.getFolders().get(currCommit.getRootFolderSHA1());
-
         response.setContentType("application/json;charset=UTF-8");
-        Gson gson = new Gson();
-        String toOut = gson.toJson(new IRepositoryFile[] { currCommit, root });
         PrintWriter out = response.getWriter();
-        out.print(toOut);
-        out.flush();
+        Gson gson = new Gson();
+
+        try {
+            Repository repository = Engine.Creator.getInstance().getActiveRepository();
+            Commit currCommit = repository.getCommits().get(repository.getHeadBranch().getPointedCommitSha1());
+
+            currCommit.getSha1(); // updates the sha1
+            repository.setOwner(ServletsUtils.getUsersManager(getServletContext()).getLoggedInUser().getName());
+
+            out.print(gson.toJson(repository));
+            out.flush();
+        } catch (NullPointerException e) {
+            out.print("User has no repositories.");
+        }
     }
 }

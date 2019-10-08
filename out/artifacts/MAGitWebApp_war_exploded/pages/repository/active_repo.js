@@ -22,6 +22,7 @@ $(onLoad);
 function onLoad() {
     setHeaderItemsOnClick();
     setListsItemsOnClick();
+    updateActiveRepo();
 }
 
 function setHeaderItemsOnClick() {
@@ -230,7 +231,6 @@ function importXmlSuccessFunc(response) {
         }
     } else {
         window.location.href = HOME;
-        updateActiveRepo();
     }
 }
 
@@ -242,7 +242,7 @@ function addNotification(index, dataJson) {
 // TO-DO
 function updateActiveRepo() {
     $.ajax({
-        method:'POST',
+        method: 'POST',
         data: '',
         url: 'update_repo',
         timeout: 3000,
@@ -256,12 +256,14 @@ function onUpdateRepoError(response) {
 }
 
 function onUpdateRepoSuccess(response) {
-    var commit = response[0];
-    var rootFolder = response[1];
-    var commitListHeader = $('#commit-list-header');
+    if(response !== 'User has no repositories') {
+        let commitListHeader = $('#commit-list-header');
 
-    commitListHeader.find('span#commiter-name').empty().text(commit.lastChanger);
-    commitListHeader.find('td#commit-description').empty().text(commit.message);
-    commitListHeader.find('td#commit-sha1').empty().text(commit.sha1);
-    commitListHeader.find('td#commit-date').empty().text(commit.lastUpdate);
+        let headBranch = response.headBranch;
+        let currCommit = response.commits[headBranch.pointedCommitSha1];
+        commitListHeader.find('div#commiter-name').empty().text(currCommit.lastChanger);
+        commitListHeader.find('td#commit-description').empty().text(currCommit.message);
+        commitListHeader.find('td#commit-sha1').empty().text(currCommit.sha1);
+        commitListHeader.find('td#commit-date').empty().text(currCommit.lastUpdate);
+    }
 }
