@@ -5,39 +5,37 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 
-import javax.swing.text.StyledEditorKit;
-
 public class WarningRepoExistsController {
 
     @FXML private Button buttonExistingRepo;
     @FXML private Button buttonDeleteAndCreateNew;
     @FXML private Button buttonCancelRepoWarning;
 
-    private BooleanProperty m_IsLoadRepoProperty;
-    private BooleanProperty m_IsCreateNewProperty;
-    private BooleanProperty m_IsCancelProperty;
+    private BooleanProperty isLoadRepoProperty;
+    private BooleanProperty isCreateNewProperty;
+    private BooleanProperty isCancelProperty;
 
     @FXML void cancelAction(ActionEvent event) {
-        m_IsCancelProperty.set(!m_IsCancelProperty.get());
+        isCancelProperty.set(!isCancelProperty.get());
     }
 
     @FXML void deleteAndCreateNewRepoAction(ActionEvent event) {
-        m_IsCreateNewProperty.set(!m_IsCreateNewProperty.get());
+        isCreateNewProperty.set(!isCreateNewProperty.get());
     }
 
     @FXML void loadExistingRepoAction(ActionEvent event) {
-        m_IsLoadRepoProperty.set(!m_IsCancelProperty.get());
+        isLoadRepoProperty.set(!isCancelProperty.get());
     }
 
-    public void SetIsCancelProperty(BooleanProperty i_IsCancelProperty) {
-        m_IsCancelProperty = i_IsCancelProperty;
+    public void setIsCancelProperty(BooleanProperty i_IsCancelProperty) {
+        isCancelProperty = i_IsCancelProperty;
     }
 
-    public void SetIsLoadRepoProperty(BooleanProperty i_IsLoadRepoProperty) {
-        m_IsLoadRepoProperty = i_IsLoadRepoProperty;
+    public void setIsLoadRepoProperty(BooleanProperty i_IsLoadRepoProperty) {
+        isLoadRepoProperty = i_IsLoadRepoProperty;
     }
 
-    public void SetIsCreateNewProperty(BooleanProperty i_IsCreateNewProperty) {
-        m_IsCreateNewProperty = i_IsCreateNewProperty;
+    public void setIsCreateNewProperty(BooleanProperty i_IsCreateNewProperty) {
+        isCreateNewProperty = i_IsCreateNewProperty;
     }
 }

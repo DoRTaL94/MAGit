@@ -10,7 +10,7 @@ public class ActionItem extends SubMenu {
     }
 
     @Override
-    public void OnClick() {
+    public void onClick() {
         m_Action.MethodToExecuteWhenMenuWasClicked();
     }
 }

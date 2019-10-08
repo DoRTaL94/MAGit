@@ -2,7 +2,6 @@ package magit.merge;
 
 import MagitExceptions.CommitAlreadyExistsException;
 import MagitExceptions.EmptyWcException;
-import MagitExceptions.MergeException;
 import data.structures.Branch;
 import magit.Engine;
 
@@ -35,7 +34,7 @@ public class ConflictsManager implements Iterable<Conflict> {
 
     private void commitWrapper(String i_Description) {
         try {
-            Engine.Creator.GetInstance().Commit(i_Description, m_MergedBranch);
+            Engine.Creator.getInstance().commit(i_Description, m_MergedBranch);
         } catch (IOException | CommitAlreadyExistsException | EmptyWcException e) {
             m_ErrorMessageAction.accept(e.getMessage());
         }

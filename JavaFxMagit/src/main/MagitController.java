@@ -10,7 +10,7 @@ import components.conflicts.ConflictDisplays;
 import components.console.ConsoleMagit;
 import components.dialogs.CloneRepoDialogController;
 import components.filetree.repository.RepositoryFileTree;
-import components.progress.LoadXmlTask;
+import components.progress.loadXmlTask;
 import components.progress.ProgressController;
 import components.themes.ThemesController;
 import components.warnings.WarningRepoExistsController;
@@ -20,11 +20,8 @@ import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
@@ -55,7 +52,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -96,116 +92,116 @@ public class MagitController {
 
     public static final BooleanProperty UIRefreshedProperty = new SimpleBooleanProperty(false);
 
-    private static final String f_DarkDialog = "resources/DarkDialog.css";
-    private static final String f_DarkTheme = "resources/Dark.css";
-    private static final String f_ColorfulDialog = "resources/ColorfulDialog.css";
-    private static final String f_ColorfulTheme = "resources/Colorful.css";
+    private static final String darkDialog = "resources/DarkDialog.css";
+    private static final String darkTheme = "resources/Dark.css";
+    private static final String colorfulDialog = "resources/ColorfulDialog.css";
+    private static final String colorfulTheme = "resources/Colorful.css";
 
     private static final String WARNING_REPO_EXIST_FXML_PATH = "/components/warnings/WarningRepoExist.fxml";
-    private final ChangeListener<Boolean> f_ChangeListener1 = this::onRadioButtonPreceding1Change;
-    private final ChangeListener<Boolean> f_ChangeListener2 = this::onRadioButtonPreceding2Change;
-    private final Engine f_MagitEngine;
+    private final ChangeListener<Boolean> changeListener1 = this::onRadioButtonPreceding1Change;
+    private final ChangeListener<Boolean> changeListener2 = this::onRadioButtonPreceding2Change;
+    private final Engine magitEngine;
 
-    private Stage m_MainStage;
-    private RepositoryFileTree m_Repository_FileTree;
-    private Graph m_CommitTreeGraph;
-    private List<CommitGraphNode> m_CommitGraphNodes;
-    private CommitList m_CommitList;
-    private ConsoleMagit m_ConsoleMagit;
-    private DiffController m_WcDiffController;
-    private DiffController m_CommitDiffController;
-    private int m_SelectedPrecedingDiff;
-    private String m_CurrentCommitDiffSha1;
-    private String m_CurrentTheme;
-    private String m_CurrentDialogTheme;
-    private ThemesController m_ThemesController;
+    private Stage mainStage;
+    private RepositoryFileTree repositoryFileTree;
+    private Graph commitTreeGraph;
+    private List<CommitGraphNode> commitGraphNodes;
+    private CommitList commitList;
+    private ConsoleMagit consoleMagit;
+    private DiffController wcDiffController;
+    private DiffController commitDiffController;
+    private int selectedPrecedingDiff;
+    private String currentCommitDiffSha1;
+    private String currentTheme;
+    private String currentDialogTheme;
+    private ThemesController themesController;
 
     public MagitController() {
-        f_MagitEngine = Engine.Creator.GetInstance();
-        f_MagitEngine.repositoryChangedProperty.addListener(observable -> Platform.runLater(this::refreshAction));
-        f_MagitEngine.loadedProperty.addListener(observable -> Platform.runLater(this::refreshAction));
+        magitEngine = Engine.Creator.getInstance();
+        magitEngine.repositoryChangedProperty.addListener(observable -> Platform.runLater(this::refreshAction));
+        magitEngine.loadedProperty.addListener(observable -> Platform.runLater(this::refreshAction));
 
-        m_CurrentDialogTheme = "";
-        m_CurrentTheme = "";
-        m_SelectedPrecedingDiff = 1;
-        m_Repository_FileTree = new RepositoryFileTree(textAreaFileTree);
-        m_CommitTreeGraph = new Graph();
-        m_CommitGraphNodes = new ArrayList<>();
-        m_CommitList = new CommitList();
-        m_CommitList.SetFactory(new CommitItemFactory(m_CommitTreeGraph));
-        m_ConsoleMagit = new ConsoleMagit();
-        m_MainStage = null;
-        m_WcDiffController = DiffController.LoadFXML();
-        m_CommitDiffController = DiffController.LoadFXML();
-        m_ThemesController = ThemesController.LoadFXML();
+        currentDialogTheme = "";
+        currentTheme = "";
+        selectedPrecedingDiff = 1;
+        repositoryFileTree = new RepositoryFileTree(textAreaFileTree);
+        commitTreeGraph = new Graph();
+        commitGraphNodes = new ArrayList<>();
+        commitList = new CommitList();
+        commitList.setFactory(new CommitItemFactory(commitTreeGraph));
+        consoleMagit = new ConsoleMagit();
+        mainStage = null;
+        wcDiffController = DiffController.loadFXML();
+        commitDiffController = DiffController.loadFXML();
+        themesController = ThemesController.LoadFXML();
 
         ThemesController.themeChangedProperty.addListener((observable, oldValue, newValue) -> {
             if(newValue.equals("Dark")) {
-                m_CurrentTheme = f_DarkTheme;
-                m_CurrentDialogTheme = f_DarkDialog;
+                currentTheme = darkTheme;
+                currentDialogTheme = darkDialog;
             }
             else if(newValue.equals("Colorful")){
-                m_CurrentTheme = f_ColorfulTheme;
-                m_CurrentDialogTheme = f_ColorfulDialog;
+                currentTheme = colorfulTheme;
+                currentDialogTheme = colorfulDialog;
 
             }
 
             if(newValue.equals("Default")) {
-                m_CurrentTheme = "";
-                m_CurrentDialogTheme = "";
+                currentTheme = "";
+                currentDialogTheme = "";
                 borderPaneMain.getStylesheets().clear();
                 borderPaneMain.applyCss();
             } else {
                 borderPaneMain.getStylesheets().clear();
-                borderPaneMain.getStylesheets().add(getClass().getResource(m_CurrentTheme).toExternalForm());
+                borderPaneMain.getStylesheets().add(getClass().getResource(currentTheme).toExternalForm());
                 borderPaneMain.applyCss();
             }
         });
 
-        Platform.runLater(() -> m_MainStage.titleProperty().bind(Bindings.format("Magit - %s", f_MagitEngine.currentNameProperty)));
+        Platform.runLater(() -> mainStage.titleProperty().bind(Bindings.format("Magit - %s", magitEngine.currentNameProperty)));
     }
 
     @FXML public void initialize() {
-        stackPaneCommitTree.getChildren().add(m_CommitList);
-        m_CommitList.toBack();
-        tabConsole.setContent(m_ConsoleMagit);
-        splitPaneFileTree.visibleProperty().bind(f_MagitEngine.loadedProperty);
-        tabWcStatus.setContent(m_WcDiffController.GetRoot());
-        m_WcDiffController.GetRoot().visibleProperty().bind(f_MagitEngine.loadedProperty);
-        HBox CommitDiffRoot = m_CommitDiffController.GetRoot();
+        stackPaneCommitTree.getChildren().add(commitList);
+        commitList.toBack();
+        tabConsole.setContent(consoleMagit);
+        splitPaneFileTree.visibleProperty().bind(magitEngine.loadedProperty);
+        tabWcStatus.setContent(wcDiffController.getRoot());
+        wcDiffController.getRoot().visibleProperty().bind(magitEngine.loadedProperty);
+        HBox CommitDiffRoot = commitDiffController.getRoot();
         VBox.setVgrow(CommitDiffRoot, Priority.ALWAYS);
         vBoxDiff.getChildren().add(CommitDiffRoot);
         vBoxDiff.setVisible(false);
 
-        radioButtonPreceding1.selectedProperty().addListener(f_ChangeListener1);
-        radioButtonPreceding2.selectedProperty().addListener(f_ChangeListener2);
+        radioButtonPreceding1.selectedProperty().addListener(changeListener1);
+        radioButtonPreceding2.selectedProperty().addListener(changeListener2);
         radioButtonPreceding1.selectedProperty().addListener((observable, oldValue, newValue) -> {if(newValue){radioButtonPreceding2.setSelected(false);}});
         radioButtonPreceding2.selectedProperty().addListener((observable, oldValue, newValue) -> {if(newValue){radioButtonPreceding1.setSelected(false);}});
 
-        menuItemFileExplorer.disableProperty().bind(f_MagitEngine.loadedProperty.not());
-        menuItemChangeUserName.disableProperty().bind(f_MagitEngine.loadedProperty.not());
-        menuItemExportToXml.disableProperty().bind(f_MagitEngine.loadedProperty.not());
-        menuItemCommit.disableProperty().bind(f_MagitEngine.loadedProperty.not());
-        menuItemCreateBranch.disableProperty().bind(f_MagitEngine.loadedProperty.not());
-        menuItemDeleteBranch.disableProperty().bind(f_MagitEngine.loadedProperty.not());
-        menuItemCheckoutBranch.disableProperty().bind(f_MagitEngine.loadedProperty.not());
-        menuItemResetHeadBranch.disableProperty().bind(f_MagitEngine.loadedProperty.not());
-        menuItemMergeBranches.disableProperty().bind(f_MagitEngine.loadedProperty.not());
-        menuItemCheckout.disableProperty().bind(f_MagitEngine.loadedProperty.not());
-        buttonCommit.disableProperty().bind(f_MagitEngine.loadedProperty.not());
-        buttonRefresh.disableProperty().bind(f_MagitEngine.loadedProperty.not());
-        menuItemPush.disableProperty().bind(f_MagitEngine.remoteRepositoryClonedProperty.not());
-        menuItemPull.disableProperty().bind(f_MagitEngine.remoteRepositoryClonedProperty.not());
-        menuItemFetch.disableProperty().bind(f_MagitEngine.remoteRepositoryClonedProperty.not());
+        menuItemFileExplorer.disableProperty().bind(magitEngine.loadedProperty.not());
+        menuItemChangeUserName.disableProperty().bind(magitEngine.loadedProperty.not());
+        menuItemExportToXml.disableProperty().bind(magitEngine.loadedProperty.not());
+        menuItemCommit.disableProperty().bind(magitEngine.loadedProperty.not());
+        menuItemCreateBranch.disableProperty().bind(magitEngine.loadedProperty.not());
+        menuItemDeleteBranch.disableProperty().bind(magitEngine.loadedProperty.not());
+        menuItemCheckoutBranch.disableProperty().bind(magitEngine.loadedProperty.not());
+        menuItemResetHeadBranch.disableProperty().bind(magitEngine.loadedProperty.not());
+        menuItemMergeBranches.disableProperty().bind(magitEngine.loadedProperty.not());
+        menuItemCheckout.disableProperty().bind(magitEngine.loadedProperty.not());
+        buttonCommit.disableProperty().bind(magitEngine.loadedProperty.not());
+        buttonRefresh.disableProperty().bind(magitEngine.loadedProperty.not());
+        menuItemPush.disableProperty().bind(magitEngine.remoteRepositoryClonedProperty.not());
+        menuItemPull.disableProperty().bind(magitEngine.remoteRepositoryClonedProperty.not());
+        menuItemFetch.disableProperty().bind(magitEngine.remoteRepositoryClonedProperty.not());
     }
 
     public void SetStage(Stage i_Stage) {
-        m_MainStage = i_Stage;
+        mainStage = i_Stage;
     }
 
     @FXML void changeUserNameAction() {
-        if(f_MagitEngine.GetActiveRepository() != null) {
-            showTextInputDialog("Change User Name", "", "Change User Name:", f_MagitEngine::SetCurrentUserName);
+        if(magitEngine.getActiveRepository() != null) {
+            showTextInputDialog("Change User Name", "", "Change User Name:", magitEngine::setCurrentUserName);
         }
         else {
             alertRepositoryNotLoaded();
@@ -217,8 +213,8 @@ public class MagitController {
         DialogPane dialogPane = dialog.getDialogPane();
         dialogPane.getStylesheets().removeAll();
 
-        if(!m_CurrentDialogTheme.isEmpty()) {
-            dialogPane.getStylesheets().add(getClass().getResource(m_CurrentDialogTheme).toExternalForm());
+        if(!currentDialogTheme.isEmpty()) {
+            dialogPane.getStylesheets().add(getClass().getResource(currentDialogTheme).toExternalForm());
             dialogPane.applyCss();
         }
 
@@ -268,7 +264,7 @@ public class MagitController {
     }
 
     @FXML void checkoutAction() {
-        if(f_MagitEngine.GetActiveRepository() != null) {
+        if(magitEngine.getActiveRepository() != null) {
             showTextInputDialog("Checkout", "", "Please enter branch name:", branchName -> checkoutActionWrapper(branchName, false));
         }
         else {
@@ -278,14 +274,14 @@ public class MagitController {
 
     private void checkoutActionWrapper(String i_BranchName, boolean i_IsSkipWcCheck) {
         try {
-            if (f_MagitEngine.GetActiveRepository().GetHeadBranch().GetName().equals(i_BranchName)) {
+            if (magitEngine.getActiveRepository().getHeadBranch().getName().equals(i_BranchName)) {
                 Alert("Magit Error", "",
                         String.format("Branch named %s is head branch and therefore already been spreaded.", i_BranchName), Alert.AlertType.ERROR);
-            } else if (!f_MagitEngine.GetActiveRepository().GetBranches().containsKey(i_BranchName)) {
+            } else if (!magitEngine.getActiveRepository().getBranches().containsKey(i_BranchName)) {
                 Alert("Magit Error", "",
                         String.format("Branch named %s is not exists.", i_BranchName), Alert.AlertType.ERROR);
             } else {
-                f_MagitEngine.Checkout(i_BranchName, i_IsSkipWcCheck);
+                magitEngine.checkout(i_BranchName, i_IsSkipWcCheck);
             }
         } catch (IOException e) {
             Alert("Directory Error", "Cannot checkout branch",
@@ -298,12 +294,12 @@ public class MagitController {
         } catch (Exception e) {
             yesNoDialog("Checkout Warning", "Attempt to perform checkout on remote branch",
                     String.format("%s%s%s", e.getMessage(), System.lineSeparator(), "Do you wish to create a remote tracking branch?"),
-                    () -> f_MagitEngine.CreateRTB(i_BranchName), null);
+                    () -> magitEngine.CreateRTB(i_BranchName), null);
         }
     }
 
     @FXML void commitAction() {
-        if(f_MagitEngine.GetActiveRepository() != null) {
+        if(magitEngine.getActiveRepository() != null) {
             showTextInputDialog("Commit", "Performs commit on the corrent working directory",
                     "Please enter commit description:", this::commitWrapper);
         }
@@ -314,7 +310,7 @@ public class MagitController {
 
     private void commitWrapper(String i_CommitDescription) {
         try {
-            boolean isCommitExecuted = f_MagitEngine.Commit(i_CommitDescription, null);
+            boolean isCommitExecuted = magitEngine.commit(i_CommitDescription, null);
 
             if(isCommitExecuted) {
                 Alert("Successful Operation", "",
@@ -336,7 +332,7 @@ public class MagitController {
     }
 
     @FXML void createBranchAction() {
-        if(f_MagitEngine.GetActiveRepository() != null) {
+        if(magitEngine.getActiveRepository() != null) {
             showTextInputDialog("Create Branch", "", "Please enter branch name:", this::createBranchWrapper);
         }
         else {
@@ -346,8 +342,8 @@ public class MagitController {
 
     private void createBranchWrapper(String i_BranchName) {
         try {
-            if (!f_MagitEngine.IsBranchNameExists(i_BranchName)) {
-                f_MagitEngine.CreateNewBranch(i_BranchName);
+            if (!magitEngine.isBranchNameExists(i_BranchName)) {
+                magitEngine.createNewBranch(i_BranchName);
                 yesNoDialog("Successful Operation", "",
                         String.format("%s%s%s","Branch has been created successfully", System.lineSeparator(), "Do you wish to perform checkout?"),
                         () -> checkoutActionWrapper(i_BranchName, false), null);
@@ -370,8 +366,8 @@ public class MagitController {
 
         DialogPane dialogPane = alert.getDialogPane();
 
-        if(!m_CurrentDialogTheme.isEmpty()) {
-            dialogPane.getStylesheets().add(getClass().getResource(m_CurrentDialogTheme).toExternalForm());
+        if(!currentDialogTheme.isEmpty()) {
+            dialogPane.getStylesheets().add(getClass().getResource(currentDialogTheme).toExternalForm());
             dialogPane.applyCss();
         }
 
@@ -405,7 +401,7 @@ public class MagitController {
     @FXML void createRepoAction() {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("Choose Where To Create");
-        File choice = directoryChooser.showDialog(m_MainStage);
+        File choice = directoryChooser.showDialog(mainStage);
 
         if (choice != null) {
             showTextInputDialog("Create Repository", "Directory name is required", "Enter directory name:", name -> createRepoActionWrapper(name, choice.toPath().toString()));
@@ -424,7 +420,7 @@ public class MagitController {
             boolean isCreate = createRepository(i_DirectoryName, i_DirectoryName, i_Location);
 
             if(isCreate) {
-                f_MagitEngine.GetActiveRepository().SetName(i_RepoName);
+                magitEngine.getActiveRepository().setName(i_RepoName);
             }
         }
     }
@@ -435,7 +431,7 @@ public class MagitController {
         String path = Paths.get(i_Location, i_DirectoryName).toString();
 
         try {
-            f_MagitEngine.CreateRepositoryAndFiles(i_RepoName, path);
+            magitEngine.createRepositoryAndFiles(i_RepoName, path);
             isCreate = true;
         } catch (RepositoryAlreadyExistsException e) {
             repositoryAlreadyExistsHandler(path, null,
@@ -460,7 +456,7 @@ public class MagitController {
     }
 
     @FXML void deleteBranchAction() {
-        if(f_MagitEngine.GetActiveRepository() != null) {
+        if(magitEngine.getActiveRepository() != null) {
             showTextInputDialog("Delete Branch", "", "Enter branch name:", this::deleteBranchWrapper);
         }
         else {
@@ -470,16 +466,16 @@ public class MagitController {
 
     private void deleteBranchWrapper(String i_BranchName) {
         try {
-            if (!f_MagitEngine.IsBranchNameExists(i_BranchName)) {
+            if (!magitEngine.isBranchNameExists(i_BranchName)) {
                 Alert("Magit Error", "",
                         String.format("Branch named %s is not exists.", i_BranchName), Alert.AlertType.ERROR);
             }
-            else if(f_MagitEngine.GetActiveRepository().GetHeadBranch().GetName().equals(i_BranchName)) {
+            else if(magitEngine.getActiveRepository().getHeadBranch().getName().equals(i_BranchName)) {
                 Alert("Magit Error", "",
                         String.format("Branch named %s is head branch and therefore cannot be deleted.", i_BranchName), Alert.AlertType.ERROR);
             }
             else {
-                f_MagitEngine.DeleteBranch(i_BranchName);
+                magitEngine.deleteBranch(i_BranchName);
             }
         } catch (IOException e) {
             Alert("Magit Error", "",
@@ -489,7 +485,7 @@ public class MagitController {
     }
 
     @FXML void exitAction() {
-        m_MainStage.close();
+        mainStage.close();
     }
 
     @FXML void loadRepoFromXmlAction() {
@@ -504,25 +500,25 @@ public class MagitController {
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Choose Xml File");
             fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("XML files (*.xml)", "*.xml"));
-            file = fileChooser.showOpenDialog(m_MainStage);
+            file = fileChooser.showOpenDialog(mainStage);
         }
 
         String xmlLocation = file == null ? i_XmlLocation : file.toPath().toString();
 
         if(xmlLocation != null) {
-            ProgressController progressController = ProgressController.LoadFXML();
-            LoadXmlTask loadXmlTask = new LoadXmlTask(xmlLocation);
-            progressController.SetTask(loadXmlTask);
+            ProgressController progressController = ProgressController.loadFXML();
+            loadXmlTask loadXmlTask = new loadXmlTask(xmlLocation);
+            progressController.setTask(loadXmlTask);
 
             loadXmlTask.FolderInLocationAlreadyExistsProperty.addListener((observable, oldValue, newValue) ->
                     Platform.runLater(() -> alertFolderAlreadyExists(newValue)));
             loadXmlTask.RepositoryAlreadyExistsProperty.addListener(observable ->
-                    Platform.runLater(() -> repositoryAlreadyExistsHandler(f_MagitEngine.GetRepositoryPath(), xmlLocation, () ->
-                            deleteAndCreateNewRepo(f_MagitEngine.GetRepositoryPath(), xmlLocation, warningStage), warningStage)));
+                    Platform.runLater(() -> repositoryAlreadyExistsHandler(magitEngine.getRepositoryPath(), xmlLocation, () ->
+                            deleteAndCreateNewRepo(magitEngine.getRepositoryPath(), xmlLocation, warningStage), warningStage)));
             loadXmlTask.XmlErrorProperty.addListener(observable ->
-                    Platform.runLater(() -> xmlErrorHandler(loadXmlTask.GetXmlError())));
+                    Platform.runLater(() -> xmlErrorHandler(loadXmlTask.getXmlError())));
 
-            progressController.Run();
+            progressController.run();
         }
     }
 
@@ -543,9 +539,9 @@ public class MagitController {
             VBox root = fxmlLoader.load(url.openStream());
             WarningRepoExistsController controller = fxmlLoader.getController();
 
-            controller.SetIsCancelProperty(isCancelProperty);
-            controller.SetIsCreateNewProperty(isCreateNewProperty);
-            controller.SetIsLoadRepoProperty(isLoadRepoProperty);
+            controller.setIsCancelProperty(isCancelProperty);
+            controller.setIsCreateNewProperty(isCreateNewProperty);
+            controller.setIsLoadRepoProperty(isLoadRepoProperty);
 
             isCancelProperty.addListener((observable, oldValue, newValue) ->
                     cancelAction(i_WarningStage));
@@ -554,8 +550,8 @@ public class MagitController {
             isLoadRepoProperty.addListener((observable, oldValue, newValue) ->
                     loadExistingRepo(i_RepoLocation, i_WarningStage));
 
-            if(!m_CurrentDialogTheme.isEmpty()) {
-                root.getStylesheets().add(getClass().getResource(m_CurrentDialogTheme).toExternalForm());
+            if(!currentDialogTheme.isEmpty()) {
+                root.getStylesheets().add(getClass().getResource(currentDialogTheme).toExternalForm());
                 root.applyCss();
             }
 
@@ -576,7 +572,7 @@ public class MagitController {
 
     private void loadRepository(String i_Location) {
         try {
-            f_MagitEngine.ChangeActiveRepository(i_Location);
+            magitEngine.changeActiveRepository(i_Location);
         } catch (IOException e) {
             alertRepositoryCorrupted(e.getMessage());
             e.printStackTrace();
@@ -603,8 +599,8 @@ public class MagitController {
         Alert alert = new Alert(i_AlertType);
 
         DialogPane dialogPane = alert.getDialogPane();
-        if(!m_CurrentDialogTheme.isEmpty()) {
-            dialogPane.getStylesheets().add(getClass().getResource(m_CurrentDialogTheme).toExternalForm());
+        if(!currentDialogTheme.isEmpty()) {
+            dialogPane.getStylesheets().add(getClass().getResource(currentDialogTheme).toExternalForm());
             dialogPane.applyCss();
         }
 
@@ -677,19 +673,19 @@ public class MagitController {
     @FXML private void refreshAction() {
         UIRefreshedProperty.set(false);
 
-        if(f_MagitEngine.GetActiveRepository() != null) {
+        if(magitEngine.getActiveRepository() != null) {
             clearGraphics();
-            menuButtonWc.setText(f_MagitEngine.GetRepositoryPath());
-            menuItemWcPath.setText(f_MagitEngine.GetRepositoryPath());
+            menuButtonWc.setText(magitEngine.getRepositoryPath());
+            menuItemWcPath.setText(magitEngine.getRepositoryPath());
 
-            menuButtonActiveBranch.setText(f_MagitEngine.GetActiveRepository().GetHeadBranch().GetName());
-            menuItemActiveBranch.setText(f_MagitEngine.GetActiveRepository().GetHeadBranch().GetName());
+            menuButtonActiveBranch.setText(magitEngine.getActiveRepository().getHeadBranch().getName());
+            menuItemActiveBranch.setText(magitEngine.getActiveRepository().getHeadBranch().getName());
 
             choiceBoxBranches.getItems().clear();
-            choiceBoxBranches.setValue(f_MagitEngine.GetActiveRepository().GetHeadBranch().GetName());
+            choiceBoxBranches.setValue(magitEngine.getActiveRepository().getHeadBranch().getName());
 
-            for (Map.Entry<String, Branch> branch : f_MagitEngine.GetActiveRepository().GetBranches().entrySet()) {
-                choiceBoxBranches.getItems().add(branch.getValue().GetName());
+            for (Map.Entry<String, Branch> branch : magitEngine.getActiveRepository().getBranches().entrySet()) {
+                choiceBoxBranches.getItems().add(branch.getValue().getName());
             }
 
             updateFileTree();
@@ -701,10 +697,10 @@ public class MagitController {
     }
 
     public void clearGraphics() {
-        m_CommitList.getChildren().clear();
-        m_CommitTreeGraph = new Graph();
-        m_CommitList.SetFactory(new CommitItemFactory(m_CommitTreeGraph));
-        m_CommitGraphNodes.clear();
+        commitList.getChildren().clear();
+        commitTreeGraph = new Graph();
+        commitList.setFactory(new CommitItemFactory(commitTreeGraph));
+        commitGraphNodes.clear();
         paneCommitTree.getChildren().clear();
         choiceBoxBranches.getItems().clear();
 
@@ -716,15 +712,15 @@ public class MagitController {
 
     private void onRadioButtonPreceding1Change(ObservableValue<? extends Boolean> observableValue, Boolean aBoolean, Boolean aBoolean1) {
         if(aBoolean1) {
-            m_SelectedPrecedingDiff = 1;
-            loadCommitDiff(m_CurrentCommitDiffSha1);
+            selectedPrecedingDiff = 1;
+            loadCommitDiff(currentCommitDiffSha1);
         }
     }
 
     private void onRadioButtonPreceding2Change(ObservableValue<? extends Boolean> observableValue, Boolean aBoolean, Boolean aBoolean1) {
         if(aBoolean1) {
-            m_SelectedPrecedingDiff = 2;
-            loadCommitDiff(m_CurrentCommitDiffSha1);
+            selectedPrecedingDiff = 2;
+            loadCommitDiff(currentCommitDiffSha1);
         }
     }
 
@@ -736,43 +732,43 @@ public class MagitController {
             addTreeToList();
 
             CommitTreeLayout treeLayout = new CommitTreeLayout(graphNodeRoot);
-            m_CommitTreeGraph.layout(treeLayout);
-            m_CommitTreeGraph.getModel().addCell(graphNodeRoot);
-            paneCommitTree.getChildren().add(m_CommitTreeGraph.getCanvas());
-            m_CommitTreeGraph.endUpdate();
+            commitTreeGraph.layout(treeLayout);
+            commitTreeGraph.getModel().addCell(graphNodeRoot);
+            paneCommitTree.getChildren().add(commitTreeGraph.getCanvas());
+            commitTreeGraph.endUpdate();
 
-            for(CommitGraphNode graphNode: m_CommitGraphNodes) {
-                graphNode.SetClickAction(() -> {
+            for(CommitGraphNode graphNode: commitGraphNodes) {
+                graphNode.setClickAction(() -> {
                     radioButtonPreceding1.setSelected(true);
                     radioButtonPreceding2.setSelected(false);
-                    loadCommitDiff(graphNode.GetSha1());
+                    loadCommitDiff(graphNode.getSha1());
                     updateGraphicsToHighlightBranch(graphNode);
                 });
             }
 
             Platform.runLater(() -> {
-                m_CommitTreeGraph.getUseNodeGestures().set(false);
-                m_CommitTreeGraph.getUseViewportGestures().set(false);
+                commitTreeGraph.getUseNodeGestures().set(false);
+                commitTreeGraph.getUseViewportGestures().set(false);
             });
         }
     }
 
     private void updateGraphicsToHighlightBranch(CommitGraphNode i_GraphNode) {
-        for(CommitGraphNode graphNode: m_CommitGraphNodes) {
-            boolean isHeadBranch = isHeadBranch(graphNode.GetPointingBranches());
+        for(CommitGraphNode graphNode: commitGraphNodes) {
+            boolean isHeadBranch = isHeadBranch(graphNode.getPointingBranches());
             boolean isOnBranch = false;
-            List<Branch> onBranches = graphNode.GetCommitNode().GetOnBranches();
+            List<Branch> onBranches = graphNode.getCommitNode().getOnBranches();
 
-            for (Branch onBranch : i_GraphNode.GetCommitNode().GetOnBranches()) {
+            for (Branch onBranch : i_GraphNode.getCommitNode().getOnBranches()) {
                 if(onBranches.contains(onBranch) && !isHeadBranch) {
                     isOnBranch = true;
                     break;
                 }
             }
             if(isOnBranch) {
-                graphNode.SetRectangleTreeNodeId("branchSelectedTreeNode");
+                graphNode.setRectangleTreeNodeId("branchSelectedTreeNode");
             } else if(!isHeadBranch) {
-                graphNode.SetRectangleTreeNodeId("rectangleTreeNode");
+                graphNode.setRectangleTreeNodeId("rectangleTreeNode");
             }
         }
     }
@@ -781,7 +777,7 @@ public class MagitController {
         boolean isHead = false;
 
         for(Branch branch: i_PointingBranches) {
-            if(branch.GetName().equals(f_MagitEngine.GetActiveRepository().GetHeadBranch().GetName())) {
+            if(branch.getName().equals(magitEngine.getActiveRepository().getHeadBranch().getName())) {
                 isHead = true;
                 break;
             }
@@ -791,17 +787,17 @@ public class MagitController {
     }
 
     private void loadCommitDiff(String i_CommitSha1) {
-        m_CurrentCommitDiffSha1 = i_CommitSha1;
-        List<List<List<String>>> diff = f_MagitEngine.GetCommitDiff(i_CommitSha1);
+        currentCommitDiffSha1 = i_CommitSha1;
+        List<List<List<String>>> diff = magitEngine.getCommitDiff(i_CommitSha1);
 
-        m_CommitDiffController.GetListViewNewFiles().getItems().clear();
-        m_CommitDiffController.GetListViewDeletedFiles().getItems().clear();
-        m_CommitDiffController.GetListViewChangedFiles().getItems().clear();
+        commitDiffController.getListViewNewFiles().getItems().clear();
+        commitDiffController.getListViewDeletedFiles().getItems().clear();
+        commitDiffController.getListViewChangedFiles().getItems().clear();
 
         if(diff != null) {
             vBoxDiff.setVisible(true);
 
-            List<List<String>> precedingDiff = diff.get(m_SelectedPrecedingDiff - 1);
+            List<List<String>> precedingDiff = diff.get(selectedPrecedingDiff - 1);
             radioButtonPreceding1.setDisable(false);
             radioButtonPreceding2.setDisable(diff.size() < 2);
 
@@ -810,15 +806,15 @@ public class MagitController {
             List<String> changedFiles = precedingDiff.get(2);
 
             for (String file : newFiles) {
-                m_CommitDiffController.GetListViewNewFiles().getItems().add(file);
+                commitDiffController.getListViewNewFiles().getItems().add(file);
             }
 
             for (String file : deletedFiles) {
-                m_CommitDiffController.GetListViewDeletedFiles().getItems().add(file);
+                commitDiffController.getListViewDeletedFiles().getItems().add(file);
             }
 
             for (String file : changedFiles) {
-                m_CommitDiffController.GetListViewChangedFiles().getItems().add(file);
+                commitDiffController.getListViewChangedFiles().getItems().add(file);
             }
         }
         else {
@@ -829,37 +825,37 @@ public class MagitController {
     }
 
     private void updateWcStatus() {
-        List<List<String>> wcStatus = f_MagitEngine.GetWorkingCopyDelta();
+        List<List<String>> wcStatus = magitEngine.getWorkingCopyDelta();
         List<String> deletedFiles = wcStatus.get(0);
         List<String> newFiles = wcStatus.get(1);
         List<String> changedFiles = wcStatus.get(2);
 
-        m_WcDiffController.GetListViewNewFiles().getItems().clear();
-        m_WcDiffController.GetListViewDeletedFiles().getItems().clear();
-        m_WcDiffController.GetListViewChangedFiles().getItems().clear();
+        wcDiffController.getListViewNewFiles().getItems().clear();
+        wcDiffController.getListViewDeletedFiles().getItems().clear();
+        wcDiffController.getListViewChangedFiles().getItems().clear();
 
         for(String file: newFiles) {
-            m_WcDiffController.GetListViewNewFiles().getItems().add(file);
+            wcDiffController.getListViewNewFiles().getItems().add(file);
         }
 
         for(String file: deletedFiles) {
-            m_WcDiffController.GetListViewDeletedFiles().getItems().add(file);
+            wcDiffController.getListViewDeletedFiles().getItems().add(file);
         }
 
         for(String file: changedFiles) {
-            m_WcDiffController.GetListViewChangedFiles().getItems().add(file);
+            wcDiffController.getListViewChangedFiles().getItems().add(file);
         }
     }
 
     private void addTreeToList() {
         //m_CommitGraphNodes.sort(CommitGraphNode::compareTo);
-        Object[] array = m_CommitGraphNodes.toArray();
-        sort(array, 0, m_CommitGraphNodes.size() - 1);
-        m_CommitGraphNodes = Arrays.stream(array).map(o -> (CommitGraphNode) o).collect(Collectors.toList());
+        Object[] array = commitGraphNodes.toArray();
+        sort(array, 0, commitGraphNodes.size() - 1);
+        commitGraphNodes = Arrays.stream(array).map(o -> (CommitGraphNode) o).collect(Collectors.toList());
 
-        for(int node = 0; node < m_CommitGraphNodes.size(); node++) {
-            m_CommitList.AddChild(m_CommitGraphNodes.get(node));
-            m_CommitGraphNodes.get(node).SetIdInList(node);
+        for(int node = 0; node < commitGraphNodes.size(); node++) {
+            commitList.addChild(commitGraphNodes.get(node));
+            commitGraphNodes.get(node).setIdInList(node);
         }
     }
 
@@ -872,8 +868,8 @@ public class MagitController {
                 CommitGraphNode pivotNode = (CommitGraphNode) pivot;
                 CommitGraphNode nodeToCheck = (CommitGraphNode) arr[j];
 
-                long pivotTime = new SimpleDateFormat(Engine.DATE_FORMAT).parse(pivotNode.GetCommit().GetLastUpdate()).getTime();
-                long nodeToCheckTime = new SimpleDateFormat(Engine.DATE_FORMAT).parse(nodeToCheck.GetCommit().GetLastUpdate()).getTime();
+                long pivotTime = new SimpleDateFormat(Engine.DATE_FORMAT).parse(pivotNode.getCommit().getLastUpdate()).getTime();
+                long nodeToCheckTime = new SimpleDateFormat(Engine.DATE_FORMAT).parse(nodeToCheck.getCommit().getLastUpdate()).getTime();
 
                 if (pivotTime - nodeToCheckTime < 0) {
                     i++;
@@ -905,8 +901,8 @@ public class MagitController {
         boolean isGraphNodeExists = false;
         CommitGraphNode graphNode = null;
 
-        for(CommitGraphNode node: m_CommitGraphNodes) {
-            if(node.GetCommitNode().equals(i_Root)) {
+        for(CommitGraphNode node: commitGraphNodes) {
+            if(node.getCommitNode().equals(i_Root)) {
                 graphNode = node;
                 isGraphNodeExists = true;
                 break;
@@ -915,15 +911,15 @@ public class MagitController {
 
         if(!isGraphNodeExists) {
             graphNode = new CommitGraphNode(i_Root);
-            m_CommitGraphNodes.add(graphNode);
+            commitGraphNodes.add(graphNode);
 
-            if(i_Root.GetChildren().size() == 0) {
+            if(i_Root.getChildren().size() == 0) {
                 return graphNode;
             }
 
-            for(CommitNode node: i_Root.GetChildren()) {
+            for(CommitNode node: i_Root.getChildren()) {
                 CommitGraphNode graphNodeChild = initializeCommitGraphNodes(node);
-                graphNodeChild.GetGraphNodeParents().add(graphNode);
+                graphNodeChild.getGraphNodeParents().add(graphNode);
                 graphNode.AddGraphNodeChild(graphNodeChild);
             }
         }
@@ -935,23 +931,23 @@ public class MagitController {
         Map<String, CommitNode> treeNodes = new HashMap<>();
         CommitNode leaf = null;
 
-        for(Map.Entry<String, Branch> branchEntry: f_MagitEngine.GetActiveRepository().GetBranches().entrySet()) {
-            leaf = f_MagitEngine.BuildTree(treeNodes, branchEntry.getValue());
+        for(Map.Entry<String, Branch> branchEntry: magitEngine.getActiveRepository().getBranches().entrySet()) {
+            leaf = magitEngine.BuildTree(treeNodes, branchEntry.getValue());
         }
 
-        return f_MagitEngine.FindRoot(leaf);
+        return magitEngine.FindRoot(leaf);
     }
 
     private void updateFileTree() {
         hBoxFileTree.getChildren().clear();
-        m_Repository_FileTree = new RepositoryFileTree(textAreaFileTree);
-        m_Repository_FileTree.CreateTreeFromFile(new File(f_MagitEngine.GetRepositoryPath()));
-        HBox.setHgrow(m_Repository_FileTree, Priority.ALWAYS);
-        hBoxFileTree.getChildren().add(m_Repository_FileTree);
+        repositoryFileTree = new RepositoryFileTree(textAreaFileTree);
+        repositoryFileTree.CreateTreeFromFile(new File(magitEngine.getRepositoryPath()));
+        HBox.setHgrow(repositoryFileTree, Priority.ALWAYS);
+        hBoxFileTree.getChildren().add(repositoryFileTree);
     }
 
     @FXML private void mergeBranchesAction() {
-        if(f_MagitEngine.GetActiveRepository() != null) {
+        if(magitEngine.getActiveRepository() != null) {
             showTextInputDialog("Merge", "Merge selected branch with head branch",
                     "Enter branch name:", this::mergeBranchesActionWrapper);
         }
@@ -962,12 +958,12 @@ public class MagitController {
 
     private void mergeBranchesActionWrapper(String i_BranchName) {
         // אם שם הענף לא ריק וגם הוא קיים ברשימת ענפים
-        if(!i_BranchName.isEmpty() && f_MagitEngine.GetActiveRepository().GetBranches().containsKey(i_BranchName)) {
-            Branch headBranch = f_MagitEngine.GetActiveRepository().GetHeadBranch();
-            Branch branchToMerge = f_MagitEngine.GetActiveRepository().GetBranches().get(i_BranchName);
+        if(!i_BranchName.isEmpty() && magitEngine.getActiveRepository().getBranches().containsKey(i_BranchName)) {
+            Branch headBranch = magitEngine.getActiveRepository().getHeadBranch();
+            Branch branchToMerge = magitEngine.getActiveRepository().getBranches().get(i_BranchName);
 
             // מנהל את כל תהליך הקונפליקטים כדי שהClient לא יצטרך להתעסק עם לוגיקה
-            ConflictsManager conflictsManager = f_MagitEngine.MergeBranches(headBranch, branchToMerge,
+            ConflictsManager conflictsManager = magitEngine.MergeBranches(headBranch, branchToMerge,
                     this::getCommitDescriptionAction, this::fastForwardMergePopup, this::mergeExceptionMessagePopup);
 
             if (conflictsManager != null) {
@@ -997,9 +993,9 @@ public class MagitController {
     }
 
     @FXML private void openFileExplorerAction() {
-        if(f_MagitEngine.GetActiveRepository() != null) {
+        if(magitEngine.getActiveRepository() != null) {
             try {
-                Desktop.getDesktop().open(new File(f_MagitEngine.GetRepositoryPath()));
+                Desktop.getDesktop().open(new File(magitEngine.getRepositoryPath()));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -1008,7 +1004,7 @@ public class MagitController {
 
     @FXML private void openRepositoryAction() {
         DirectoryChooser directoryChooser = new DirectoryChooser();
-        File directory = directoryChooser.showDialog(m_MainStage);
+        File directory = directoryChooser.showDialog(mainStage);
 
         if(directory != null) {
             String directoryPath = directory.getAbsolutePath();
@@ -1017,7 +1013,7 @@ public class MagitController {
     }
 
     @FXML private void exportToXmlAction() {
-        if(f_MagitEngine.GetActiveRepository() != null) {
+        if(magitEngine.getActiveRepository() != null) {
             showTextInputDialog("Export Repository To Xml", "", "Please enter xml full path:", this::exportRepositoryToXmlActionWrapper);
         }
         else {
@@ -1027,14 +1023,14 @@ public class MagitController {
 
     private void exportRepositoryToXmlActionWrapper(String i_XmlFullPath) {
         try {
-            f_MagitEngine.ExportRepositoryToXml(i_XmlFullPath);
-        } catch (XmlErrorsException | RepositoryNotLoadedException e) {
+            magitEngine.exportRepositoryToXml(i_XmlFullPath);
+        } catch (xmlErrorsException | RepositoryNotLoadedException e) {
             exceptionHandler(e);
         }
     }
 
     @FXML private void resetHeadBranchAction() {
-        if(f_MagitEngine.GetActiveRepository() != null) {
+        if(magitEngine.getActiveRepository() != null) {
             showTextInputDialog("Reset Head Branch", "", "Please enter commit sha1:", this::resetHeadBranchActionWrapper);
         }
         else {
@@ -1044,7 +1040,7 @@ public class MagitController {
 
     private void resetHeadBranchActionWrapper(String i_CommitSha1) {
         try {
-            f_MagitEngine.ResetHeadBranch(i_CommitSha1);
+            magitEngine.resetHeadBranch(i_CommitSha1);
         } catch (IOException e) {
             Alert("Magit Error", "Cannot reset head branch", "Input is not a commit sha1.", Alert.AlertType.ERROR);
         } catch (Sha1LengthException e) {
@@ -1054,18 +1050,18 @@ public class MagitController {
     }
 
     @FXML private void cloneAction() {
-        CloneRepoDialogController cloneDialogController = CloneRepoDialogController.LoadFxml();
-        cloneDialogController.SetOkAction(() -> cloneActionWrapper(cloneDialogController));
-        cloneDialogController.ShowDialog();
+        CloneRepoDialogController cloneDialogController = CloneRepoDialogController.loadFxml();
+        cloneDialogController.setOkAction(() -> cloneActionWrapper(cloneDialogController));
+        cloneDialogController.showDialog();
     }
 
     private void cloneActionWrapper(CloneRepoDialogController i_CloneDialogController) {
-        String repoName = i_CloneDialogController.GetTextFieldRepoName().getText();
-        String localRepoLocation  = i_CloneDialogController.GetTextFieldLocalRepoPath().getText();
-        String remoteRepoLocation = i_CloneDialogController.GetTextFieldRemoteRepoPath().getText();
+        String repoName = i_CloneDialogController.getTextFieldRepoName().getText();
+        String localRepoLocation  = i_CloneDialogController.getTextFieldLocalRepoPath().getText();
+        String remoteRepoLocation = i_CloneDialogController.getTextFieldRemoteRepoPath().getText();
 
         try {
-            f_MagitEngine.Clone(repoName, localRepoLocation, remoteRepoLocation);
+            magitEngine.Clone(repoName, localRepoLocation, remoteRepoLocation);
         } catch (IOException e) {
             exceptionHandler(e);
         } catch (CollaborationException e) {
@@ -1075,7 +1071,7 @@ public class MagitController {
 
     @FXML private void pushAction() {
         try {
-            f_MagitEngine.Push();
+            magitEngine.Push();
             Alert("Collaboration Message", "Successful operation", "Push was executed successfully.", Alert.AlertType.INFORMATION);
         } catch (CollaborationException e) {
             Alert("Collaboration Error", "Something went wrong...", e.getMessage(), Alert.AlertType.ERROR);
@@ -1086,7 +1082,7 @@ public class MagitController {
 
     @FXML private void pullAction() {
         try {
-            f_MagitEngine.Pull();
+            magitEngine.Pull();
             Alert("Collaboration Message", "Successful operation", "Pull was executed successfully.", Alert.AlertType.INFORMATION);
         } catch (OpenChangesInWcException e) {
             Alert("Collaboration Error", "Something went wrong...", "Remote repository working directory is not clean.", Alert.AlertType.ERROR);
@@ -1098,11 +1094,11 @@ public class MagitController {
     }
 
     @FXML private void fetchAction() {
-        f_MagitEngine.Fetch();
+        magitEngine.Fetch();
         Alert("Collaboration Message", "Successful operation", "Fetch was executed successfully.", Alert.AlertType.INFORMATION);
     }
 
     @FXML public void changeThemeAction() {
-        m_ThemesController.Show();
+        themesController.Show();
     }
 }

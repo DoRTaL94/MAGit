@@ -2,7 +2,7 @@ package users;
 
 import MagitExceptions.FolderInLocationAlreadyExistsException;
 import MagitExceptions.RepositoryAlreadyExistsException;
-import MagitExceptions.XmlErrorsException;
+import MagitExceptions.xmlErrorsException;
 import javafx.beans.property.SimpleStringProperty;
 import magit.Engine;
 
@@ -24,10 +24,10 @@ public class UsersManager {
 
     public void addRepo(String i_UserName, String i_XmlPath) {
         try {
-            Engine.Creator.GetInstance().LoadRepositoryFromXml(i_XmlPath, new SimpleStringProperty());
+            Engine.Creator.getInstance().loadRepositoryFromXml(i_XmlPath, new SimpleStringProperty());
             // לבדוק אם הרפו כבר קיים
-            nameToUserMap.get(i_UserName).addRepo(Engine.Creator.GetInstance().GetActiveRepository());
-        } catch (FileNotFoundException | FolderInLocationAlreadyExistsException | XmlErrorsException | RepositoryAlreadyExistsException ignored) {
+            nameToUserMap.get(i_UserName).addRepo(Engine.Creator.getInstance().getActiveRepository());
+        } catch (FileNotFoundException | FolderInLocationAlreadyExistsException | xmlErrorsException | RepositoryAlreadyExistsException ignored) {
         }
     }
 

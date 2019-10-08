@@ -41,10 +41,10 @@ public class ConsoleMagit extends ScrollPane {
         m_Console.addEventFilter(KeyEvent.KEY_PRESSED, this::filterKeyPressed);
         m_Console.addEventFilter(KeyEvent.KEY_TYPED, this::filterKeyTyped);
 
-        menus.MainMenu consoleMainMenu = new menus.MainMenu("M.A.Git", Engine.Creator.GetInstance());
+        menus.MainMenu consoleMainMenu = new menus.MainMenu("M.A.Git", Engine.Creator.getInstance());
         BuildMenu(consoleMainMenu);
 
-        Thread consoleMagitThread = new Thread(consoleMainMenu::Show);
+        Thread consoleMagitThread = new Thread(consoleMainMenu::show);
         consoleMagitThread.setDaemon(true);
         consoleMagitThread.start();
     }
@@ -54,7 +54,7 @@ public class ConsoleMagit extends ScrollPane {
         List<SubMenu> options = MenuOptions.GetActions();
 
         for(SubMenu option: options) {
-            i_MainMenu.AddItem(option);
+            i_MainMenu.addItem(option);
         }
     }
 
@@ -62,7 +62,7 @@ public class ConsoleMagit extends ScrollPane {
         if (keyEvent.getCode() == KeyCode.ENTER)  {
             inputLength = 0;
             String text = m_Console.getText();
-            List<String> lines = StringUtilities.GetLines(text);
+            List<String> lines = StringUtilities.getLines(text);
             int linesCount = lines.size();
             String input = lines.get(linesCount - 1).substring(3);
             m_Controller.SetBuffer(input);

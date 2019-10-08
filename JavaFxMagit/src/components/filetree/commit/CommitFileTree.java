@@ -22,7 +22,7 @@ import java.util.List;
 public class CommitFileTree extends TreeView<Folder.Data> {
     private static final String FOLDER_ICON_PATH = "/components/filetree/resources/folder.png";
     private static final String TXT_FILE_ICON_PATH = "/components/filetree/resources/text-x-generic.png";
-    private final Repository f_ActiveRepository =  Engine.Creator.GetInstance().GetActiveRepository();
+    private final Repository f_ActiveRepository =  Engine.Creator.getInstance().getActiveRepository();
     private CommitNode m_CommitNode;
     private static final String f_DarkTheme = "resources/Dark.css";
     private static final String f_ColorfulTheme = "resources/Colorful.css";
@@ -63,7 +63,7 @@ public class CommitFileTree extends TreeView<Folder.Data> {
         });
 
         m_CommitNode = i_CommitNode;
-        CreateTree(i_CommitNode.GetCommit());
+        CreateTree(i_CommitNode.getCommit());
         loadFXML();
     }
 
@@ -81,7 +81,7 @@ public class CommitFileTree extends TreeView<Folder.Data> {
             commitFilesStage.getIcons().add(new Image(getClass().getResourceAsStream("/main/resources/MAGit.png")));
             commitFilesStage.show();
             ((CommitFileTreeController)fxmlLoader.getController()).SetCommitFilesTree(this);
-            ((CommitFileTreeController)fxmlLoader.getController()).SetLabelCommitSha1(m_CommitNode.GetSha1());
+            ((CommitFileTreeController)fxmlLoader.getController()).SetLabelCommitSha1(m_CommitNode.getSha1());
 
             m_Root.getStylesheets().add(getClass().getResource(m_CurrentTheme).toExternalForm());
             m_Root.applyCss();
@@ -92,11 +92,11 @@ public class CommitFileTree extends TreeView<Folder.Data> {
 
     public void CreateTree(Commit i_Commit) {
         Folder.Data rootFolderData = new Folder.Data();
-        rootFolderData.SetSHA1(i_Commit.GetRootFolderSHA1());
-        rootFolderData.SetlastUpdate(i_Commit.GetLastUpdate());
-        rootFolderData.SetLastChanger(i_Commit.GetLastChanger());
-        rootFolderData.SetName(f_ActiveRepository.GetName());
-        rootFolderData.SetFileType(eFileType.FOLDER);
+        rootFolderData.setSHA1(i_Commit.getRootFolderSHA1());
+        rootFolderData.setlastUpdate(i_Commit.getLastUpdate());
+        rootFolderData.setLastChanger(i_Commit.getLastChanger());
+        rootFolderData.setName(f_ActiveRepository.getName());
+        rootFolderData.setFileType(eFileType.FOLDER);
 
         this.setRoot(CreateTreeRec(rootFolderData));
         this.getRoot().setExpanded(true);
@@ -105,9 +105,9 @@ public class CommitFileTree extends TreeView<Folder.Data> {
     public TreeItem<Folder.Data> CreateTreeRec(Folder.Data i_File) {
         TreeItem<Folder.Data> item = new TreeItem<>(i_File);
 
-        if(i_File.GetFileType().equals(eFileType.FOLDER)) {
-            Folder root = f_ActiveRepository.GetFolders().get(i_File.GetSHA1());
-            List<Folder.Data> files = root.GetFiles();
+        if(i_File.getFileType().equals(eFileType.FOLDER)) {
+            Folder root = f_ActiveRepository.getFolders().get(i_File.getSHA1());
+            List<Folder.Data> files = root.getFiles();
 
             for(Folder.Data file: files) {
                 item.getChildren().add(CreateTreeRec(file));

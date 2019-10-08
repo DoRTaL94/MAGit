@@ -12,7 +12,6 @@ import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import magit.Engine;
 import main.MagitController;
 
 import java.io.IOException;
@@ -24,68 +23,68 @@ public class ProgressController {
     @FXML private TextArea textBoxDetails;
     @FXML private Label labelPercent;
 
-    private static final String f_DarkTheme = "/main/resources/DarkDialog.css";
-    private static final String f_ColorfulTheme = "/main/resources/ColorfulDialog.css";
-    private String m_CurrentTheme;
-    private Stage m_Stage;
-    private Scene m_Scene;
-    private Task m_Task;
+    private static final String darkTheme = "/main/resources/DarkDialog.css";
+    private static final String colorfulTheme = "/main/resources/ColorfulDialog.css";
+    private String currentTheme;
+    private Stage stage;
+    private Scene scene;
+    private Task task;
 
     public ProgressController() {
-        m_Stage = new Stage();
+        stage = new Stage();
 
         if(ThemesController.themeChangedProperty.get().equals("Dark")) {
-            m_CurrentTheme = f_DarkTheme;
+            currentTheme = darkTheme;
         } else if(ThemesController.themeChangedProperty.get().equals("Colorful")) {
-            m_CurrentTheme = f_ColorfulTheme;
+            currentTheme = colorfulTheme;
         } else {
-            m_CurrentTheme = "";
+            currentTheme = "";
         }
 
         ThemesController.themeChangedProperty.addListener((observable, oldValue, newValue) -> {
             if(newValue.equals("Dark")) {
-                m_CurrentTheme = f_DarkTheme;
+                currentTheme = darkTheme;
             }
             else if(newValue.equals("Colorful")) {
-                m_CurrentTheme = f_ColorfulTheme;
+                currentTheme = colorfulTheme;
             }
 
             if(newValue.equals("Default")) {
-                m_CurrentTheme = "";
+                currentTheme = "";
                 vBoxLoading.getStylesheets().clear();
                 vBoxLoading.applyCss();
             } else {
                 vBoxLoading.getStylesheets().clear();
-                vBoxLoading.getStylesheets().add(getClass().getResource(m_CurrentTheme).toExternalForm());
+                vBoxLoading.getStylesheets().add(getClass().getResource(currentTheme).toExternalForm());
                 vBoxLoading.applyCss();
             }
         });
     }
 
-    public void SetTask(Task i_Task) {
-        m_Task = i_Task;
+    public void setTask(Task i_Task) {
+        task = i_Task;
 
         i_Task.progressProperty().addListener((observable, oldValue, newValue) -> {
             progressBar.setProgress((double) newValue);
             labelPercent.setText(String.format("%.0f%s", ((double) newValue) * 100, "%"));
         });
-        i_Task.setOnCancelled(event -> m_Stage.close());
+        i_Task.setOnCancelled(event -> stage.close());
         i_Task.messageProperty().addListener((observable, oldValue, newValue) -> addText(newValue));
         MagitController.UIRefreshedProperty.addListener((observable, oldValue, newValue) -> {
             if(newValue) {
-                m_Stage.close();
+                stage.close();
             }
         });
     }
 
-    public void Run() {
-        Thread th = new Thread(m_Task);
+    public void run() {
+        Thread th = new Thread(task);
         th.setDaemon(true);
         th.start();
-        m_Stage.show();
+        stage.show();
     }
 
-    public static ProgressController LoadFXML() {
+    public static ProgressController loadFXML() {
         FXMLLoader fxmlLoader = new FXMLLoader();
         URL url = DiffController.class.getResource("/components/progress/ProgressUI.fxml");
         fxmlLoader.setLocation(url);
@@ -100,13 +99,13 @@ public class ProgressController {
     }
 
     @FXML public void initialize() {
-        m_Scene = new Scene(vBoxLoading);
-        m_Stage.setScene(m_Scene);
-        m_Stage.setTitle("Loading...");
-        m_Stage.getIcons().add(new Image(getClass().getResourceAsStream("/main/resources/MAGit.png")));
+        scene = new Scene(vBoxLoading);
+        stage.setScene(scene);
+        stage.setTitle("Loading...");
+        stage.getIcons().add(new Image(getClass().getResourceAsStream("/main/resources/MAGit.png")));
 
-        if(!m_CurrentTheme.isEmpty()) {
-            vBoxLoading.getStylesheets().add(getClass().getResource(m_CurrentTheme).toExternalForm());
+        if(!currentTheme.isEmpty()) {
+            vBoxLoading.getStylesheets().add(getClass().getResource(currentTheme).toExternalForm());
             vBoxLoading.applyCss();
         }
     }

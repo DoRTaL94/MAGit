@@ -25,34 +25,34 @@ public class DiffController {
 
     private static final String FOLDER_ICON_PATH = "/components/filetree/resources/folder.png";
     private static final String TXT_FILE_ICON_PATH = "/components/filetree/resources/text-x-generic.png";
-    private static final String f_DarkTheme = "resources/Dark.css";
-    private static final String f_ColorfulTheme = "resources/Colorful.css";
-    private String m_CurrentTheme;
+    private static final String darkTheme = "resources/Dark.css";
+    private static final String colorfulTheme = "resources/Colorful.css";
+    private String currentTheme;
 
     public DiffController() {
-        m_CurrentTheme = "";
+        currentTheme = "";
 
         ThemesController.themeChangedProperty.addListener((observable, oldValue, newValue) -> {
             if(newValue.equals("Dark")) {
-                m_CurrentTheme = f_DarkTheme;
+                currentTheme = darkTheme;
             }
             else if(newValue.equals("Colorful")) {
-                m_CurrentTheme = f_ColorfulTheme;
+                currentTheme = colorfulTheme;
             }
 
             if(newValue.equals("Default")) {
-                m_CurrentTheme = "";
+                currentTheme = "";
                 hBoxWcStatus.getStylesheets().clear();
                 hBoxWcStatus.applyCss();
             } else {
                 hBoxWcStatus.getStylesheets().clear();
-                hBoxWcStatus.getStylesheets().add(getClass().getResource(m_CurrentTheme).toExternalForm());
+                hBoxWcStatus.getStylesheets().add(getClass().getResource(currentTheme).toExternalForm());
                 hBoxWcStatus.applyCss();
             }
         });
     }
 
-    public static DiffController LoadFXML() {
+    public static DiffController loadFXML() {
         FXMLLoader fxmlLoader = new FXMLLoader();
         URL url = DiffController.class.getResource("/components/Diff/DiffUI.fxml");
         fxmlLoader.setLocation(url);
@@ -99,14 +99,14 @@ public class DiffController {
                       }
                   };
 
-                  listCell.setOnMouseClicked(mouseEvent -> ListCell_Click(mouseEvent, listCell));
+                  listCell.setOnMouseClicked(mouseEvent -> listCell_Click(mouseEvent, listCell));
 
                   return listCell;
               }
           });
     }
 
-    private void ListCell_Click(MouseEvent i_MouseEvent, ListCell<String> i_ClickedListCell) {
+    private void listCell_Click(MouseEvent i_MouseEvent, ListCell<String> i_ClickedListCell) {
         if(i_MouseEvent.getButton().equals(MouseButton.PRIMARY)) {
             if(i_MouseEvent.getClickCount() == 2) {
                 try {
@@ -128,19 +128,19 @@ public class DiffController {
         }
     }
 
-    public HBox GetRoot() {
+    public HBox getRoot() {
         return hBoxWcStatus;
     }
 
-    public ListView<String> GetListViewDeletedFiles() {
+    public ListView<String> getListViewDeletedFiles() {
         return listViewDeletedFiles;
     }
 
-    public ListView<String> GetListViewNewFiles() {
+    public ListView<String> getListViewNewFiles() {
         return listViewNewFiles;
     }
 
-    public ListView<String> GetListViewChangedFiles() {
+    public ListView<String> getListViewChangedFiles() {
         return listViewChangedFiles;
     }
 }

@@ -6,44 +6,44 @@ import IO.FileUtilities;
 import resources.jaxb.schema.generated.MagitBlob;
 
 public class Blob implements IRepositoryFile {
-    private String m_Text;
+    private String text;
 
     public Blob() {
-        m_Text = null;
+        text = null;
     }
 
-    public static String GetSha1FromContent(String blobContent) {
+    public static String getSha1FromContent(String blobContent) {
         return blobContent.replaceAll("\\s", "");
     }
 
-    public String GetText() {
-        return m_Text;
+    public String getText() {
+        return text;
     }
 
-    public void SetText(String i_Text) {
-        m_Text = i_Text;
+    public void setText(String i_Text) {
+        text = i_Text;
     }
 
-    public static Blob Parse(MagitBlob i_MagitBlob){
+    public static Blob parse(MagitBlob i_MagitBlob){
         Blob newBlob = new Blob();
-        newBlob.SetText(i_MagitBlob.getContent());
+        newBlob.setText(i_MagitBlob.getContent());
         return newBlob;
     }
 
-    public static Blob Parse(File i_BlobZippedFile) throws IOException {
+    public static Blob parse(File i_BlobZippedFile) throws IOException {
         Blob newBlob = new Blob();
         String blobContent = null;
 
         blobContent = FileUtilities.UnzipFile(i_BlobZippedFile.getPath());
 
-        newBlob.SetText(blobContent);
+        newBlob.setText(blobContent);
         return newBlob;
     }
 
     @Override
     public String toString() {
-        return m_Text;
+        return text;
     }
 
-    public String toStringForSha1() { return m_Text.replaceAll("\\s", ""); }
+    public String toStringForSha1() { return text.replaceAll("\\s", ""); }
 }

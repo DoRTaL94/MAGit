@@ -3,14 +3,14 @@ package components.commit.tree;
 import javafx.scene.layout.VBox;
 
 public class CommitList extends VBox {
-    private CommitItemFactory m_Factory;
+    private CommitItemFactory factory;
 
-    public void SetFactory(CommitItemFactory i_Factory) {
+    public void setFactory(CommitItemFactory i_Factory) {
         setSpacing(5);
-        m_Factory = i_Factory;
+        factory = i_Factory;
     }
 
-    public void AddChild(CommitGraphNode i_Child) {
-        this.getChildren().add(m_Factory.CreateCommitItem(i_Child).GetCommitDetails());
+    public void addChild(CommitGraphNode i_Child) {
+        this.getChildren().add(factory.CreateCommitItem(i_Child).GetCommitDetails());
     }
 }

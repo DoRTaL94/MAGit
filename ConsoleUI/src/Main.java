@@ -8,9 +8,9 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        Menu mainMenu = new MainMenu("M.A.Git", Engine.Creator.GetInstance());
+        Menu mainMenu = new MainMenu("M.A.Git", Engine.Creator.getInstance());
         BuildMenu(mainMenu);
-        mainMenu.Show();
+        mainMenu.show();
     }
 
     private static void BuildMenu(Menu i_MainMenu) {
@@ -18,7 +18,7 @@ public class Main {
         List<SubMenu> options = MenuOptions.GetActions();
 
         for(SubMenu option: options) {
-            i_MainMenu.AddItem(option);
+            i_MainMenu.addItem(option);
         }
     }
 }

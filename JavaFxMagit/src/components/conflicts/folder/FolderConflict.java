@@ -9,7 +9,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import magit.merge.Conflict;
 
-import java.awt.*;
 import java.io.IOException;
 import java.net.URL;
 import java.io.File;
@@ -28,14 +27,14 @@ public class FolderConflict implements IConflictDisplay {
     private void updateGraphics() {
         if(m_Conflict.GetTheirs() != null) {
             FolderFileTree folderFileTree = new FolderFileTree((Folder) m_Conflict.GetTheirs(), m_Conflict.GetFileLocation());
-            folderFileTree.getRoot().getValue().SetName(new File(m_Conflict.GetFileLocation()).getName());
+            folderFileTree.getRoot().getValue().setName(new File(m_Conflict.GetFileLocation()).getName());
             VBox.setVgrow(folderFileTree, Priority.ALWAYS);
             m_Controller.GetStackPaneTheirsFolderContent().getChildren().add(folderFileTree);
         }
 
         if(m_Conflict.GetOurs() != null) {
             FolderFileTree folderFileTree = new FolderFileTree((Folder) m_Conflict.GetOurs(), m_Conflict.GetFileLocation());
-            folderFileTree.getRoot().getValue().SetName(new File(m_Conflict.GetFileLocation()).getName());
+            folderFileTree.getRoot().getValue().setName(new File(m_Conflict.GetFileLocation()).getName());
             VBox.setVgrow(folderFileTree, Priority.ALWAYS);
             m_Controller.GetStackPaneOursFolderContent().getChildren().add(folderFileTree);
         }

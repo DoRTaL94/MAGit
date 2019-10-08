@@ -16,17 +16,17 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Factory {
-    private final Map<String, Blob> sf_TmpBlobs = new HashMap<>();
-    private final Map<String, Folder> sf_TmpFolders = new HashMap<>();
-    private final IEngine f_Engine;
+    private final Map<String, Blob> tmpBlobs = new HashMap<>();
+    private final Map<String, Folder> tmpFolders = new HashMap<>();
+    private final IEngine engine;
 
     public Factory(IEngine i_Engine) {
-        f_Engine = i_Engine;
+        engine = i_Engine;
     }
 
-    Repository CreateRepository(MagitRepository i_MagitRepository) {
+    Repository createRepository(MagitRepository i_MagitRepository) {
         boolean isEmptyRepo = i_MagitRepository.getMagitCommits().getMagitSingleCommit().size() == 0;
-        Repository repository = CreateRepositoryAndFiles(i_MagitRepository.getName(), i_MagitRepository.getLocation(), isEmptyRepo);
+        Repository repository = createRepositoryAndFiles(i_MagitRepository.getName(), i_MagitRepository.getLocation(), isEmptyRepo);
 
         if(!isEmptyRepo) {
             // Set lists of magit data structures.
@@ -36,14 +36,14 @@ public class Factory {
             List<MagitSingleFolder> magitFolders = i_MagitRepository.getMagitFolders().getMagitSingleFolder();
 
             // Transform magit lists to maps and set maps in repository.
-            repository.SetBranches(GenerateBranchesHashMap(magitBranches));
-            repository.SetCommits(GenerateCommitsHashMap(magitCommits));
-            repository.SetFolders(GenerateFoldersHashMap(magitFolders, GenerateMagitBlobsHashMap(magitBlobs)));
-            repository.SetBlobs(GenerateBlobsHashMap(magitBlobs));
+            repository.setBranches(generateBranchesHashMap(magitBranches));
+            repository.setCommits(generateCommitsHashMap(magitCommits));
+            repository.setFolders(generateFoldersHashMap(magitFolders, generateMagitBlobsHashMap(magitBlobs)));
+            repository.setBlobs(generateBlobsHashMap(magitBlobs));
 
             try {
                 String headBranchName = i_MagitRepository.getMagitBranches().getHead();
-                CreateFilesOnSystem(headBranchName);
+                createFilesOnSystem(headBranchName);
             } catch (IOException | ParseException e) {
                 e.printStackTrace();
             }
@@ -52,9 +52,9 @@ public class Factory {
         return repository;
     }
 
-    Repository CreateRepositoryAndFiles(String i_RepositoryName, String i_RepositoryLocation, boolean i_IsEmptyRepo) {
+    Repository createRepositoryAndFiles(String i_RepositoryName, String i_RepositoryLocation, boolean i_IsEmptyRepo) {
         Repository repository = new Repository();
-        repository.SetName(i_RepositoryName);
+        repository.setName(i_RepositoryName);
 
         File repositoryFolder = new File(i_RepositoryLocation);
         File magit            = new File(repositoryFolder, ".magit");
@@ -66,121 +66,121 @@ public class Factory {
         objects.mkdir();
         Branches.mkdir();
 
-        repository.SetLocationPath(repositoryFolder.getAbsolutePath());
-        f_Engine.SetRepositoryPath(repositoryFolder.getAbsolutePath());
-        f_Engine.SetActiveRepository(repository);
-        FileUtilities.WriteToFile(Paths.get(repository.GetLocationPath(),
-                ".magit", "details.txt").toString(), String.format("%s%s%s", i_RepositoryName, System.lineSeparator(), f_Engine.GetRemoteRepositoryLocation()));
+        repository.setLocationPath(repositoryFolder.getAbsolutePath());
+        engine.setRepositoryPath(repositoryFolder.getAbsolutePath());
+        engine.setActiveRepository(repository);
+        FileUtilities.WriteToFile(Paths.get(repository.getLocationPath(),
+                ".magit", "details.txt").toString(), String.format("%s%s%s", i_RepositoryName, System.lineSeparator(), engine.getRemoteRepositoryLocation()));
 
         if(i_IsEmptyRepo) {
-            repository.SetBlobs(new HashMap<>());
-            repository.SetFolders(new HashMap<>());
-            repository.SetCommits(new HashMap<>());
-            repository.SetBranches(new HashMap<>());
+            repository.setBlobs(new HashMap<>());
+            repository.setFolders(new HashMap<>());
+            repository.setCommits(new HashMap<>());
+            repository.setBranches(new HashMap<>());
 
             Branch masterBranch = new Branch();
-            masterBranch.SetIsHead(true);
-            masterBranch.SetName("master");
-            repository.GetBranches().put("master", masterBranch);
+            masterBranch.setIsHead(true);
+            masterBranch.setName("master");
+            repository.getBranches().put("master", masterBranch);
 
             String headBranchPath = Paths.get(i_RepositoryLocation, ".magit", "branches", "head.txt").toString();
             String masterBranchPath = Paths.get(i_RepositoryLocation, ".magit", "branches", "master.txt").toString();
             FileUtilities.WriteToFile(masterBranchPath, "");
             FileUtilities.WriteToFile(headBranchPath, "master");
 
-            repository.SetHeadBranch(masterBranch);
+            repository.setHeadBranch(masterBranch);
         }
 
         return repository;
     }
 
-    private void CreateFilesOnSystem(String i_HeadBranchName) throws IOException, ParseException {
-        Repository repository = f_Engine.GetActiveRepository();
-        Map<String, Branch> branches = f_Engine.GetActiveRepository().GetBranches();
-        Map<String, Commit> commits  = f_Engine.GetActiveRepository().GetCommits();
+    private void createFilesOnSystem(String i_HeadBranchName) throws IOException, ParseException {
+        Repository repository = engine.getActiveRepository();
+        Map<String, Branch> branches = engine.getActiveRepository().getBranches();
+        Map<String, Commit> commits  = engine.getActiveRepository().getCommits();
         Set<String> sha1Set = new HashSet<>();
 
         for(Map.Entry<String, Branch> branch: branches.entrySet()) {
             Branch newBranch = new Branch();
-            String pointedCommitSha1 = branch.getValue().GetPointedCommitSha1();
-            String branchPath = Paths.get(repository.GetLocationPath(),
-                    ".magit", "branches", branch.getValue().GetName().concat(".txt")).toString();
+            String pointedCommitSha1 = branch.getValue().getPointedCommitSha1();
+            String branchPath = Paths.get(repository.getLocationPath(),
+                    ".magit", "branches", branch.getValue().getName().concat(".txt")).toString();
             Commit commit = commits.get(pointedCommitSha1);
 
             if(!sha1Set.contains(pointedCommitSha1)) {
                 pointedCommitSha1 = spreadCommitAndSetNewSha1s(commit, sha1Set);
             }
 
-            if(branch.getValue().GetName().contains("/") ||
-                    branch.getValue().GetName().contains("\\")) {
-                String[] parts = branch.getValue().GetName().split("/");
+            if(branch.getValue().getName().contains("/") ||
+                    branch.getValue().getName().contains("\\")) {
+                String[] parts = branch.getValue().getName().split("/");
                 String remoteRepoName;
 
                 if(parts.length == 1) {
-                    parts = branch.getValue().GetName().split(Pattern.quote("\\"));
+                    parts = branch.getValue().getName().split(Pattern.quote("\\"));
                 }
 
                 remoteRepoName = parts[0];
-                String remoteRepoFolderPath = Paths.get(repository.GetLocationPath(),
+                String remoteRepoFolderPath = Paths.get(repository.getLocationPath(),
                         ".magit", "branches", remoteRepoName).toString();
                 new File(remoteRepoFolderPath).mkdir();
             }
 
             FileUtilities.WriteToFile(branchPath, pointedCommitSha1);
 
-            if(branch.getValue().GetName().equals(i_HeadBranchName)) {
-                newBranch.SetIsHead(true);
-                f_Engine.GetActiveRepository().SetHeadBranch(newBranch);
+            if(branch.getValue().getName().equals(i_HeadBranchName)) {
+                newBranch.setIsHead(true);
+                engine.getActiveRepository().setHeadBranch(newBranch);
             }
 
-            newBranch.SetPointedCommitSha1(pointedCommitSha1);
-            newBranch.SetName(branch.getValue().GetName());
-            branches.put(newBranch.GetName(), newBranch);
+            newBranch.setPointedCommitSha1(pointedCommitSha1);
+            newBranch.setName(branch.getValue().getName());
+            branches.put(newBranch.getName(), newBranch);
         }
 
-        CreateWc(f_Engine.GetActiveRepository().GetHeadBranch());
+        createWc(engine.getActiveRepository().getHeadBranch());
     }
 
-    void CreateWc(Branch i_HeadBranch) throws IOException {
-        String repoPath = f_Engine.GetActiveRepository().GetLocationPath();
+    void createWc(Branch i_HeadBranch) throws IOException {
+        String repoPath = engine.getActiveRepository().getLocationPath();
         String headBranchFilePath = Paths.get(repoPath,".magit", "branches", "head.txt").toString();
-        FileUtilities.WriteToFile(headBranchFilePath, i_HeadBranch.GetName());
+        FileUtilities.WriteToFile(headBranchFilePath, i_HeadBranch.getName());
 
-        String pointedCommitSha1 = i_HeadBranch.GetPointedCommitSha1();
-        Commit currentCommit     = f_Engine.GetActiveRepository().GetCommits().get(pointedCommitSha1);
+        String pointedCommitSha1 = i_HeadBranch.getPointedCommitSha1();
+        Commit currentCommit     = engine.getActiveRepository().getCommits().get(pointedCommitSha1);
 
-        CreateFolderFromCommit(currentCommit, f_Engine.GetRepositoryPath());
+        createFolderFromCommit(currentCommit, engine.getRepositoryPath());
     }
 
-    void CreateFolderFromCommit(Commit i_Commit, String i_Location) {
-        String rootFolderSha1    = i_Commit.GetRootFolderSHA1();
-        Folder rootFolder        = f_Engine.GetActiveRepository().GetFolders().get(rootFolderSha1);
+    void createFolderFromCommit(Commit i_Commit, String i_Location) {
+        String rootFolderSha1    = i_Commit.getRootFolderSHA1();
+        Folder rootFolder        = engine.getActiveRepository().getFolders().get(rootFolderSha1);
 
-        CreateWcRec(rootFolder, i_Location);
+        createWcRec(rootFolder, i_Location);
     }
 
-    void CreateFolder(Folder i_Folder, String i_FullPath) {
+    void createFolder(Folder i_Folder, String i_FullPath) {
         File folderFile = new File(i_FullPath);
         folderFile.mkdir();
-        CreateWcRec(i_Folder, i_FullPath);
+        createWcRec(i_Folder, i_FullPath);
     }
 
-    private void CreateWcRec(Folder i_RootFolder, String i_CurrentLocation) {
-        List<Folder.Data> filesInFolder = i_RootFolder.GetFiles();
+    private void createWcRec(Folder i_RootFolder, String i_CurrentLocation) {
+        List<Folder.Data> filesInFolder = i_RootFolder.getFiles();
 
         for(Folder.Data file: filesInFolder) {
-            if(file.GetFileType().equals(eFileType.FOLDER)) {
-                Folder subFolder = f_Engine.GetActiveRepository().GetFolders().get(file.GetSHA1());
-                String subFolderLocation = Paths.get(i_CurrentLocation, file.GetName()).toString();
+            if(file.getFileType().equals(eFileType.FOLDER)) {
+                Folder subFolder = engine.getActiveRepository().getFolders().get(file.getSHA1());
+                String subFolderLocation = Paths.get(i_CurrentLocation, file.getName()).toString();
                 File folderFile = new File(subFolderLocation);
                 folderFile.mkdir();
 
-                CreateWcRec(subFolder, subFolderLocation);
+                createWcRec(subFolder, subFolderLocation);
             }
             else {
-                Blob blob = f_Engine.GetActiveRepository().GetBlobs().get(file.GetSHA1());
-                String blobPath = Paths.get(i_CurrentLocation, file.GetName()).toString();
-                FileUtilities.WriteToFile(blobPath, blob.GetText());
+                Blob blob = engine.getActiveRepository().getBlobs().get(file.getSHA1());
+                String blobPath = Paths.get(i_CurrentLocation, file.getName()).toString();
+                FileUtilities.WriteToFile(blobPath, blob.getText());
             }
         }
     }
@@ -191,32 +191,32 @@ public class Factory {
 
         // Setting first preceding commit
         if(!firstPrecedingCommitSha1.isEmpty()) {
-            Commit firstPrecedingCommit = f_Engine.GetActiveRepository().GetCommits().get(firstPrecedingCommitSha1);
+            Commit firstPrecedingCommit = engine.getActiveRepository().getCommits().get(firstPrecedingCommitSha1);
 
             if(firstPrecedingCommit != null) {
                 firstPrecedingCommitSha1 = spreadCommitAndSetNewSha1s(firstPrecedingCommit, i_Sha1Set);
-                i_Commit.SetFirstPrecedingCommitSha1(firstPrecedingCommitSha1);
+                i_Commit.setFirstPrecedingCommitSha1(firstPrecedingCommitSha1);
             }
 
             // Setting Second preceding commit
             if(!secondPrecedingCommitSha1.isEmpty()) {
-                Commit secondPrecedingCommit = f_Engine.GetActiveRepository().GetCommits().get(secondPrecedingCommitSha1);
+                Commit secondPrecedingCommit = engine.getActiveRepository().getCommits().get(secondPrecedingCommitSha1);
 
                 if(secondPrecedingCommit != null) {
                     secondPrecedingCommitSha1 = spreadCommitAndSetNewSha1s(secondPrecedingCommit, i_Sha1Set);
-                    i_Commit.SetSecondPrecedingCommitSha1(secondPrecedingCommitSha1);
+                    i_Commit.setSecondPrecedingCommitSha1(secondPrecedingCommitSha1);
                 }
             }
         }
 
         // Setting root folder
-        String rootFolderSha1 = i_Commit.GetRootFolderSHA1();
-        Folder rootFolder     = f_Engine.GetActiveRepository().GetFolders().get(rootFolderSha1);
-        String objectsPath    = Paths.get(f_Engine.GetActiveRepository().GetLocationPath(), ".magit", "objects").toString();
-        rootFolderSha1        = spreadCommitAndSetNewSha1sRec(rootFolder, "", i_Commit.GetLastUpdate(), f_Engine.GetRepositoryPath(), false);
+        String rootFolderSha1 = i_Commit.getRootFolderSHA1();
+        Folder rootFolder     = engine.getActiveRepository().getFolders().get(rootFolderSha1);
+        String objectsPath    = Paths.get(engine.getActiveRepository().getLocationPath(), ".magit", "objects").toString();
+        rootFolderSha1        = spreadCommitAndSetNewSha1sRec(rootFolder, "", i_Commit.getLastUpdate(), engine.getRepositoryPath(), false);
 
-        f_Engine.GetActiveRepository().GetFolders().put(rootFolderSha1, rootFolder);
-        i_Commit.SetRootFolderSHA1(rootFolderSha1);
+        engine.getActiveRepository().getFolders().put(rootFolderSha1, rootFolder);
+        i_Commit.setRootFolderSHA1(rootFolderSha1);
 
         // Zip and files management
         String commitSha1 = DigestUtils.sha1Hex(i_Commit.toStringForSha1());
@@ -224,19 +224,19 @@ public class Factory {
         FileUtilities.ZipFile(commitSha1, i_Commit.toString(), zipPath);
         i_Sha1Set.add(commitSha1);
         File rootFolderFile = new File(Paths.get(objectsPath, rootFolderSha1).toString());
-        rootFolderFile.setLastModified(new SimpleDateFormat(Engine.DATE_FORMAT).parse(i_Commit.GetLastUpdate()).getTime());
+        rootFolderFile.setLastModified(new SimpleDateFormat(Engine.DATE_FORMAT).parse(i_Commit.getLastUpdate()).getTime());
 
-        f_Engine.GetActiveRepository().GetCommits().put(commitSha1, i_Commit);
+        engine.getActiveRepository().getCommits().put(commitSha1, i_Commit);
 
         return commitSha1;
     }
 
     private String spreadCommitAndSetNewSha1sRec(IRepositoryFile i_File, String i_FileNameInFolder, String i_LastModified, String i_CurrentPath,  boolean i_IsCreateWC) throws IOException, ParseException {
-        String objectsFolderPath = Paths.get(f_Engine.GetActiveRepository().GetLocationPath(), ".magit", "objects").toString();
+        String objectsFolderPath = Paths.get(engine.getActiveRepository().getLocationPath(), ".magit", "objects").toString();
         String Sha1;
 
         if(i_File instanceof Blob) {
-            String blobContent = ((Blob)i_File).GetText();
+            String blobContent = ((Blob)i_File).getText();
             Sha1               = DigestUtils.sha1Hex(((Blob)i_File).toStringForSha1());
             String zipPath     = Paths.get(objectsFolderPath, Sha1).toString();
 
@@ -260,25 +260,25 @@ public class Factory {
                 folderToCreate.mkdir();
             }
 
-            for(Folder.Data file: folder.GetFiles()) {
-                IRepositoryFile item = file.GetFileType().equals(eFileType.BLOB) ?
-                        f_Engine.GetActiveRepository().GetBlobs().get(file.GetSHA1()) :
-                        f_Engine.GetActiveRepository().GetFolders().get(file.GetSHA1());
-                String itemSha1 = spreadCommitAndSetNewSha1sRec(item, file.GetName(), file.GetlastUpdate(), folderPath, i_IsCreateWC);
+            for(Folder.Data file: folder.getFiles()) {
+                IRepositoryFile item = file.getFileType().equals(eFileType.BLOB) ?
+                        engine.getActiveRepository().getBlobs().get(file.getSHA1()) :
+                        engine.getActiveRepository().getFolders().get(file.getSHA1());
+                String itemSha1 = spreadCommitAndSetNewSha1sRec(item, file.getName(), file.getlastUpdate(), folderPath, i_IsCreateWC);
 
-                if(file.GetFileType().equals(eFileType.BLOB)) {
-                    f_Engine.GetActiveRepository().GetBlobs().put(itemSha1,
-                            f_Engine.GetActiveRepository().GetBlobs().get(file.GetSHA1()));
+                if(file.getFileType().equals(eFileType.BLOB)) {
+                    engine.getActiveRepository().getBlobs().put(itemSha1,
+                            engine.getActiveRepository().getBlobs().get(file.getSHA1()));
                 }
                 else {
-                    f_Engine.GetActiveRepository().GetFolders().put(itemSha1,
-                            f_Engine.GetActiveRepository().GetFolders().get(file.GetSHA1()));
+                    engine.getActiveRepository().getFolders().put(itemSha1,
+                            engine.getActiveRepository().getFolders().get(file.getSHA1()));
                 }
 
-                file.SetSHA1(itemSha1);
+                file.setSHA1(itemSha1);
             }
 
-            folder.GetFiles().sort(Folder.Data::compare);
+            folder.getFiles().sort(Folder.Data::compare);
             Sha1 = DigestUtils.sha1Hex(folder.toStringForSha1(Paths.get(folderPath)));
 
             if(!isSha1Exists(Sha1, objectsFolderPath)) {
@@ -311,76 +311,76 @@ public class Factory {
         return isExists;
     }
 
-    public Map<String, Blob> GetTmpBlobs() {
-        return sf_TmpBlobs;
+    public Map<String, Blob> getTmpBlobs() {
+        return tmpBlobs;
     }
 
-    Map<String, Folder> GetTmpFolders() {
-        return sf_TmpFolders;
+    Map<String, Folder> getTmpFolders() {
+        return tmpFolders;
     }
 
-    Map<String, String> CreatePathToSha1Map(Branch i_Branch) {
+    Map<String, String> createPathToSha1Map(Branch i_Branch) {
         Map<String, String> map = new HashMap<>();
-        String currentCommitSha1 = i_Branch.GetPointedCommitSha1();
+        String currentCommitSha1 = i_Branch.getPointedCommitSha1();
 
         if(!currentCommitSha1.isEmpty()) {
-            Commit currentCommit = f_Engine.GetActiveRepository().GetCommits().get(currentCommitSha1);
-            map = CreatePathToSha1MapFromCommit(currentCommit);
+            Commit currentCommit = engine.getActiveRepository().getCommits().get(currentCommitSha1);
+            map = createPathToSha1MapFromCommit(currentCommit);
         }
 
         return map;
     }
 
-    Map<String, String> CreatePathToSha1MapFromCommit(Commit i_Commit) {
+    Map<String, String> createPathToSha1MapFromCommit(Commit i_Commit) {
         HashMap<String, String> map = new HashMap<>();
-        Folder rootFolder = f_Engine.GetActiveRepository().GetFolders().get(i_Commit.GetRootFolderSHA1());
+        Folder rootFolder = engine.getActiveRepository().getFolders().get(i_Commit.getRootFolderSHA1());
 
-        CreateCurrentCommitPathToSha1MapRec(rootFolder, f_Engine.GetRepositoryPath(), map);
+        createCurrentCommitPathToSha1MapRec(rootFolder, engine.getRepositoryPath(), map);
 
-        rootFolder.GetFiles().sort(Folder.Data::compare);
-        String path = f_Engine.GetRepositoryPath();
+        rootFolder.getFiles().sort(Folder.Data::compare);
+        String path = engine.getRepositoryPath();
 
-        if(!f_Engine.GetRemoteRepositoryLocation().isEmpty()) {
-            path = f_Engine.ReplaceRootPath(f_Engine.GetRepositoryPath(), f_Engine.GetRemoteRepositoryLocation(), 2);
+        if(!engine.getRemoteRepositoryLocation().isEmpty()) {
+            path = engine.replaceRootPath(engine.getRepositoryPath(), engine.getRemoteRepositoryLocation(), 2);
         }
 
         String rootFolderSha1 = DigestUtils.sha1Hex(rootFolder.toStringForSha1(Paths.get(path)));
-        map.put(f_Engine.GetRepositoryPath(), rootFolderSha1);
+        map.put(engine.getRepositoryPath(), rootFolderSha1);
 
         return map;
     }
 
-    private void CreateCurrentCommitPathToSha1MapRec(IRepositoryFile i_Item, String i_CurrentPath, Map<String, String> i_Map) {
+    private void createCurrentCommitPathToSha1MapRec(IRepositoryFile i_Item, String i_CurrentPath, Map<String, String> i_Map) {
         if(i_Item instanceof Folder) {
-            List<Folder.Data> filesInFolder = ((Folder)i_Item).GetFiles();
+            List<Folder.Data> filesInFolder = ((Folder)i_Item).getFiles();
 
             for(Folder.Data file: filesInFolder) {
-                String newPath = Paths.get(i_CurrentPath, file.GetName()).toString();
+                String newPath = Paths.get(i_CurrentPath, file.getName()).toString();
 
-                if(file.GetFileType().equals(eFileType.FOLDER)) {
-                    Folder subFolder = f_Engine.GetActiveRepository().GetFolders().get(file.GetSHA1());
-                    CreateCurrentCommitPathToSha1MapRec(subFolder, newPath, i_Map);
-                    i_Map.put(newPath, file.GetSHA1());
+                if(file.getFileType().equals(eFileType.FOLDER)) {
+                    Folder subFolder = engine.getActiveRepository().getFolders().get(file.getSHA1());
+                    createCurrentCommitPathToSha1MapRec(subFolder, newPath, i_Map);
+                    i_Map.put(newPath, file.getSHA1());
                 }
                 else {
-                    i_Map.put(newPath, file.GetSHA1());
+                    i_Map.put(newPath, file.getSHA1());
                 }
             }
         }
 
     }
 
-    String CreateBlob(String i_Path) throws IOException {
+    String createBlob(String i_Path) throws IOException {
         Blob blob = new Blob();
 
-        blob.SetText(FileUtilities.ReadTextFromFile(i_Path));
+        blob.setText(FileUtilities.ReadTextFromFile(i_Path));
         String sha1 = DigestUtils.sha1Hex(blob.toStringForSha1());
-        sf_TmpBlobs.put(sha1, blob);
+        tmpBlobs.put(sha1, blob);
 
         return sha1;
     }
 
-    String CreateFolder(String i_Path, String i_PutLastModifiedIfNew) throws IOException {
+    String createFolder(String i_Path, String i_PutLastModifiedIfNew) throws IOException {
         Path folderPath = Paths.get(i_Path);
 
         Folder folder = new Folder();
@@ -394,45 +394,45 @@ public class Factory {
 
                 if(!isFolder || file.listFiles().length != 0) {
                     if (isFolder) {
-                        sha1 = CreateFolder(file.toPath().toString(),i_PutLastModifiedIfNew);
+                        sha1 = createFolder(file.toPath().toString(),i_PutLastModifiedIfNew);
                     } else {
-                        sha1 = CreateBlob(file.toPath().toString());
+                        sha1 = createBlob(file.toPath().toString());
                     }
 
                     Folder.Data fileData = Folder.Data.Parse(file, sha1);
 
                     if(i_PutLastModifiedIfNew != null) {
-                        fileData.SetlastUpdate(i_PutLastModifiedIfNew);
+                        fileData.setlastUpdate(i_PutLastModifiedIfNew);
                     }
 
-                    folder.AddFile(fileData);
+                    folder.addFile(fileData);
                 }
             }
 
-            if (i_Path.equals(f_Engine.GetRepositoryPath())) {
-                folder.SetIsRoot(true);
+            if (i_Path.equals(engine.getRepositoryPath())) {
+                folder.setIsRoot(true);
             }
 
-            folder.GetFiles().sort(Folder.Data::compare);
+            folder.getFiles().sort(Folder.Data::compare);
 
-            if(f_Engine.GetRemoteRepositoryLocation().isEmpty()) {
+            if(engine.getRemoteRepositoryLocation().isEmpty()) {
                 sha1 = DigestUtils.sha1Hex(folder.toStringForSha1(folderPath));
             }
             else {
-                sha1 = DigestUtils.sha1Hex(folder.toStringForSha1(Paths.get(f_Engine.ReplaceRootPath(i_Path,
-                        f_Engine.GetRemoteRepositoryLocation(), 2))));
+                sha1 = DigestUtils.sha1Hex(folder.toStringForSha1(Paths.get(engine.replaceRootPath(i_Path,
+                        engine.getRemoteRepositoryLocation(), 2))));
             }
-            sf_TmpFolders.put(sha1, folder);
+            tmpFolders.put(sha1, folder);
         }
 
         return sha1;
     }
 
-    private Map<String, MagitBlob> GenerateMagitBlobsHashMap(List<MagitBlob> i_MagitBlobs) {
+    private Map<String, MagitBlob> generateMagitBlobsHashMap(List<MagitBlob> i_MagitBlobs) {
         return i_MagitBlobs.stream().collect(Collectors.toMap(MagitBlob::getId, Function.identity()));
     }
 
-    private  Map<String, Folder> GenerateFoldersHashMap(List<MagitSingleFolder> i_MagitFolders, Map<String, MagitBlob> i_MagitBlobsHashMap) {
+    private  Map<String, Folder> generateFoldersHashMap(List<MagitSingleFolder> i_MagitFolders, Map<String, MagitBlob> i_MagitBlobsHashMap) {
         HashMap<String, MagitSingleFolder> magitFoldersHashMap = new HashMap<>();
 
         for(MagitSingleFolder folder : i_MagitFolders) {
@@ -450,48 +450,48 @@ public class Factory {
                 boolean isRoot = folder.getValue().isIsRoot();
                 Folder folderToPut = new Folder();
                 foldersHashMap.put(folder.getValue().getId(), folderToPut);
-                folderToPut.SetIsRoot(isRoot);
+                folderToPut.setIsRoot(isRoot);
             }
 
             for (Item item : folder.getValue().getItems().getItem()) {
                 boolean isFolder = item.getType().equals("folder");
                 Folder.Data folderData = new Folder.Data();
 
-                folderData.SetSHA1(item.getId());
-                folderData.SetFileType(isFolder ?
+                folderData.setSHA1(item.getId());
+                folderData.setFileType(isFolder ?
                         eFileType.FOLDER :
                         eFileType.BLOB);
-                folderData.SetLastChanger(isFolder ?
+                folderData.setLastChanger(isFolder ?
                         i_MagitFoldersHashMap.get(item.getId()).getLastUpdater() :
                         i_MagitBlobsHashMap.get(item.getId()).getLastUpdater());
-                folderData.SetlastUpdate(isFolder ?
+                folderData.setlastUpdate(isFolder ?
                         i_MagitFoldersHashMap.get(item.getId()).getLastUpdateDate() :
                         i_MagitBlobsHashMap.get(item.getId()).getLastUpdateDate());
-                folderData.SetName(isFolder ?
+                folderData.setName(isFolder ?
                         i_MagitFoldersHashMap.get(item.getId()).getName() :
                         i_MagitBlobsHashMap.get(item.getId()).getName());
 
-                foldersHashMap.get(folder.getValue().getId()).AddFile(folderData);
+                foldersHashMap.get(folder.getValue().getId()).addFile(folderData);
             }
         }
 
         return foldersHashMap;
     }
 
-    private Map<String, Blob> GenerateBlobsHashMap(List<MagitBlob> i_MagitBlobs) {
-        return i_MagitBlobs.stream().collect(Collectors.toMap(MagitBlob::getId, Blob::Parse));
+    private Map<String, Blob> generateBlobsHashMap(List<MagitBlob> i_MagitBlobs) {
+        return i_MagitBlobs.stream().collect(Collectors.toMap(MagitBlob::getId, Blob::parse));
     }
 
-    private Map<String, Commit> GenerateCommitsHashMap(List<MagitSingleCommit> i_MagitCommits) {
-        return i_MagitCommits.stream().collect(Collectors.toMap(MagitSingleCommit::getId, Commit::Parse));
+    private Map<String, Commit> generateCommitsHashMap(List<MagitSingleCommit> i_MagitCommits) {
+        return i_MagitCommits.stream().collect(Collectors.toMap(MagitSingleCommit::getId, Commit::parse));
     }
 
-    private Map<String, Branch> GenerateBranchesHashMap(List<MagitSingleBranch> i_MagitBranches) {
-        return i_MagitBranches.stream().collect(Collectors.toMap(MagitSingleBranch::getName, Branch::Parse));
+    private Map<String, Branch> generateBranchesHashMap(List<MagitSingleBranch> i_MagitBranches) {
+        return i_MagitBranches.stream().collect(Collectors.toMap(MagitSingleBranch::getName, Branch::parse));
     }
 
-    public void Clear() {
-        sf_TmpBlobs.clear();
-        sf_TmpFolders.clear();
+    public void clear() {
+        tmpBlobs.clear();
+        tmpFolders.clear();
     }
 }

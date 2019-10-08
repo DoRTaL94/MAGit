@@ -1,7 +1,7 @@
 const HEADER_ITEM = "#header-drop-downs > nav > ul > li";
 const HEADER_LIST_ITEM = "#header-drop-downs > nav > ul > li > ul > li";
 const SERVER_ERROR_MESSAGE = '<li>' + "Failed to send data to the server..." + '</li>';
-const HOME = "/pages/repository/active_repo.html";
+const HOME = "/magit/pages/repository/active_repo.html";
 
 let uploadForm =
     `<form id="uploadForm" action="import" enctype="multipart/form-data" method="POST">
@@ -22,6 +22,7 @@ $(onLoad);
 function onLoad() {
     setHeaderItemsOnClick();
     setListsItemsOnClick();
+    updateActiveRepo();
 }
 
 function setHeaderItemsOnClick() {
@@ -230,7 +231,6 @@ function importXmlSuccessFunc(response) {
         }
     } else {
         window.location.href = HOME;
-        updateActiveRepo();
     }
 }
 
@@ -241,5 +241,27 @@ function addNotification(index, dataJson) {
 
 // TO-DO
 function updateActiveRepo() {
+    $.ajax({
+        method:'POST',
+        data: '',
+        url: 'update_repo',
+        timeout: 3000,
+        error: onUpdateRepoError,
+        success: onUpdateRepoSuccess
+    });
+}
 
+function onUpdateRepoError(response) {
+
+}
+
+function onUpdateRepoSuccess(response) {
+    var commit = response[0];
+    var rootFolder = response[1];
+    var commitListHeader = $('#commit-list-header');
+
+    commitListHeader.find('span#commiter-name').empty().text(commit.lastChanger);
+    commitListHeader.find('td#commit-description').empty().text(commit.message);
+    commitListHeader.find('td#commit-sha1').empty().text(commit.sha1);
+    commitListHeader.find('td#commit-date').empty().text(commit.lastUpdate);
 }

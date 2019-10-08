@@ -1,6 +1,5 @@
 package components.filetree.commit;
 
-import components.themes.ThemesController;
 import data.structures.Folder;
 import data.structures.Repository;
 import data.structures.eFileType;
@@ -34,7 +33,7 @@ public class CommitFileTreeController {
     private static final double sf_CopyButtonOpacity = 0.6;
     private static final double sf_ClipboardImgSize = 20;
 
-    private final Repository f_ActiveRepository =  Engine.Creator.GetInstance().GetActiveRepository();
+    private final Repository f_ActiveRepository =  Engine.Creator.getInstance().getActiveRepository();
 
     @FXML public void initialize() {
         buttonCopyFileSha1.setGraphic(createGraphics());
@@ -62,18 +61,18 @@ public class CommitFileTreeController {
         i_CommitFileTree.getSelectionModel()
                 .selectedItemProperty()
                 .addListener((observable, oldValue, newValue) -> {
-                    if (!newValue.getValue().GetFileType().equals(eFileType.FOLDER)) {
+                    if (!newValue.getValue().getFileType().equals(eFileType.FOLDER)) {
                         textAreaCommitFileContent.setDisable(false);
-                        SetTextAreaText(f_ActiveRepository.GetBlobs().get(newValue.getValue().GetSHA1()).GetText());
+                        SetTextAreaText(f_ActiveRepository.getBlobs().get(newValue.getValue().getSHA1()).getText());
                     }
                     else {
                         textAreaCommitFileContent.setDisable(true);
                         textAreaCommitFileContent.setText("");
                     }
 
-                    SetLabelLastUpdater(newValue.getValue().GetLastChanger());
-                    SetLabelSha1(newValue.getValue().GetSHA1());
-                    SetLabelUpdateDate(newValue.getValue().GetlastUpdate());
+                    SetLabelLastUpdater(newValue.getValue().getLastChanger());
+                    SetLabelSha1(newValue.getValue().getSHA1());
+                    SetLabelUpdateDate(newValue.getValue().getlastUpdate());
                 });
     }
 
@@ -83,7 +82,7 @@ public class CommitFileTreeController {
             protected void updateItem(Folder.Data item, boolean empty) {
                 super.updateItem(item, empty);
                 if (item != null) {
-                    setText(item.GetName());
+                    setText(item.getName());
                     setGraphic(getTreeItem().getGraphic());
                 } else {
                     setText("");

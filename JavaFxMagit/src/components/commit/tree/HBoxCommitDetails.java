@@ -3,8 +3,6 @@ package components.commit.tree;
 import components.themes.ThemesController;
 import data.structures.Branch;
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -13,42 +11,41 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
-import main.MagitController;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class HBoxCommitDetails extends HBox {
     private static final double HBOX_HEIGHT = 32.0;
-    private static final String f_DarkTheme = "resources/Dark.css";
-    private static final String f_ColorfulTheme = "resources/Colorful.css";
-    private static final String f_DefaultTheme = "resources/Default.css";
+    private static final String darkTheme = "resources/Dark.css";
+    private static final String colorfulTheme = "resources/Colorful.css";
+    private static final String defaultTheme = "resources/Default.css";
 
-    private static final String f_DarkSelectedTheme = "resources/DarkSelected.css";
-    private static final String f_ColorfulSelectedTheme = "resources/ColorfulSelected.css";
-    private static final String f_DefaultSelectedTheme = "resources/DefaultSelected.css";
+    private static final String darkSelectedTheme = "resources/DarkSelected.css";
+    private static final String colorfulSelectedTheme = "resources/ColorfulSelected.css";
+    private static final String defaultSelectedTheme = "resources/DefaultSelected.css";
 
-    private Label m_LabelPointedCommitDescription;
-    private Label m_LabelUserName;
-    private Label m_LabelCommitTimeStamp;
-    private Label m_LabelCommitSha1;
-    private Pane m_PaneSpacer;
-    private List<StackPane> m_StackPaneBranchNameList;
-    private Runnable m_DoubleClickAction;
-    private Runnable m_ClickAction;
-    private String m_CurrentTheme;
-    private String m_CurrentSelectedTheme;
+    private Label labelPointedCommitDescription;
+    private Label labelUserName;
+    private Label labelCommitTimeStamp;
+    private Label labelCommitSha1;
+    private Pane paneSpacer;
+    private List<StackPane> stackPaneBranchNameList;
+    private Runnable doubleClickAction;
+    private Runnable clickAction;
+    private String currentTheme;
+    private String currentSelectedTheme;
 
     public HBoxCommitDetails() {
-        this.setOnMouseClicked(this::CommitDetails_Click);
+        this.setOnMouseClicked(this::commitDetails_Click);
         CommitItemFactory.GetListItemClickedProperty().addListener(observable -> updateGraphics());
 
-        m_StackPaneBranchNameList = new ArrayList<>();
-        m_PaneSpacer = new Pane();
-        m_LabelUserName = new Label();
-        m_LabelPointedCommitDescription = new Label();
-        m_LabelCommitTimeStamp = new Label();
-        m_LabelCommitSha1 = new Label();
+        stackPaneBranchNameList = new ArrayList<>();
+        paneSpacer = new Pane();
+        labelUserName = new Label();
+        labelPointedCommitDescription = new Label();
+        labelCommitTimeStamp = new Label();
+        labelCommitSha1 = new Label();
 
         this.setHeight(HBOX_HEIGHT);
         this.setPrefHeight(HBOX_HEIGHT);
@@ -56,45 +53,45 @@ public class HBoxCommitDetails extends HBox {
         this.setSpacing(10);
 
         if(ThemesController.themeChangedProperty.get().equals("Dark")) {
-            m_CurrentTheme = f_DarkTheme;
-            m_CurrentSelectedTheme = f_DarkTheme;
+            currentTheme = darkTheme;
+            currentSelectedTheme = darkTheme;
         } else if(ThemesController.themeChangedProperty.get().equals("Colorful")) {
-            m_CurrentTheme = f_ColorfulTheme;
-            m_CurrentSelectedTheme = f_ColorfulSelectedTheme;
+            currentTheme = colorfulTheme;
+            currentSelectedTheme = colorfulSelectedTheme;
         } else {
-            m_CurrentTheme = f_DefaultTheme;
-            m_CurrentSelectedTheme = f_DefaultSelectedTheme;
+            currentTheme = defaultTheme;
+            currentSelectedTheme = defaultSelectedTheme;
         }
 
-        setStylesheet(m_CurrentTheme);
+        setStylesheet(currentTheme);
 
         ThemesController.themeChangedProperty.addListener((observable, oldValue, newValue) -> {
             if(newValue.equals("Dark")) {
-                m_CurrentSelectedTheme = f_DarkSelectedTheme;
-                m_CurrentTheme = f_DarkTheme;
+                currentSelectedTheme = darkSelectedTheme;
+                currentTheme = darkTheme;
             }
             else if(newValue.equals("Colorful")) {
-                m_CurrentSelectedTheme = f_ColorfulSelectedTheme;
-                m_CurrentTheme = f_ColorfulTheme;
+                currentSelectedTheme = colorfulSelectedTheme;
+                currentTheme = colorfulTheme;
             }
             else {
-                m_CurrentSelectedTheme = f_DefaultSelectedTheme;
-                m_CurrentTheme = f_DefaultTheme;
+                currentSelectedTheme = defaultSelectedTheme;
+                currentTheme = defaultTheme;
             }
 
-            setStylesheet(m_CurrentTheme);
+            setStylesheet(currentTheme);
         });
     }
 
     private void updateGraphics() {
-        if(m_CurrentTheme.equals(f_DarkTheme)) {
-            setStylesheet(f_DarkTheme);
+        if(currentTheme.equals(darkTheme)) {
+            setStylesheet(darkTheme);
         }
-        else if(m_CurrentTheme.equals(f_ColorfulTheme)) {
-            setStylesheet(f_ColorfulTheme);
+        else if(currentTheme.equals(colorfulTheme)) {
+            setStylesheet(colorfulTheme);
         }
         else {
-            setStylesheet(f_DefaultTheme);
+            setStylesheet(defaultTheme);
         }
     }
 
@@ -106,33 +103,33 @@ public class HBoxCommitDetails extends HBox {
         this.applyCss();
     }
 
-    private void CommitDetails_Click(MouseEvent mouseEvent) {
+    private void commitDetails_Click(MouseEvent mouseEvent) {
         if(mouseEvent.getButton().equals(MouseButton.PRIMARY)) {
             if(mouseEvent.getClickCount() == 1) {
                 CommitItemFactory.GetListItemClickedProperty().set(CommitItemFactory.GetListItemClickedProperty().not().get());
-                setStylesheet(m_CurrentSelectedTheme);
-                if(m_ClickAction != null) {
-                    m_ClickAction.run();
+                setStylesheet(currentSelectedTheme);
+                if(clickAction != null) {
+                    clickAction.run();
                 }
             }
             else if(mouseEvent.getClickCount() == 2) {
-                if (m_DoubleClickAction != null) {
-                    m_DoubleClickAction.run();
+                if (doubleClickAction != null) {
+                    doubleClickAction.run();
                 }
             }
         }
     }
 
-    public void SetDoubleClickAction(Runnable i_Action) {
-        m_DoubleClickAction = i_Action;
+    public void setDoubleClickAction(Runnable i_Action) {
+        doubleClickAction = i_Action;
     }
 
-    public void SetClickAction(Runnable i_Action) {
-        m_ClickAction = i_Action;
+    public void setClickAction(Runnable i_Action) {
+        clickAction = i_Action;
     }
 
-    public void AddBranchNameRectangle(Branch i_Branch) {
-        Text textLabelBranch = new Text(i_Branch.GetName());
+    public void addBranchNameRectangle(Branch i_Branch) {
+        Text textLabelBranch = new Text(i_Branch.getName());
         textLabelBranch.setFont(Font.font("System", FontWeight.BOLD, 15));
         double labelBranchNameWidth = textLabelBranch.getLayoutBounds().getWidth();
 
@@ -140,14 +137,14 @@ public class HBoxCommitDetails extends HBox {
         Rectangle rectBranchName = new Rectangle();
         Label labelBranch = new Label();
 
-        labelBranch.setText(i_Branch.GetName());
+        labelBranch.setText(i_Branch.getName());
         labelBranch.setPrefWidth(labelBranchNameWidth);
 
         stackPaneBranchName.minWidthProperty().bind(rectBranchName.widthProperty());
         stackPaneBranchName.maxWidthProperty().bind(rectBranchName.widthProperty());
         stackPaneBranchName.setPrefHeight(HBOX_HEIGHT);
 
-        if(i_Branch.IsTracking()) {
+        if(i_Branch.isTracking()) {
             rectBranchName.getStyleClass().add("rectBranchNameRTB");
         } else {
             rectBranchName.getStyleClass().add("rectBranchName");
@@ -164,28 +161,28 @@ public class HBoxCommitDetails extends HBox {
         stackPaneBranchName.getChildren().add(rectBranchName);
         stackPaneBranchName.getChildren().add(labelBranch);
 
-        m_StackPaneBranchNameList.add(stackPaneBranchName);
+        stackPaneBranchNameList.add(stackPaneBranchName);
     }
 
-    public void Update() {
-        m_PaneSpacer.setPrefWidth(0);
-        m_PaneSpacer.setPrefHeight(HBOX_HEIGHT);
+    public void update() {
+        paneSpacer.setPrefWidth(0);
+        paneSpacer.setPrefHeight(HBOX_HEIGHT);
 
-        setLabelStyle(m_LabelUserName);
-        setLabelStyle(m_LabelPointedCommitDescription);
-        setLabelStyle(m_LabelCommitTimeStamp);
-        setLabelStyle(m_LabelCommitSha1);
+        setLabelStyle(labelUserName);
+        setLabelStyle(labelPointedCommitDescription);
+        setLabelStyle(labelCommitTimeStamp);
+        setLabelStyle(labelCommitSha1);
 
-        this.getChildren().add(m_PaneSpacer);
+        this.getChildren().add(paneSpacer);
 
-        for(StackPane stackPane: m_StackPaneBranchNameList) {
+        for(StackPane stackPane: stackPaneBranchNameList) {
             this.getChildren().add(stackPane);
         }
 
-        this.getChildren().add(m_LabelPointedCommitDescription);
-        this.getChildren().add(m_LabelUserName);
-        this.getChildren().add(m_LabelCommitTimeStamp);
-        this.getChildren().add(m_LabelCommitSha1);
+        this.getChildren().add(labelPointedCommitDescription);
+        this.getChildren().add(labelUserName);
+        this.getChildren().add(labelCommitTimeStamp);
+        this.getChildren().add(labelCommitSha1);
     }
 
     private void setLabelStyle(Label i_Label) {
@@ -195,27 +192,27 @@ public class HBoxCommitDetails extends HBox {
         i_Label.maxWidthProperty().bind(i_Label.prefWidthProperty());
     }
 
-    public List<StackPane> GetBranchNameRectangleList() {
-        return m_StackPaneBranchNameList;
+    public List<StackPane> getBranchNameRectangleList() {
+        return stackPaneBranchNameList;
     }
 
-    public Label GetLabelPointedCommitDescription() {
-        return m_LabelPointedCommitDescription;
+    public Label getLabelPointedCommitDescription() {
+        return labelPointedCommitDescription;
     }
 
-    public Label GetLabelUserName() {
-        return m_LabelUserName;
+    public Label getLabelUserName() {
+        return labelUserName;
     }
 
-    public Label GetLabelCommitDaysAgo() {
-        return m_LabelCommitTimeStamp;
+    public Label getLabelCommitDaysAgo() {
+        return labelCommitTimeStamp;
     }
 
-    public Label GetLabelCommitSha1() {
-        return m_LabelCommitSha1;
+    public Label getLabelCommitSha1() {
+        return labelCommitSha1;
     }
 
-    public Pane GetPaneSpacer() {
-        return m_PaneSpacer;
+    public Pane getPaneSpacer() {
+        return paneSpacer;
     }
 }

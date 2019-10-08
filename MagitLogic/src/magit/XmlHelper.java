@@ -27,12 +27,12 @@ public class XmlHelper {
     }
 
     public XmlHelper(InputStream i_XmlInputStream, String i_CurrentUserName) {
-        Engine.Creator.GetInstance().SetCurrentUserName(i_CurrentUserName);
-        m_XmlPath = Paths.get("c:/magit-ex3", Engine.Creator.GetInstance().GetCurrentUserName(), "repositories").toString();
+        Engine.Creator.getInstance().setCurrentUserName(i_CurrentUserName);
+        m_XmlPath = Paths.get("c:/magit-ex3", Engine.Creator.getInstance().getCurrentUserName(), "repositories").toString();
         m_XmlInputStream = i_XmlInputStream;
     }
 
-    public MagitRepository GetMagitRepository() {
+    public MagitRepository getMagitRepository() {
         return m_MagitRepository;
     }
 
@@ -213,7 +213,7 @@ public class XmlHelper {
     private List<String> CheckErrorsInBranch(MagitSingleBranch branch, MagitRepository i_Repository) {
         List<String> errors             = new ArrayList<>();
         String pointedCommitId          = branch.getPointedCommit().getId();
-        MagitSingleCommit pointedCommit = GetCommitById(pointedCommitId, i_Repository);
+        MagitSingleCommit pointedCommit = getCommitById(pointedCommitId, i_Repository);
 
         if(i_Repository.getMagitCommits().getMagitSingleCommit().size() != 0) {
             if (pointedCommit == null) {
@@ -235,7 +235,7 @@ public class XmlHelper {
 
             if(precedingCommits.size() != 0) {
                 String precedingCommitSha1 = precedingCommits.get(0).getId();
-                MagitSingleCommit precedingCommit = GetCommitById(precedingCommitSha1, i_Repository);
+                MagitSingleCommit precedingCommit = getCommitById(precedingCommitSha1, i_Repository);
 
                 if (precedingCommit == null) {
                     errors.add(String.format("%sCommit (Id: %s) pointing to preceding commit (Id: %s) that not exists", System.lineSeparator(), i_Commits.getId(), precedingCommitSha1));
@@ -244,7 +244,7 @@ public class XmlHelper {
         }
 
         String rootFolderId          = i_Commits.getRootFolder().getId();
-        MagitSingleFolder rootFolder = GetFolderById(rootFolderId, i_Repository);
+        MagitSingleFolder rootFolder = getFolderById(rootFolderId, i_Repository);
 
         if (rootFolder == null) {
             errors.add(String.format("%sCommit (Id: %s) pointing to folder (Id: %s) that not exists", System.lineSeparator(), i_Commits.getId(), i_Commits.getRootFolder().getId()));
@@ -271,7 +271,7 @@ public class XmlHelper {
 
             for (Item item : folderItems) {
                 if (item.getType().equals("folder")) {
-                    MagitSingleFolder folder = GetFolderById(item.getId(), i_Repository);
+                    MagitSingleFolder folder = getFolderById(item.getId(), i_Repository);
 
                     if (folder == null) {
                         errors.add(String.format("%sFolder (Id: %s) not exists", System.lineSeparator(), item.getId()));
@@ -284,7 +284,7 @@ public class XmlHelper {
                         }
                     }
                 } else {
-                    if (GetBlobById(item.getId(), i_Repository) == null) {
+                    if (getBlobById(item.getId(), i_Repository) == null) {
                         errors.add(String.format("%sBlob (Id: %s, Folder id: %s) not exists", System.lineSeparator(), item.getId(), rootFolder.getId()));
                     }
                 }
@@ -294,7 +294,7 @@ public class XmlHelper {
         return errors;
     }
 
-    private MagitBlob GetBlobById(String i_BlobId, MagitRepository i_repository) {
+    private MagitBlob getBlobById(String i_BlobId, MagitRepository i_repository) {
         List<MagitBlob> blobs = i_repository.getMagitBlobs().getMagitBlob();
         MagitBlob blobToReturn = null;
 
@@ -308,7 +308,7 @@ public class XmlHelper {
         return blobToReturn;
     }
 
-    private MagitSingleFolder GetFolderById(String rootFolderId, MagitRepository i_repository) {
+    private MagitSingleFolder getFolderById(String rootFolderId, MagitRepository i_repository) {
         List<MagitSingleFolder> folders = i_repository.getMagitFolders().getMagitSingleFolder();
         MagitSingleFolder rootFolder = null;
 
@@ -322,7 +322,7 @@ public class XmlHelper {
         return rootFolder;
     }
 
-    private MagitSingleCommit GetCommitById(String pointedCommitId, MagitRepository i_Repository) {
+    private MagitSingleCommit getCommitById(String pointedCommitId, MagitRepository i_Repository) {
         List<MagitSingleCommit> commits = i_Repository.getMagitCommits().getMagitSingleCommit();
         MagitSingleCommit commitToReturn = null;
 

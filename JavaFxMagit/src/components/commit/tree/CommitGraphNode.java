@@ -27,61 +27,61 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CommitGraphNode extends AbstractCell implements Comparable {
-    private static final String f_DarkTheme = "resources/TreeNodeDark.css";
-    private static final String f_ColorfulTheme = "resources/TreeNodeColorful.css";
-    private static final String f_DefaultTheme = "resources/TreeNodeDefault.css";
+    private static final String darkTheme = "resources/TreeNodeDark.css";
+    private static final String colorfulTheme = "resources/TreeNodeColorful.css";
+    private static final String defaultTheme = "resources/TreeNodeDefault.css";
 
     public DoubleProperty CommitDetailsXProperty;
     public DoubleProperty TreeNodeYProperty;
-    private HBoxCommitDetails m_CommitDetails;
-    private Rectangle m_RectangleTreeNode;
-    private Pane m_PaneRectangleTreeNode;
-    private CommitNode m_CommitNode;
-    private List<CommitGraphNode> m_GraphNodeParents;
-    private List<CommitGraphNode> m_GraphNodeChildrens;
-    private int m_BranchNumber;
-    private int m_IdInList;
-    private String m_CurrentTheme;
+    private HBoxCommitDetails commitDetails;
+    private Rectangle rectangleTreeNode;
+    private Pane paneRectangleTreeNode;
+    private CommitNode commitNode;
+    private List<CommitGraphNode> graphNodeParents;
+    private List<CommitGraphNode> graphNodeChildrens;
+    private int branchNumber;
+    private int idInList;
+    private String currentTheme;
 
     public CommitGraphNode(CommitNode i_Node) {
-        m_CommitNode           = i_Node;
-        m_BranchNumber         = -1;
-        m_GraphNodeChildrens   = new ArrayList<>();
-        m_GraphNodeParents     = new ArrayList<>();
-        m_CommitDetails        = new HBoxCommitDetails();
+        commitNode = i_Node;
+        branchNumber = -1;
+        graphNodeChildrens = new ArrayList<>();
+        graphNodeParents = new ArrayList<>();
+        commitDetails = new HBoxCommitDetails();
         TreeNodeYProperty      = new SimpleDoubleProperty(0);
         CommitDetailsXProperty = new SimpleDoubleProperty(20);
 
-        m_CommitDetails.SetDoubleClickAction(() -> new CommitFileTree(m_CommitNode));
+        commitDetails.setDoubleClickAction(() -> new CommitFileTree(commitNode));
 
         if(ThemesController.themeChangedProperty.get().equals("Dark")) {
-            m_CurrentTheme = f_DarkTheme;
+            currentTheme = darkTheme;
         } else if(ThemesController.themeChangedProperty.get().equals("Colorful")) {
-            m_CurrentTheme = f_ColorfulTheme;
+            currentTheme = colorfulTheme;
         } else {
-            m_CurrentTheme = f_DefaultTheme;
+            currentTheme = defaultTheme;
         }
 
         initializeRectangleTreeNode();
         initializeCommitDetails();
 
-        m_PaneRectangleTreeNode.getStylesheets().add(getClass().getResource(m_CurrentTheme).toExternalForm());
-        m_PaneRectangleTreeNode.applyCss();
+        paneRectangleTreeNode.getStylesheets().add(getClass().getResource(currentTheme).toExternalForm());
+        paneRectangleTreeNode.applyCss();
 
         ThemesController.themeChangedProperty.addListener((observable, oldValue, newValue) -> {
             if(newValue.equals("Dark")) {
-                m_CurrentTheme = f_DarkTheme;
+                currentTheme = darkTheme;
             }
             else if(newValue.equals("Colorful")) {
-                m_CurrentTheme = f_ColorfulTheme;
+                currentTheme = colorfulTheme;
             }
             else {
-                m_CurrentTheme = f_DefaultTheme;
+                currentTheme = defaultTheme;
             }
 
-            m_PaneRectangleTreeNode.getStylesheets().clear();
-            m_PaneRectangleTreeNode.getStylesheets().add(getClass().getResource(m_CurrentTheme).toExternalForm());
-            m_PaneRectangleTreeNode.applyCss();
+            paneRectangleTreeNode.getStylesheets().clear();
+            paneRectangleTreeNode.getStylesheets().add(getClass().getResource(currentTheme).toExternalForm());
+            paneRectangleTreeNode.applyCss();
         });
     }
 
@@ -94,99 +94,99 @@ public class CommitGraphNode extends AbstractCell implements Comparable {
     }
 
     private void initializeCommitDetails() {
-        if(this.GetPointingBranches().size() != 0) {
-            for(Branch branch: this.GetPointingBranches()) {
-                m_CommitDetails.AddBranchNameRectangle(branch);
+        if(this.getPointingBranches().size() != 0) {
+            for(Branch branch: this.getPointingBranches()) {
+                commitDetails.addBranchNameRectangle(branch);
             }
         }
 
-        double labelCommitDaysAgoWidth = getTextWidth(this.GetCommit().GetLastUpdate());
-        double labelCommitSha1Width = getTextWidth(this.GetSha1());
-        double labelUserNameWidth = getTextWidth(this.GetCommit().GetLastChanger());
-        double labelPointedCommitDescriptionWidth = getTextWidth(this.GetCommit().GetMessage());
+        double labelCommitDaysAgoWidth = getTextWidth(this.getCommit().getLastUpdate());
+        double labelCommitSha1Width = getTextWidth(this.getSha1());
+        double labelUserNameWidth = getTextWidth(this.getCommit().getLastChanger());
+        double labelPointedCommitDescriptionWidth = getTextWidth(this.getCommit().getMessage());
 
-        m_CommitDetails.GetLabelCommitDaysAgo().setPrefWidth(labelCommitDaysAgoWidth);
-        m_CommitDetails.GetLabelCommitDaysAgo().setText(this.GetCommit().GetLastUpdate());
-        m_CommitDetails.GetLabelCommitDaysAgo().setAlignment(Pos.CENTER);
+        commitDetails.getLabelCommitDaysAgo().setPrefWidth(labelCommitDaysAgoWidth);
+        commitDetails.getLabelCommitDaysAgo().setText(this.getCommit().getLastUpdate());
+        commitDetails.getLabelCommitDaysAgo().setAlignment(Pos.CENTER);
 
-        m_CommitDetails.GetLabelCommitSha1().setPrefWidth(labelCommitSha1Width);
-        m_CommitDetails.GetLabelCommitSha1().setText(this.GetSha1());
-        m_CommitDetails.GetLabelCommitSha1().setAlignment(Pos.CENTER);
+        commitDetails.getLabelCommitSha1().setPrefWidth(labelCommitSha1Width);
+        commitDetails.getLabelCommitSha1().setText(this.getSha1());
+        commitDetails.getLabelCommitSha1().setAlignment(Pos.CENTER);
 
-        m_CommitDetails.GetLabelUserName().setPrefWidth(labelUserNameWidth);
-        m_CommitDetails.GetLabelUserName().setText(this.GetCommit().GetLastChanger());
-        m_CommitDetails.GetLabelUserName().setAlignment(Pos.CENTER);
+        commitDetails.getLabelUserName().setPrefWidth(labelUserNameWidth);
+        commitDetails.getLabelUserName().setText(this.getCommit().getLastChanger());
+        commitDetails.getLabelUserName().setAlignment(Pos.CENTER);
 
-        m_CommitDetails.GetLabelPointedCommitDescription().setPrefWidth(labelPointedCommitDescriptionWidth);
-        m_CommitDetails.GetLabelPointedCommitDescription().setText(this.GetCommit().GetMessage());
-        m_CommitDetails.GetLabelPointedCommitDescription().setAlignment(Pos.CENTER);
+        commitDetails.getLabelPointedCommitDescription().setPrefWidth(labelPointedCommitDescriptionWidth);
+        commitDetails.getLabelPointedCommitDescription().setText(this.getCommit().getMessage());
+        commitDetails.getLabelPointedCommitDescription().setAlignment(Pos.CENTER);
 
-        m_CommitDetails.Update();
+        commitDetails.update();
 
-        m_CommitDetails.GetPaneSpacer().prefWidthProperty().bind(CommitDetailsXProperty);
-        m_CommitDetails.GetPaneSpacer().minWidthProperty().bind(CommitDetailsXProperty);
-        TreeNodeYProperty.bind(m_CommitDetails.layoutYProperty());
+        commitDetails.getPaneSpacer().prefWidthProperty().bind(CommitDetailsXProperty);
+        commitDetails.getPaneSpacer().minWidthProperty().bind(CommitDetailsXProperty);
+        TreeNodeYProperty.bind(commitDetails.layoutYProperty());
     }
 
     private void initializeRectangleTreeNode() {
-        m_RectangleTreeNode = new Rectangle();
-        m_RectangleTreeNode.setWidth(16);
-        m_RectangleTreeNode.setHeight(16);
-        m_RectangleTreeNode.setId("rectangleTreeNode");
+        rectangleTreeNode = new Rectangle();
+        rectangleTreeNode.setWidth(16);
+        rectangleTreeNode.setHeight(16);
+        rectangleTreeNode.setId("rectangleTreeNode");
 
-        m_PaneRectangleTreeNode = new Pane();
-        m_PaneRectangleTreeNode.getChildren().add(m_RectangleTreeNode);
-        m_PaneRectangleTreeNode.setPrefWidth(16);
-        m_PaneRectangleTreeNode.setPrefHeight(16);
+        paneRectangleTreeNode = new Pane();
+        paneRectangleTreeNode.getChildren().add(rectangleTreeNode);
+        paneRectangleTreeNode.setPrefWidth(16);
+        paneRectangleTreeNode.setPrefHeight(16);
 
-        if(!m_CurrentTheme.isEmpty()) {
-            m_PaneRectangleTreeNode.getStylesheets().clear();
-            m_PaneRectangleTreeNode.getStylesheets().add(getClass().getResource(m_CurrentTheme).toExternalForm());
-            m_PaneRectangleTreeNode.applyCss();
+        if(!currentTheme.isEmpty()) {
+            paneRectangleTreeNode.getStylesheets().clear();
+            paneRectangleTreeNode.getStylesheets().add(getClass().getResource(currentTheme).toExternalForm());
+            paneRectangleTreeNode.applyCss();
         }
     }
 
-    public List<CommitGraphNode> GetGraphNodeParents() { return m_GraphNodeParents; }
+    public List<CommitGraphNode> getGraphNodeParents() { return graphNodeParents; }
 
     public void AddGraphNodeParent(CommitGraphNode i_Parent) {
-        m_GraphNodeParents.add(i_Parent);
-        m_GraphNodeParents.sort(CommitGraphNode::compareTo);
+        graphNodeParents.add(i_Parent);
+        graphNodeParents.sort(CommitGraphNode::compareTo);
     }
 
-    public int GetBranchNumber() { return m_BranchNumber; }
+    public int getBranchNumber() { return branchNumber; }
 
-    public void SetBranchNumber(int i_Num) {
-        m_BranchNumber = i_Num;
+    public void setBranchNumber(int i_Num) {
+        branchNumber = i_Num;
     }
 
-    public List<CommitGraphNode> GetGraphNodeChildren() { return m_GraphNodeChildrens; }
+    public List<CommitGraphNode> getGraphNodeChildren() { return graphNodeChildrens; }
 
     public void AddGraphNodeChild(CommitGraphNode i_GraphNode) {
-        m_GraphNodeChildrens.add(i_GraphNode);
-        m_GraphNodeChildrens.sort(CommitGraphNode::compareTo);
+        graphNodeChildrens.add(i_GraphNode);
+        graphNodeChildrens.sort(CommitGraphNode::compareTo);
     }
 
-    public CommitNode GetFirstParent() { return m_CommitNode.GetSecondParent(); }
+    public CommitNode getFirstParent() { return commitNode.getSecondParent(); }
 
-    public List<CommitNode> GetChildren() { return m_CommitNode.GetChildren(); }
+    public List<CommitNode> getChildren() { return commitNode.getChildren(); }
 
-    public List<Branch> GetPointingBranches() { return m_CommitNode.GetPointingBranches(); }
+    public List<Branch> getPointingBranches() { return commitNode.getPointingBranches(); }
 
-    public String GetSha1() { return m_CommitNode.GetSha1(); }
+    public String getSha1() { return commitNode.getSha1(); }
 
-    public CommitNode GetCommitNode() { return m_CommitNode; }
+    public CommitNode getCommitNode() { return commitNode; }
 
-    public Commit GetCommit() { return m_CommitNode.GetCommit(); }
+    public Commit getCommit() { return commitNode.getCommit(); }
 
-    public CommitNode GetSecondParent() {return m_CommitNode.GetSecondParent(); }
+    public CommitNode getSecondParent() {return commitNode.getSecondParent(); }
 
     @Override public Region getGraphic(Graph graph) {
-        return m_PaneRectangleTreeNode;
+        return paneRectangleTreeNode;
     }
 
     @Override public DoubleBinding getXAnchor(Graph graph, IEdge edge) {
         final Region graphic = graph.getGraphic(this);
-        return graphic.layoutXProperty().add(m_RectangleTreeNode.getWidth() / 2);
+        return graphic.layoutXProperty().add(rectangleTreeNode.getWidth() / 2);
     }
 
     @Override public int compareTo(Object i_GraphNode) {
@@ -195,8 +195,8 @@ public class CommitGraphNode extends AbstractCell implements Comparable {
         long thisNodeTime = 0;
 
         try {
-            String nodeToCompareDate = nodeToCompare.GetCommit().GetLastUpdate();
-            String thisNodeDate = GetCommit().GetLastUpdate();
+            String nodeToCompareDate = nodeToCompare.getCommit().getLastUpdate();
+            String thisNodeDate = getCommit().getLastUpdate();
             nodeToCompareTime = new SimpleDateFormat(Engine.DATE_FORMAT).parse(nodeToCompareDate).getTime();
             thisNodeTime = new SimpleDateFormat(Engine.DATE_FORMAT).parse(thisNodeDate).getTime();
         } catch (ParseException e) {
@@ -206,24 +206,24 @@ public class CommitGraphNode extends AbstractCell implements Comparable {
         return (int)(nodeToCompareTime - thisNodeTime);
     }
 
-    public Point GetLocation(Graph i_Graph) {
+    public Point getLocation(Graph i_Graph) {
         return new Point((int) i_Graph.getGraphic(this).layoutXProperty().get(),
                 (int) i_Graph.getGraphic(this).layoutYProperty().get());
     }
 
-    public Region GetCommitDetails() {
-        return m_CommitDetails;
+    public Region getCommitDetails() {
+        return commitDetails;
     }
 
-    public void SetRectangleTreeNodeId(String i_CssId) {
-        m_RectangleTreeNode.setId(i_CssId);
+    public void setRectangleTreeNodeId(String i_CssId) {
+        rectangleTreeNode.setId(i_CssId);
     }
 
-    public void SetIdInList(int i_NodeId) {
-        m_IdInList = i_NodeId;
+    public void setIdInList(int i_NodeId) {
+        idInList = i_NodeId;
     }
 
-    public int GetIdInList() { return m_IdInList; }
+    public int getIdInList() { return idInList; }
 
     @Override
     public boolean equals(Object o) {
@@ -231,9 +231,9 @@ public class CommitGraphNode extends AbstractCell implements Comparable {
             return false;
         }
 
-        return ((CommitGraphNode) o).GetCommitNode().equals(m_CommitNode);
+        return ((CommitGraphNode) o).getCommitNode().equals(commitNode);
     }
 
-    public void SetClickAction(Runnable i_Action) { m_CommitDetails.SetClickAction(i_Action); }
+    public void setClickAction(Runnable i_Action) { commitDetails.setClickAction(i_Action); }
 }
 

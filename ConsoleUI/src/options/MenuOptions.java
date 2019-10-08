@@ -25,7 +25,7 @@ public class MenuOptions {
             System.out.println("Please enter user name:");
             System.out.print(">> ");
             Scanner scanner = new Scanner(System.in);
-            Menu.GetEngine().SetCurrentUserName(scanner.nextLine());
+            Menu.getEngine().setCurrentUserName(scanner.nextLine());
             System.out.println();
             System.out.println("Message: User name has been changed.");
             System.out.println();
@@ -39,9 +39,9 @@ public class MenuOptions {
             while(!isSuccessfulLoad) {
                 try {
                     if(isLoadDataFromRepository) {
-                        Menu.GetEngine().LoadDataFromRepository(Menu.GetEngine().GetRepositoryPath());
+                        Menu.getEngine().loadDataFromRepository(Menu.getEngine().getRepositoryPath());
                         System.out.println();
-                        System.out.format("Message: %s has been loaded successfully.", Menu.GetEngine().GetActiveRepository().GetName());
+                        System.out.format("Message: %s has been loaded successfully.", Menu.getEngine().getActiveRepository().getName());
                         System.out.println();
                     } else {
                         if(xmlPath == null) {
@@ -50,8 +50,8 @@ public class MenuOptions {
                             System.out.println();
                         }
 
-                        Menu.GetEngine().LoadRepositoryFromXml(xmlPath, new SimpleStringProperty(""));
-                        System.out.format("Message: \"%s\" repository has been loaded successfully.", Menu.GetEngine().GetActiveRepository().GetName());
+                        Menu.getEngine().loadRepositoryFromXml(xmlPath, new SimpleStringProperty(""));
+                        System.out.format("Message: \"%s\" repository has been loaded successfully.", Menu.getEngine().getActiveRepository().getName());
                         System.out.println();
                     }
 
@@ -65,7 +65,7 @@ public class MenuOptions {
                 }
                 catch (RepositoryAlreadyExistsException e) {
                     try {
-                        isLoadDataFromRepository = RepoAlreadyExistsExceptionHandler(Menu.GetEngine().GetRepositoryPath());
+                        isLoadDataFromRepository = RepoAlreadyExistsExceptionHandler(Menu.getEngine().getRepositoryPath());
                         System.out.println();
                     } catch (IOException ioe) {
                         System.out.println();
@@ -75,13 +75,13 @@ public class MenuOptions {
                         break;
                     }
                 }
-                catch (XmlErrorsException e) {
-                    if(e.GetErrors() != null && e.GetErrors().size() == 1) {
-                        String error = e.GetErrors().toString();
+                catch (xmlErrorsException e) {
+                    if(e.getErrors() != null && e.getErrors().size() == 1) {
+                        String error = e.getErrors().toString();
                         System.out.println("ERROR: " + error.substring(1, error.length() - 1));
                     }
-                    else if(e.GetErrors() != null && e.GetErrors().size() > 1) {
-                        System.out.println("ERRORS: " + e.GetErrors());
+                    else if(e.getErrors() != null && e.getErrors().size() > 1) {
+                        System.out.println("ERRORS: " + e.getErrors());
                     }
                     else {
                         System.out.println("ERROR: " + e.getMessage());
@@ -104,7 +104,7 @@ public class MenuOptions {
 
             Scanner scanner = new Scanner(System.in);
             String newRepoPath = scanner.nextLine();
-            String currentRepoPath = Menu.GetEngine().GetRepositoryPath();
+            String currentRepoPath = Menu.getEngine().getRepositoryPath();
 
             try {
                 if(currentRepoPath == null || !Paths.get(newRepoPath).toString().equals(Paths.get(currentRepoPath).toString())) {
@@ -112,7 +112,7 @@ public class MenuOptions {
                     int input = 0;
 
                     if(currentRepoPath != null) {
-                        List<List<String>> wcStatus = Menu.GetEngine().GetWorkingCopyDelta();
+                        List<List<String>> wcStatus = Menu.getEngine().getWorkingCopyDelta();
                         isWcClean = wcStatus.get(0).size() == 0 && wcStatus.get(1).size() == 0 && wcStatus.get(2).size() == 0;
 
                         if (!isWcClean) {
@@ -121,15 +121,15 @@ public class MenuOptions {
                             System.out.println("Would you like to proceed with your request?");
                             System.out.println("1. Yes");
                             System.out.println("2. No");
-                            input = ConsoleUtils.GetUserChoice();
+                            input = ConsoleUtils.getUserChoice();
                         }
                     }
 
                     System.out.println();
 
                     if (input == 1 || isWcClean) {
-                        Menu.GetEngine().ChangeActiveRepository(newRepoPath);
-                        System.out.format("Message: %s has been loaded successfully.", Menu.GetEngine().GetActiveRepository().GetName());
+                        Menu.getEngine().changeActiveRepository(newRepoPath);
+                        System.out.format("Message: %s has been loaded successfully.", Menu.getEngine().getActiveRepository().getName());
                         System.out.println();
                     }
                     else if(input == 2) {
@@ -141,7 +141,7 @@ public class MenuOptions {
                 }
                 else {
                     System.out.println();
-                    System.out.format("Message: %s has already been loaded.", Menu.GetEngine().GetActiveRepository().GetName());
+                    System.out.format("Message: %s has already been loaded.", Menu.getEngine().getActiveRepository().getName());
                     System.out.println();
                 }
             }
@@ -157,8 +157,8 @@ public class MenuOptions {
             System.out.println();
         }));
         m_Actions.add(new ActionItem(" Show current commit files", ()->{
-            if(Menu.GetEngine().GetActiveRepository() != null) {
-                List<String> commitFilesInfo = Menu.GetEngine().ShowCurrentCommitFiles();
+            if(Menu.getEngine().getActiveRepository() != null) {
+                List<String> commitFilesInfo = Menu.getEngine().showCurrentCommitFiles();
 
                 if(commitFilesInfo.size() != 0) {
                     printFilesDetails(commitFilesInfo);
@@ -174,14 +174,14 @@ public class MenuOptions {
             System.out.println();
         }));
         m_Actions.add(new ActionItem(" Show working copy status", ()-> {
-            if(Menu.GetEngine().GetActiveRepository() != null) {
-                List<List<String>> wcStatus = Menu.GetEngine().GetWorkingCopyDelta();
+            if(Menu.getEngine().getActiveRepository() != null) {
+                List<List<String>> wcStatus = Menu.getEngine().getWorkingCopyDelta();
                 List<String> deletedFile = wcStatus.get(0);
                 List<String> newFiles = wcStatus.get(1);
                 List<String> changedFiles = wcStatus.get(2);
 
-                System.out.println(String.format("Repository name: %s", Menu.GetEngine().GetActiveRepository().GetName()));
-                System.out.println(String.format("Repository location: %s", Menu.GetEngine().GetActiveRepository().GetLocationPath()));
+                System.out.println(String.format("Repository name: %s", Menu.getEngine().getActiveRepository().getName()));
+                System.out.println(String.format("Repository location: %s", Menu.getEngine().getActiveRepository().getLocationPath()));
                 System.out.println();
 
                 if (deletedFile.size() != 0) {
@@ -216,7 +216,7 @@ public class MenuOptions {
             }
         }));
         m_Actions.add(new ActionItem(" Commit", ()-> {
-            if(Menu.GetEngine().GetActiveRepository() != null) {
+            if(Menu.getEngine().getActiveRepository() != null) {
                 Scanner scanner = new Scanner(System.in);
                 System.out.println("Please write commit description:");
                 System.out.print(">> ");
@@ -224,7 +224,7 @@ public class MenuOptions {
                 System.out.println();
 
                 try {
-                    boolean isCommitExecuted = Menu.GetEngine().Commit(description, null);
+                    boolean isCommitExecuted = Menu.getEngine().commit(description, null);
 
                     if (isCommitExecuted) {
                         System.out.println("Message: Commit was executed successfully.");
@@ -249,9 +249,9 @@ public class MenuOptions {
             System.out.println();
         }));
         m_Actions.add(new ActionItem(" Show all branches", ()-> {
-            if(Menu.GetEngine().GetActiveRepository() != null) {
+            if(Menu.getEngine().getActiveRepository() != null) {
                 String newLine = System.lineSeparator();
-                List<String> branchesInfo = Menu.GetEngine().ShowAllBranches();
+                List<String> branchesInfo = Menu.getEngine().showAllBranches();
 
                 for(String branchInfo: branchesInfo) {
                     String[] parts = branchInfo.split(";");
@@ -272,24 +272,24 @@ public class MenuOptions {
             }
         }));
         m_Actions.add(new ActionItem(" Create new branch", ()-> {
-            if(Menu.GetEngine().GetActiveRepository() != null) {
+            if(Menu.getEngine().getActiveRepository() != null) {
                 System.out.println("Please enter branch name:");
                 System.out.print(">> ");
                 Scanner scanner = new Scanner(System.in);
                 String branchName = scanner.nextLine();
 
-                if (Menu.GetEngine().IsBranchNameExists(branchName)) {
+                if (Menu.getEngine().isBranchNameExists(branchName)) {
                     System.out.println();
                     System.out.println("ERROR: Branch name already exists.");
                 }
                 else {
                     try {
                         System.out.println();
-                        Menu.GetEngine().CreateNewBranch(branchName);
+                        Menu.getEngine().createNewBranch(branchName);
                         System.out.format("Message: Branch \"%s\" has been created.", branchName);
                         System.out.println();
 
-                        List<List<String>> wcStatus = Menu.GetEngine().GetWorkingCopyDelta();
+                        List<List<String>> wcStatus = Menu.getEngine().getWorkingCopyDelta();
                         boolean isWcClean = wcStatus.get(0).size() == 0 &&
                                 wcStatus.get(1).size() == 0 &&
                                 wcStatus.get(2).size() == 0;
@@ -298,10 +298,10 @@ public class MenuOptions {
                             System.out.println("Do you want to execute checkout on this branch?");
                             System.out.println("1. Yes");
                             System.out.println("2. No");
-                            int input = ConsoleUtils.GetUserChoice();
+                            int input = ConsoleUtils.getUserChoice();
 
                             if (input == 1) {
-                                Menu.GetEngine().Checkout(branchName, true);
+                                Menu.getEngine().checkout(branchName, true);
                             } else if (input != 2) {
                                 System.out.println("ERROR: Invalid input.");
                                 System.out.println();
@@ -323,26 +323,26 @@ public class MenuOptions {
             System.out.println();
         }));
         m_Actions.add(new ActionItem(" Delete branch", ()-> {
-            if(Menu.GetEngine().GetActiveRepository() != null) {
+            if(Menu.getEngine().getActiveRepository() != null) {
                 System.out.println("Please enter branch name:");
                 System.out.print(">> ");
                 Scanner scanner = new Scanner(System.in);
                 String branchName = scanner.nextLine();
 
-                if (!Menu.GetEngine().IsBranchNameExists(branchName)) {
+                if (!Menu.getEngine().isBranchNameExists(branchName)) {
                     System.out.println();
                     System.out.format("ERROR: Branch named \"%s\" is not found.", branchName);
                     System.out.println();
                 }
                 else {
-                    if(Menu.GetEngine().GetActiveRepository().GetHeadBranch().GetName().equals(branchName)) {
+                    if(Menu.getEngine().getActiveRepository().getHeadBranch().getName().equals(branchName)) {
                         System.out.println();
                         System.out.format("ERROR: The branch named \"%s\" is a head branch and therefore cannot be deleted.", branchName);
                         System.out.println();
                     }
                     else {
                         try {
-                            Menu.GetEngine().DeleteBranch(branchName);
+                            Menu.getEngine().deleteBranch(branchName);
                             System.out.println();
                             System.out.format("Message: Branch named \"%s\" has successfully been deleted.", branchName);
                             System.out.println();
@@ -361,8 +361,8 @@ public class MenuOptions {
             System.out.println();
         }));
         m_Actions.add(new ActionItem("Checkout", ()-> {
-            if(Menu.GetEngine().GetActiveRepository() != null) {
-                IEngine engine = Menu.GetEngine();
+            if(Menu.getEngine().getActiveRepository() != null) {
+                IEngine engine = Menu.getEngine();
 
                 System.out.println("Please enter branch name:");
                 System.out.print(">> ");
@@ -370,19 +370,19 @@ public class MenuOptions {
                 String branchName = scanner.nextLine();
                 System.out.println();
 
-                if(engine.GetActiveRepository().GetHeadBranch().GetName().equals(branchName)) {
+                if(engine.getActiveRepository().getHeadBranch().getName().equals(branchName)) {
                     System.out.format("ERROR: \"%s\" branch is the head branch and therefore already been spread in the working copy.", branchName);
                     System.out.println();
                 }
                 else {
-                    if(!engine.IsBranchNameExists(branchName)) {
+                    if(!engine.isBranchNameExists(branchName)) {
 
                         System.out.format("ERROR: \"%s\" branch is not exists.", branchName);
                         System.out.println();
                     }
                     else {
                         try {
-                            Menu.GetEngine().Checkout(branchName, true);
+                            Menu.getEngine().checkout(branchName, true);
                             System.out.println("Message: Checkout was executed successfully.");
                         } catch (IOException e) {
                             System.out.println("ERROR: Please check if all files in the working copy are closed and try again.");
@@ -399,8 +399,8 @@ public class MenuOptions {
             System.out.println();
         }));
         m_Actions.add(new ActionItem("Show active branch history", ()-> {
-            if(Menu.GetEngine().GetActiveRepository() != null) {
-                List<String> activeBranchHistory = Menu.GetEngine().ShowActiveBranchHistory();
+            if(Menu.getEngine().getActiveRepository() != null) {
+                List<String> activeBranchHistory = Menu.getEngine().showActiveBranchHistory();
                 String newLine = System.lineSeparator();
                 int size = activeBranchHistory.size();
 
@@ -426,7 +426,7 @@ public class MenuOptions {
 
         }));
         m_Actions.add(new ActionItem("Reset head branch", ()-> {
-            if(Menu.GetEngine().GetActiveRepository() != null) {
+            if(Menu.getEngine().getActiveRepository() != null) {
                 boolean isAbortRequest = false;
                 boolean isSuccessfulReset = false;
                 boolean isProceedWithRequest = false;
@@ -438,7 +438,7 @@ public class MenuOptions {
                 String newPointedCommitSha1 = scanner.nextLine();
                 System.out.println();
 
-                List<List<String>> wcStatus = Menu.GetEngine().GetWorkingCopyDelta();
+                List<List<String>> wcStatus = Menu.getEngine().getWorkingCopyDelta();
                 boolean isWcClean = wcStatus.get(0).size() == 0 &&
                         wcStatus.get(1).size() == 0 &&
                         wcStatus.get(2).size() == 0;
@@ -446,12 +446,12 @@ public class MenuOptions {
                 while(!isAbortRequest && !isSuccessfulReset) {
                     if (isWcClean || isProceedWithRequest) {
                         try {
-                            Menu.GetEngine().ResetHeadBranch(newPointedCommitSha1);
+                            Menu.getEngine().resetHeadBranch(newPointedCommitSha1);
                             isSuccessfulReset = true;
                             System.out.println("Message: Reset branch has been executed successfuly.");
                             System.out.println();
 
-                            List<String> commitFilesInfo = Menu.GetEngine().ShowCurrentCommitFiles();
+                            List<String> commitFilesInfo = Menu.getEngine().showCurrentCommitFiles();
 
                             if(commitFilesInfo.size() != 0) {
                                 System.out.println("Desplaying the new pointed commit files:");
@@ -473,7 +473,7 @@ public class MenuOptions {
                         System.out.println("Would you like to proceed with your request?");
                         System.out.println("1. Yes");
                         System.out.println("2. No");
-                        input = ConsoleUtils.GetUserChoice();
+                        input = ConsoleUtils.getUserChoice();
 
                         if(input == 1) {
                             isProceedWithRequest = true;
@@ -510,14 +510,14 @@ public class MenuOptions {
             while (!isSuccessfulLoad) {
                 try {
                     if(!isLoadDataFromRepository) {
-                        Menu.GetEngine().CreateRepositoryAndFiles(repoName, repoLocation);
-                        System.out.format("Message: \"%s\" repository has been loaded successfully.", Menu.GetEngine().GetActiveRepository().GetName());
+                        Menu.getEngine().createRepositoryAndFiles(repoName, repoLocation);
+                        System.out.format("Message: \"%s\" repository has been loaded successfully.", Menu.getEngine().getActiveRepository().getName());
                         System.out.println();
                     }
                     else {
-                        Menu.GetEngine().LoadDataFromRepository(Menu.GetEngine().GetRepositoryPath());
+                        Menu.getEngine().loadDataFromRepository(Menu.getEngine().getRepositoryPath());
                         System.out.println();
-                        System.out.format("Message: \"%s\" has been loaded successfully.", Menu.GetEngine().GetActiveRepository().GetName());
+                        System.out.format("Message: \"%s\" has been loaded successfully.", Menu.getEngine().getActiveRepository().getName());
                         System.out.println();
                     }
 
@@ -545,7 +545,7 @@ public class MenuOptions {
             }
         }));
         m_Actions.add(new ActionItem("Export repository to xml", ()-> {
-            if(Menu.GetEngine().GetActiveRepository() != null) {
+            if(Menu.getEngine().getActiveRepository() != null) {
                 System.out.println("Please enter xml path:");
                 System.out.print(">> ");
                 Scanner scanner = new Scanner(System.in);
@@ -553,9 +553,9 @@ public class MenuOptions {
                 System.out.println();
 
                 try {
-                    Menu.GetEngine().ExportRepositoryToXml(xmlPath);
+                    Menu.getEngine().exportRepositoryToXml(xmlPath);
                     System.out.println("Message: Export executed successfully.");
-                } catch (XmlErrorsException | RepositoryNotLoadedException e) {
+                } catch (xmlErrorsException | RepositoryNotLoadedException e) {
                     System.out.println("ERROR: " + e.getMessage());
                 }
             }
@@ -575,11 +575,11 @@ public class MenuOptions {
         System.out.println("2. Proceed with existing repository.");
 
         try {
-            switch (ConsoleUtils.GetUserChoice()) {
+            switch (ConsoleUtils.getUserChoice()) {
                 case 1:
                     File directory = new File(i_Location);
                     FileUtils.deleteDirectory(directory);
-                    Menu.GetEngine().SetActiveRepository(null);
+                    Menu.getEngine().setActiveRepository(null);
                     break;
                 case 2:
                     isLoadDataFromRepository = true;

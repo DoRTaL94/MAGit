@@ -16,13 +16,13 @@ public class CommitItemController {
     }
 
     public Region GetCommitDetails() {
-        return m_GraphNode.GetCommitDetails();
+        return m_GraphNode.getCommitDetails();
     }
 
     private void updateGraph() {
         final Model model = m_Graph.getModel();
 
-        for(CommitGraphNode graphNode: m_GraphNode.GetGraphNodeChildren()) {
+        for(CommitGraphNode graphNode: m_GraphNode.getGraphNodeChildren()) {
             if(!model.getAddedCells().contains(graphNode)) {
                 model.addCell(graphNode);
             }

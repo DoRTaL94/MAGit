@@ -46,7 +46,7 @@ function showForm(isLogin) {
 }
 
 function createLoginForm(isLogin) {
-    return `<form class="Login-or-signup-form" action="${isLogin ? 'login' : 'signup'}" method="GET">
+    return `<form class="Login-or-signup-form" action="${isLogin ? 'login' : 'signup'}" method="POST">
 `;
 }
 

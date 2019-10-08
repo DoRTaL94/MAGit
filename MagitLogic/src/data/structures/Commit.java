@@ -12,91 +12,92 @@ import resources.jaxb.schema.generated.MagitSingleCommit;
 import resources.jaxb.schema.generated.PrecedingCommits;
 
 public class Commit implements IRepositoryFile, CommitRepresentative {
-    private String m_FirstPrecedingCommitsSHA1 = "";
-    private String m_SecondPrecedingCommitsSHA1 = "";
-    private String m_RootFolderSHA1 = null;
-    private String m_Message = null;
-    private String m_LastChanger = null;
-    private String m_LastUpdate = null;
+    private String firstPrecedingCommitsSHA1 = "";
+    private String secondPrecedingCommitsSHA1 = "";
+    private String rootFolderSHA1 = null;
+    private String message = null;
+    private String lastChanger = null;
+    private String lastUpdate = null;
+    private String sha1 = null;
 
     @Override
     public String toString() {
-        return String.format("%s;%s;%s;%s;%s;%s", m_RootFolderSHA1, m_FirstPrecedingCommitsSHA1, m_SecondPrecedingCommitsSHA1, m_Message, m_LastChanger, m_LastUpdate);
+        return String.format("%s;%s;%s;%s;%s;%s", rootFolderSHA1, firstPrecedingCommitsSHA1, secondPrecedingCommitsSHA1, message, lastChanger, lastUpdate);
     }
 
     public String toStringForSha1() {
-        return String.format("%s;%s;%s;%s", m_RootFolderSHA1, m_FirstPrecedingCommitsSHA1, m_SecondPrecedingCommitsSHA1, m_Message);
+        return String.format("%s;%s;%s;%s", rootFolderSHA1, firstPrecedingCommitsSHA1, secondPrecedingCommitsSHA1, message);
     }
 
-    public List<String> GetPrecedingCommits() {
+    public List<String> getPrecedingCommits() {
         List<String> precedings = new ArrayList<>();
 
-        if(!m_FirstPrecedingCommitsSHA1.equals("")) {
-            precedings.add(m_FirstPrecedingCommitsSHA1);
+        if(!firstPrecedingCommitsSHA1.equals("")) {
+            precedings.add(firstPrecedingCommitsSHA1);
 
-            if (!m_SecondPrecedingCommitsSHA1.equals("")) {
-                precedings.add(m_SecondPrecedingCommitsSHA1);
+            if (!secondPrecedingCommitsSHA1.equals("")) {
+                precedings.add(secondPrecedingCommitsSHA1);
             }
         }
 
         return precedings;
     }
 
-    public String GetRootFolderSHA1() {
-        return m_RootFolderSHA1;
+    public String getRootFolderSHA1() {
+        return rootFolderSHA1;
     }
 
-    public void SetRootFolderSHA1(String i_MainFolderSHA1) {
-        this.m_RootFolderSHA1 = i_MainFolderSHA1;
+    public void setRootFolderSHA1(String i_MainFolderSHA1) {
+        this.rootFolderSHA1 = i_MainFolderSHA1;
     }
 
-    public void SetFirstPrecedingCommitSha1(String i_PrecedingCommitSHA1) {
-        m_FirstPrecedingCommitsSHA1 = i_PrecedingCommitSHA1;
+    public void setFirstPrecedingCommitSha1(String i_PrecedingCommitSHA1) {
+        firstPrecedingCommitsSHA1 = i_PrecedingCommitSHA1;
     }
 
-    public void SetSecondPrecedingCommitSha1(String i_PrecedingCommitSHA1) {
-        m_SecondPrecedingCommitsSHA1 = i_PrecedingCommitSHA1;
+    public void setSecondPrecedingCommitSha1(String i_PrecedingCommitSHA1) {
+        secondPrecedingCommitsSHA1 = i_PrecedingCommitSHA1;
     }
 
-    public String GetMessage() {
-        return m_Message;
+    public String getMessage() {
+        return message;
     }
 
-    public void SetMessage(String i_Message) {
-        this.m_Message = i_Message;
+    public void setMessage(String i_Message) {
+        this.message = i_Message;
     }
 
-    public String GetLastChanger() {
-        return m_LastChanger;
+    public String getLastChanger() {
+        return lastChanger;
     }
 
-    public void SetLastChanger(String i_LastChanger) {
-        m_LastChanger = i_LastChanger;
+    public void setLastChanger(String i_LastChanger) {
+        lastChanger = i_LastChanger;
     }
 
-    public String GetLastUpdate() {
-        return m_LastUpdate;
+    public String getLastUpdate() {
+        return lastUpdate;
     }
 
-    public void SetLastUpdate(String i_LastUpdate) {
-        m_LastUpdate = i_LastUpdate;
+    public void setLastUpdate(String i_LastUpdate) {
+        lastUpdate = i_LastUpdate;
     }
 
-    public static Commit Parse(MagitSingleCommit i_MagitCommit) {
+    public static Commit parse(MagitSingleCommit i_MagitCommit) {
         Commit newCommit = new Commit();
-        newCommit.SetMessage(i_MagitCommit.getMessage());
-        newCommit.SetLastChanger(i_MagitCommit.getAuthor());
-        newCommit.SetLastUpdate(i_MagitCommit.getDateOfCreation());
-        newCommit.SetRootFolderSHA1(i_MagitCommit.getRootFolder().getId());
+        newCommit.setMessage(i_MagitCommit.getMessage());
+        newCommit.setLastChanger(i_MagitCommit.getAuthor());
+        newCommit.setLastUpdate(i_MagitCommit.getDateOfCreation());
+        newCommit.setRootFolderSHA1(i_MagitCommit.getRootFolder().getId());
 
         if(i_MagitCommit.getPrecedingCommits() != null) {
             List<PrecedingCommits.PrecedingCommit> precedings = i_MagitCommit.getPrecedingCommits().getPrecedingCommit();
 
             if (precedings.size() != 0) {
-                newCommit.SetFirstPrecedingCommitSha1(precedings.get(0).getId());
+                newCommit.setFirstPrecedingCommitSha1(precedings.get(0).getId());
 
                 if (precedings.size() == 2) {
-                    newCommit.SetSecondPrecedingCommitSha1(precedings.get(1).getId());
+                    newCommit.setSecondPrecedingCommitSha1(precedings.get(1).getId());
                 }
             }
         }
@@ -104,25 +105,25 @@ public class Commit implements IRepositoryFile, CommitRepresentative {
         return newCommit;
     }
 
-    public static Commit Parse(File i_ZippedCommitFile) throws IOException {
+    public static Commit parse(File i_ZippedCommitFile) throws IOException {
         Commit newCommit = new Commit();
 
         try {
             String commitContent = FileUtilities.UnzipFile(i_ZippedCommitFile.getPath());
             String[] parts = commitContent.split(";");
-            newCommit.SetRootFolderSHA1(parts[0]);
+            newCommit.setRootFolderSHA1(parts[0]);
 
             if (!parts[1].equals("")) {
-                newCommit.SetFirstPrecedingCommitSha1(parts[1]);
+                newCommit.setFirstPrecedingCommitSha1(parts[1]);
 
                 if(!parts[2].equals("")) {
-                    newCommit.SetSecondPrecedingCommitSha1(parts[2]);
+                    newCommit.setSecondPrecedingCommitSha1(parts[2]);
                 }
             }
 
-            newCommit.SetMessage(parts[3]);
-            newCommit.SetLastChanger(parts[4]);
-            newCommit.SetLastUpdate(parts[5]);
+            newCommit.setMessage(parts[3]);
+            newCommit.setLastChanger(parts[4]);
+            newCommit.setLastUpdate(parts[5]);
         }
         catch (ArrayIndexOutOfBoundsException e) {
             throw new IOException("Not a commit file.");
@@ -132,14 +133,18 @@ public class Commit implements IRepositoryFile, CommitRepresentative {
     }
 
     public String getSha1() {
-        return DigestUtils.sha1Hex(this.toStringForSha1());
+        if(sha1 == null) {
+            sha1 = DigestUtils.sha1Hex(this.toStringForSha1());
+        }
+
+        return sha1;
     }
 
     public String getFirstPrecedingSha1() {
-        return m_FirstPrecedingCommitsSHA1;
+        return firstPrecedingCommitsSHA1;
     }
 
     public String getSecondPrecedingSha1() {
-        return m_SecondPrecedingCommitsSHA1;
+        return secondPrecedingCommitsSHA1;
     }
 }

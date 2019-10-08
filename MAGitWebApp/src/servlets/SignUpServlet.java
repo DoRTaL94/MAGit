@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @WebServlet("/pages/signin/signup")
-public class SignupServlet extends HttpServlet {
+public class SignUpServlet extends HttpServlet {
 
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String username = request.getParameter("username");
@@ -43,11 +43,13 @@ public class SignupServlet extends HttpServlet {
             PrintWriter out = response.getWriter();
             Gson gson = new Gson();
             out.print(gson.toJson(errors));
+            out.flush();
         } else {
             response.setContentType("text/html");
             PrintWriter out = response.getWriter();
             userManager.addUser(username, password1);
             out.print("success");
+            out.flush();
         }
     }
 

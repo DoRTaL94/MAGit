@@ -23,7 +23,7 @@ public class CommitTreeLayout implements Layout {
     private final Branch f_HeadBranch;
 
     public CommitTreeLayout(CommitGraphNode i_Root) {
-        f_HeadBranch = Engine.Creator.GetInstance().GetActiveRepository().GetHeadBranch();
+        f_HeadBranch = Engine.Creator.getInstance().getActiveRepository().getHeadBranch();
         m_Root = i_Root;
         m_MaxXLocation = 0;
         m_NodesOnTheHeadBranch = new HashSet<>();
@@ -38,7 +38,7 @@ public class CommitTreeLayout implements Layout {
         // Using BFS algoritm to initialize each level at a time.
         List<CommitGraphNode> nodeList = new ArrayList<>();
         nodeList.add(m_Root);
-        m_Root.SetBranchNumber(0);
+        m_Root.setBranchNumber(0);
 
         findHeadBranch(m_Root);
         updateTreeNodeGraphics(nodeList);
@@ -52,7 +52,7 @@ public class CommitTreeLayout implements Layout {
 
         i_Root.CommitDetailsXProperty.set(m_MaxXLocation + SPACE_LEFT_TO_NODE);
 
-        for(CommitGraphNode child: i_Root.GetGraphNodeChildren()) {
+        for(CommitGraphNode child: i_Root.getGraphNodeChildren()) {
             updateCommitDetailsGraphics(child);
         }
     }
@@ -65,7 +65,7 @@ public class CommitTreeLayout implements Layout {
                 isHeadFound = true;
                 m_NodesOnTheHeadBranch.add(i_Node);
             } else {
-                for (CommitGraphNode child : i_Node.GetGraphNodeChildren()) {
+                for (CommitGraphNode child : i_Node.getGraphNodeChildren()) {
                     isHeadFound = findHeadBranch(child);
 
                     if (isHeadFound) {
@@ -82,7 +82,7 @@ public class CommitTreeLayout implements Layout {
     public boolean isPointingBranchIsHead(CommitGraphNode i_Node) {
         boolean result = false;
 
-        for (Branch branch : i_Node.GetPointingBranches()) {
+        for (Branch branch : i_Node.getPointingBranches()) {
             if (branch == f_HeadBranch) {
                 result = true;
                 break;
@@ -101,7 +101,7 @@ public class CommitTreeLayout implements Layout {
 
         // BFS algoritm adds all the children to the list and call the function recursively.
         for (CommitGraphNode node : i_Nodes) {
-            List<CommitGraphNode> nodeChildren = node.GetGraphNodeChildren();
+            List<CommitGraphNode> nodeChildren = node.getGraphNodeChildren();
             nodeList.addAll(nodeChildren);
             indetifyBranches(node, nodeChildren);
             setNodeGraphics(node);
@@ -112,7 +112,7 @@ public class CommitTreeLayout implements Layout {
         if (i_Nodes.size() > 0) {
             for (int node = 0; node < i_Nodes.size(); node++) {
                 CommitGraphNode currNode = i_Nodes.get(node);
-                int currNodeXLocation = SPACE_LEFT_TO_NODE + currNode.GetBranchNumber() * SPACE_BETWEEN_BRANCHES;
+                int currNodeXLocation = SPACE_LEFT_TO_NODE + currNode.getBranchNumber() * SPACE_BETWEEN_BRANCHES;
 
                 if (currNodeXLocation > m_MaxXLocation) {
                     m_MaxXLocation = currNodeXLocation;
@@ -129,30 +129,30 @@ public class CommitTreeLayout implements Layout {
         for (int nodeInd = 0; nodeInd < i_NodeChildren.size(); nodeInd++) {
 //            boolean isMergedBranch = false;
 //
-//            for(Branch branch: i_Node.GetPointingBranches()) {
-//                if(branch.GetIsMerged()) {
+//            for(Branch branch: i_Node.getPointingBranches()) {
+//                if(branch.getIsMerged()) {
 //                    isMergedBranch = true;
 //                    break;
 //                }
 //            }
-            if(i_NodeChildren.get(nodeInd).GetBranchNumber() == -1) {
-//                if (i_Node.GetPointingBranches().size() != 0 && !isMergedBranch) {
+            if(i_NodeChildren.get(nodeInd).getBranchNumber() == -1) {
+//                if (i_Node.getPointingBranches().size() != 0 && !isMergedBranch) {
 //                    if(m_NodesOnTheHeadBranch.contains(i_NodeChildren.get(nodeInd))) {
-//                        i_NodeChildren.get(nodeInd).SetBranchNumber(1 + i_Node.GetBranchNumber());
+//                        i_NodeChildren.get(nodeInd).setBranchNumber(1 + i_Node.getBranchNumber());
 //                    }
 //                    else {
-//                        i_NodeChildren.get(nodeInd).SetBranchNumber(2 + branchNum + i_Node.GetBranchNumber());
+//                        i_NodeChildren.get(nodeInd).setBranchNumber(2 + branchNum + i_Node.getBranchNumber());
 //                    }
 //                } else {
                     if(m_NodesOnTheHeadBranch.contains(i_NodeChildren.get(nodeInd))) {
-                        i_NodeChildren.get(nodeInd).SetBranchNumber(i_Node.GetBranchNumber());
+                        i_NodeChildren.get(nodeInd).setBranchNumber(i_Node.getBranchNumber());
                         isNodeInHeadBranchTookCare = true;
                     }
                     else if(m_Root == i_Node) {
-                        i_NodeChildren.get(nodeInd).SetBranchNumber((isNodeInHeadBranchTookCare ? nodeInd : 1 + nodeInd) + i_Node.GetBranchNumber());
+                        i_NodeChildren.get(nodeInd).setBranchNumber((isNodeInHeadBranchTookCare ? nodeInd : 1 + nodeInd) + i_Node.getBranchNumber());
                     }
                     else {
-                        i_NodeChildren.get(nodeInd).SetBranchNumber(nodeInd + i_Node.GetBranchNumber());
+                        i_NodeChildren.get(nodeInd).setBranchNumber(nodeInd + i_Node.getBranchNumber());
                     }
 //                }
             }
@@ -163,7 +163,7 @@ public class CommitTreeLayout implements Layout {
 
     private void setNodeGraphics(CommitGraphNode i_Node) {
         boolean isHead = isPointingBranchIsHead(i_Node);
-        i_Node.SetRectangleTreeNodeId(isHead ? "headBranchRectangleTreeNode" : "rectangleTreeNode");
+        i_Node.setRectangleTreeNodeId(isHead ? "headBranchRectangleTreeNode" : "rectangleTreeNode");
     }
 
     private void updateLocationLayout(CommitGraphNode i_NodeToUpdate, final int i_NodeToUpdateXLocation, List<CommitGraphNode> i_NodesInTheSameLevel) {
@@ -179,7 +179,7 @@ public class CommitTreeLayout implements Layout {
 //    private void updateLocationLayoutIfEdgeOnTop(List<CommitGraphNode> i_Nodes) {
 //        for(int node = 0; node < i_Nodes.size(); node++) {
 //            CommitGraphNode currNode = i_Nodes.get(node);
-//            int currNodeXLocation = SPACE_LEFT_TO_NODE + currNode.GetBranchNumber() * SPACE_BETWEEN_BRANCHES;
+//            int currNodeXLocation = SPACE_LEFT_TO_NODE + currNode.getBranchNumber() * SPACE_BETWEEN_BRANCHES;
 //
 //            if(currNodeXLocation < m_MaxXLocation) {
 //                Line line = findNearestLine(i_Nodes, node);
@@ -212,17 +212,17 @@ public class CommitTreeLayout implements Layout {
 //    private Line findNearestLineRec(CommitGraphNode i_NodeInOtherBranch, CommitGraphNode i_NodeToFindNearestLine) {
 //        Line result = null;
 //
-//        if(i_NodeInOtherBranch.GetIdInList() < i_NodeToFindNearestLine.GetIdInList()) {
-//            List<CommitGraphNode> parents = i_NodeInOtherBranch.GetGraphNodeParents();
+//        if(i_NodeInOtherBranch.getIdInList() < i_NodeToFindNearestLine.getIdInList()) {
+//            List<CommitGraphNode> parents = i_NodeInOtherBranch.getGraphNodeParents();
 //            CommitGraphNode parent = parents.get(parents.size() - 1);
-//            Point parentPoint = parent.GetLocation(m_Graph);
-//            Point NodeInOtherBranchPoint = i_NodeInOtherBranch.GetLocation(m_Graph);
+//            Point parentPoint = parent.getLocation(m_Graph);
+//            Point NodeInOtherBranchPoint = i_NodeInOtherBranch.getLocation(m_Graph);
 //
 //            return new Line(parentPoint, NodeInOtherBranchPoint);
 //        }
 //
-//        for(int node = i_NodeInOtherBranch.GetGraphNodeChildren().size() - 1; node >= 0; node--) {
-//            result = findNearestLineRec(i_NodeInOtherBranch.GetGraphNodeChildren().get(node), i_NodeToFindNearestLine);
+//        for(int node = i_NodeInOtherBranch.getGraphNodeChildren().size() - 1; node >= 0; node--) {
+//            result = findNearestLineRec(i_NodeInOtherBranch.getGraphNodeChildren().get(node), i_NodeToFindNearestLine);
 //
 //            if(result != null) {
 //                break;

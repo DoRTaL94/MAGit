@@ -7,7 +7,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -27,46 +26,46 @@ public class CloneRepoDialogController {
     @FXML private Button buttonCancel;
     @FXML private VBox vBoxRoot;
 
-    private static final String f_DarkTheme = "resources/Dark.css";
-    private static final String f_ColorfulTheme = "resources/Colorful.css";
-    private String m_CurrentTheme;
-    private Runnable m_OkAction;
-    private Stage m_Stage;
+    private static final String darkTheme = "resources/Dark.css";
+    private static final String colorfulTheme = "resources/Colorful.css";
+    private String currentTheme;
+    private Runnable okAction;
+    private Stage stage;
 
     public CloneRepoDialogController() {
         if(ThemesController.themeChangedProperty.get().equals("Dark")) {
-            m_CurrentTheme = f_DarkTheme;
+            currentTheme = darkTheme;
         } else if(ThemesController.themeChangedProperty.get().equals("Colorful")) {
-            m_CurrentTheme = f_ColorfulTheme;
+            currentTheme = colorfulTheme;
         } else {
-            m_CurrentTheme = "";
+            currentTheme = "";
         }
 
         ThemesController.themeChangedProperty.addListener((observable, oldValue, newValue) -> {
             if(newValue.equals("Dark")) {
-                m_CurrentTheme = f_DarkTheme;
+                currentTheme = darkTheme;
             }
             else if(newValue.equals("Colorful")) {
-                m_CurrentTheme = f_ColorfulTheme;
+                currentTheme = colorfulTheme;
             }
 
             if(newValue.equals("Default")) {
-                m_CurrentTheme = "";
+                currentTheme = "";
                 vBoxRoot.getStylesheets().clear();
                 vBoxRoot.applyCss();
             } else {
                 vBoxRoot.getStylesheets().clear();
-                vBoxRoot.getStylesheets().add(getClass().getResource(m_CurrentTheme).toExternalForm());
+                vBoxRoot.getStylesheets().add(getClass().getResource(currentTheme).toExternalForm());
                 vBoxRoot.applyCss();
             }
         });
     }
 
-    public HBox gethBoxHeader() {
+    public HBox getHBoxHeader() {
         return hBoxHeader;
     }
 
-    public static CloneRepoDialogController LoadFxml() {
+    public static CloneRepoDialogController loadFxml() {
         FXMLLoader fxmlLoader = new FXMLLoader();
         URL url = CloneRepoDialogController.class.getResource("CloneRepoDialog.fxml");
         fxmlLoader.setLocation(url);
@@ -81,43 +80,43 @@ public class CloneRepoDialogController {
     }
 
     @FXML public void initialize() {
-        if(!m_CurrentTheme.isEmpty()) {
-            vBoxRoot.getStylesheets().add(getClass().getResource(m_CurrentTheme).toExternalForm());
+        if(!currentTheme.isEmpty()) {
+            vBoxRoot.getStylesheets().add(getClass().getResource(currentTheme).toExternalForm());
             vBoxRoot.applyCss();
         }
     }
 
-    public void ShowDialog() {
-        m_Stage = new Stage();
+    public void showDialog() {
+        stage = new Stage();
         Scene mainScene = new Scene(vBoxRoot);
-        m_Stage.setScene(mainScene);
-        m_Stage.setTitle("Clone Repository");
-        m_Stage.getIcons().add(new Image(getClass().getResourceAsStream("/main/resources/MAGit.png")));
-        m_Stage.show();
+        stage.setScene(mainScene);
+        stage.setTitle("Clone Repository");
+        stage.getIcons().add(new Image(getClass().getResourceAsStream("/main/resources/MAGit.png")));
+        stage.show();
     }
 
     @FXML void cancelAction() {
-        m_Stage.close();
+        stage.close();
     }
 
     @FXML void okAction() {
-        m_OkAction.run();
-        m_Stage.close();
+        okAction.run();
+        stage.close();
     }
 
-    public void SetOkAction(Runnable i_OkAction) {
-        m_OkAction = i_OkAction;
+    public void setOkAction(Runnable i_OkAction) {
+        okAction = i_OkAction;
     }
 
-    public TextField GetTextFieldRepoName() {
+    public TextField getTextFieldRepoName() {
         return textFieldRepoName;
     }
 
-    public TextField GetTextFieldLocalRepoPath() {
+    public TextField getTextFieldLocalRepoPath() {
         return textFieldLocalRepoPath;
     }
 
-    public TextField GetTextFieldRemoteRepoPath() {
+    public TextField getTextFieldRemoteRepoPath() {
         return textFieldRemoteRepoPath;
     }
 }

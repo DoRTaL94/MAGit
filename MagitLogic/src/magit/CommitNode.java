@@ -10,74 +10,72 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CommitNode implements Comparable {
-    private final CommitNode f_FirstParent;
-    private final CommitNode f_SecondParent;
-    private final List<CommitNode> f_Children;
-    private Commit m_Commit;
-    private List<Branch> m_PointingBranches;
-    private List<Branch> m_OnBranches;
+    private final CommitNode firstParent;
+    private final CommitNode secondParent;
+    private final List<CommitNode> children;
+    private Commit commit;
+    private List<Branch> pointingBranches;
+    private List<Branch> onBranches;
 
     public CommitNode() {
-        m_OnBranches = new ArrayList<>();
-        f_FirstParent = null;
-        f_SecondParent = null;
-        f_Children = new ArrayList<>();
-        m_PointingBranches = new ArrayList<>();
-        m_Commit = null;
+        onBranches = new ArrayList<>();
+        firstParent = null;
+        secondParent = null;
+        children = new ArrayList<>();
+        pointingBranches = new ArrayList<>();
+        commit = null;
     }
 
     public CommitNode(CommitNode i_FirstParent, CommitNode i_SecondParent) {
-        m_OnBranches = new ArrayList<>();
-        f_FirstParent = i_FirstParent;
-        f_SecondParent = i_SecondParent;
-        f_Children = new ArrayList<>();
-        m_PointingBranches = new ArrayList<>();
-        m_Commit = null;
+        onBranches = new ArrayList<>();
+        firstParent = i_FirstParent;
+        secondParent = i_SecondParent;
+        children = new ArrayList<>();
+        pointingBranches = new ArrayList<>();
+        commit = null;
     }
 
-
-
-    public String GetSha1() {
+    public String getSha1() {
         String sha1 = "";
 
-        if(m_Commit != null) {
-            return DigestUtils.sha1Hex(m_Commit.toStringForSha1());
+        if(commit != null) {
+            return DigestUtils.sha1Hex(commit.toStringForSha1());
         }
 
         return sha1;
     }
 
-    public void AddChildren(CommitNode i_Child) {
-        f_Children.add(i_Child);
-        f_Children.sort(this::CompareCommitNodes);
+    public void addChildren(CommitNode i_Child) {
+        children.add(i_Child);
+        children.sort(this::compareCommitNodes);
     }
 
-    private int CompareCommitNodes(CommitNode i_N1, CommitNode I_N2) {
+    private int compareCommitNodes(CommitNode i_N1, CommitNode I_N2) {
         return i_N1.compareTo(i_N1);
     }
 
-    public CommitNode GetFirstParent() {
-        return f_FirstParent;
+    public CommitNode getFirstParent() {
+        return firstParent;
     }
 
-    public CommitNode GetSecondParent() {
-        return f_SecondParent;
+    public CommitNode getSecondParent() {
+        return secondParent;
     }
 
-    public List<CommitNode> GetChildren() {
-        return f_Children;
+    public List<CommitNode> getChildren() {
+        return children;
     }
 
-    public Commit GetCommit() {
-        return m_Commit;
+    public Commit getCommit() {
+        return commit;
     }
 
-    public void SetCommit(Commit i_Commit) {
-        m_Commit = i_Commit;
+    public void setCommit(Commit i_Commit) {
+        commit = i_Commit;
     }
 
-    public List<Branch> GetPointingBranches() {
-        return m_PointingBranches;
+    public List<Branch> getPointingBranches() {
+        return pointingBranches;
     }
 
     @Override
@@ -92,7 +90,7 @@ public class CommitNode implements Comparable {
         }
         else {
             CommitNode nodeToCompare = (CommitNode) o;
-            isEqual = this.GetSha1().equals(nodeToCompare.GetSha1());
+            isEqual = this.getSha1().equals(nodeToCompare.getSha1());
         }
 
         return isEqual;
@@ -107,9 +105,9 @@ public class CommitNode implements Comparable {
 
         try {
             nodeToCompareTime = new SimpleDateFormat(Engine.DATE_FORMAT)
-                    .parse(nodeToCompare.GetCommit().GetLastUpdate()).getTime();
+                    .parse(nodeToCompare.getCommit().getLastUpdate()).getTime();
             thisNodeTime = new SimpleDateFormat(Engine.DATE_FORMAT)
-                    .parse(this.GetCommit().GetLastUpdate()).getTime();
+                    .parse(this.getCommit().getLastUpdate()).getTime();
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -117,7 +115,7 @@ public class CommitNode implements Comparable {
         return (int)(thisNodeTime - nodeToCompareTime);
     }
 
-    public List<Branch> GetOnBranches() {
-        return m_OnBranches;
+    public List<Branch> getOnBranches() {
+        return onBranches;
     }
 }

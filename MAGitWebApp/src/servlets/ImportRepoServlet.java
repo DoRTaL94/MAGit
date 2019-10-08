@@ -2,7 +2,7 @@ package servlets;
 
 import MagitExceptions.FolderInLocationAlreadyExistsException;
 import MagitExceptions.RepositoryAlreadyExistsException;
-import MagitExceptions.XmlErrorsException;
+import MagitExceptions.xmlErrorsException;
 import com.google.gson.Gson;
 import javafx.beans.property.SimpleStringProperty;
 import magit.Engine;
@@ -28,7 +28,7 @@ public class ImportRepoServlet extends HttpServlet {
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         Collection<Part> parts      = request.getParts(); // Uploading files sends them in parts to the server. Parts size could be configured in '@MultipartConfig' above.
         StringBuilder fileContent   = new StringBuilder(); // We will append each part and make one string out of them.
-        Engine engine               = Engine.Creator.GetInstance();
+        Engine engine               = Engine.Creator.getInstance();
         List<String> errors         = new ArrayList<>();
 
         for (Part part : parts) {
@@ -44,8 +44,8 @@ public class ImportRepoServlet extends HttpServlet {
             engine.LoadRepositoryFromXml(xmlStream, username, new SimpleStringProperty());
         } catch (RepositoryAlreadyExistsException e) {
             errors.add(e.getMessage());
-        } catch (XmlErrorsException e) {
-            errors.addAll(e.GetErrors());
+        } catch (xmlErrorsException e) {
+            errors.addAll(e.getErrors());
         } catch (FolderInLocationAlreadyExistsException ignored) {}
 
         if (errors.size() > 0) {
@@ -54,6 +54,7 @@ public class ImportRepoServlet extends HttpServlet {
             String toOut = gson.toJson(errors);
             PrintWriter out = response.getWriter();
             out.print(toOut);
+            out.flush();
         } else {
             // לעדכן את הרפוזיטורי הנוכחי של המשתמש
             // להוסיף לרשימת הרפוזיטוריס של המשתמש

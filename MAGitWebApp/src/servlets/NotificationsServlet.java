@@ -36,5 +36,6 @@ public class NotificationsServlet extends HttpServlet {
         }
 
         out.print(toOut);
+        out.flush();
     }
 }

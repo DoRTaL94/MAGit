@@ -3,7 +3,7 @@ package IO;
 import java.util.Scanner;
 
 public class ConsoleUtils {
-    public static int GetUserChoice() throws NumberFormatException {
+    public static int getUserChoice() throws NumberFormatException {
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("Please choose one of the above:");

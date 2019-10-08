@@ -8,7 +8,6 @@ import javafx.scene.layout.HBox;
 import magit.merge.Conflict;
 import java.io.IOException;
 import java.net.URL;
-import java.util.function.Consumer;
 
 public class BlobConflict implements IConflictDisplay {
     private Conflict m_Conflict;
@@ -27,15 +26,15 @@ public class BlobConflict implements IConflictDisplay {
         String theirsContent = "";
 
         if(m_Conflict.GetAncestor() != null) {
-            ancestorContent = ((Blob) m_Conflict.GetAncestor()).GetText();
+            ancestorContent = ((Blob) m_Conflict.GetAncestor()).getText();
         }
 
         if(m_Conflict.GetOurs() != null) {
-            oursContent = ((Blob) m_Conflict.GetOurs()).GetText();
+            oursContent = ((Blob) m_Conflict.GetOurs()).getText();
         }
 
         if(m_Conflict.GetTheirs() != null) {
-            theirsContent = ((Blob) m_Conflict.GetTheirs()).GetText();
+            theirsContent = ((Blob) m_Conflict.GetTheirs()).getText();
         }
 
         m_Controller.GetTextAreaAncestor().setText(ancestorContent);
@@ -61,7 +60,7 @@ public class BlobConflict implements IConflictDisplay {
 
     public void UpdateSolution() {
         Blob blob = new Blob();
-        blob.SetText(m_Controller.GetTextAreaFinalResult().getText());
+        blob.setText(m_Controller.GetTextAreaFinalResult().getText());
         m_Conflict.SetSolution(blob);
     }
 

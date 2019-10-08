@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class StringUtilities {
-    public static List<String> GetLines(String i_Str){
+    public static List<String> getLines(String i_Str){
         Reader inputString = new StringReader(i_Str);
         BufferedReader br = new BufferedReader(inputString);
         Stream<String> stringLinesStream = br.lines();
