@@ -494,20 +494,20 @@ a:hover {
     display: table-row;
 }
 
+.file-last-update {
+    text-align: right;
+}
+
 .table .table-cell {
     position: relative;
     display: table-cell;
-    text-align: left;
     padding-left: 10px;
     padding-right: 10px;
-    width: 25%;
+    word-break: break-word;
 }
 
-#table {
+#table,
+#table-commit {
     padding: 0;
     margin: 0;
-}
-
-#file-last-update {
-    text-align: right;
 }

@@ -1,7 +1,7 @@
 const HEADER_ITEM = "#header-drop-downs > nav > ul > li";
 const HEADER_LIST_ITEM = "#header-drop-downs > nav > ul > li > ul > li";
 const SERVER_ERROR_MESSAGE = '<li>' + "Failed to send data to the server..." + '</li>';
-const HOME = "/magit/pages/repository/active_repo.html";
+const HOME = "../repository/active_repo.html";
 
 let uploadForm =
     `<form id="uploadForm" action="import" enctype="multipart/form-data" method="POST">
@@ -274,10 +274,10 @@ function updateRepo(branchName) {
     branchesList.empty();
     rootFolderFiles.empty();
 
-    commitListHeader.find('div#commiter-name').empty().text(currCommit.lastChanger);
-    commitListHeader.find('td#commit-description').empty().text(currCommit.message);
-    commitListHeader.find('td#commit-sha1').empty().text(currCommit.sha1);
-    commitListHeader.find('td#commit-date').empty().text(currCommit.lastUpdate);
+    commitListHeader.find('span#commiter-name').empty().text(currCommit.lastChanger);
+    commitListHeader.find('div.commit-description').empty().text(currCommit.message);
+    commitListHeader.find('div.commit-sha1').empty().text(currCommit.sha1);
+    commitListHeader.find('div.file-last-update').empty().text(currCommit.lastUpdate);
 
     $('.Repo-name').empty().text(`${ repository.owner } / ${ repository.repoName }`);
     $('#branch-drop-down').empty().text(`Branch: ${ branch.name }`);
@@ -305,10 +305,10 @@ function buildListItem(file) {
     return `<a href="#" id="${ file.sha1 }" class="Commit-list-item list-group-item list-group-item-action">
     <div id="table" class="table">
         <div class="table-row">
-            <div id="file-name" class="table-cell"><img id="${ icon }" src="../../common/${ icon }.svg"/> ${ file.name }</div>
-            <div id="file-last-changer" class="table-cell">${ file.lastChanger }</div>
-            <div id="file-sha1" class="table-cell">${ file.sha1 }</div>
-            <div id="file-last-update" class="table-cell">${ file.lastUpdate }</div>
+            <div class="table-cell file-name"><img id="${ icon }" src="../../common/${ icon }.svg"/> ${ file.name }</div>
+            <div class="table-cell file-last-changer">${ file.lastChanger }</div>
+            <div class="table-cell file-sha1">${ file.sha1 }</div>
+            <div class="table-cell file-last-update">${ file.lastUpdate }</div>
         </div>
     </div>
 </a>`;
