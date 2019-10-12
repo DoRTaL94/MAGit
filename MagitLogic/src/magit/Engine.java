@@ -75,9 +75,9 @@ public class Engine implements IEngine {
                     Commit ours = activeRepository.getCommits().get(i_Ours.getPointedCommitSha1());
                     Commit theirs = activeRepository.getCommits().get(i_Theirs.getPointedCommitSha1());
 
-                    Folder oursRootFolder = activeRepository.getFolders().get(ours.getRootFolderSHA1());
-                    Folder theirsRootFolder = activeRepository.getFolders().get(theirs.getRootFolderSHA1());
-                    Folder ancestorRootFolder = activeRepository.getFolders().get(ancestor.getRootFolderSHA1());
+                    Folder oursRootFolder = activeRepository.getFolders().get(ours.getRootFolderSha1());
+                    Folder theirsRootFolder = activeRepository.getFolders().get(theirs.getRootFolderSha1());
+                    Folder ancestorRootFolder = activeRepository.getFolders().get(ancestor.getRootFolderSha1());
 
                     Map<String, String> oursPathToSha1Map = factory.createPathToSha1Map(i_Ours);
                     Map<String, String> theirsPathToSha1Map = factory.createPathToSha1Map(i_Theirs);
@@ -566,7 +566,7 @@ public class Engine implements IEngine {
                 isCommitExecuted = true;
                 Commit commit    = new Commit();
                 commit.setMessage(i_Description);
-                commit.setRootFolderSHA1(folderSha1);
+                commit.setRootFolderSha1(folderSha1);
                 commit.setFirstPrecedingCommitSha1(activeRepository.getHeadBranch().getPointedCommitSha1());
                 commit.setLastChanger(currentNameProperty.get());
                 commit.setLastUpdate(new SimpleDateFormat(DATE_FORMAT).format(new Date(System.currentTimeMillis())));
@@ -766,7 +766,7 @@ public class Engine implements IEngine {
 
         if(pointedCommitSha1 != null && !pointedCommitSha1.isEmpty()) {
             Commit pointedCommit = activeRepository.getCommits().get(pointedCommitSha1);
-            String rootFolderSha1 = pointedCommit.getRootFolderSHA1();
+            String rootFolderSha1 = pointedCommit.getRootFolderSha1();
             Folder rootFolder = activeRepository.getFolders().get(rootFolderSha1);
 
             List<Folder.Data> folderItems = rootFolder.getFiles();
@@ -868,7 +868,7 @@ public class Engine implements IEngine {
             try {
                 getNewItems(pathToSha1Map, activeRepositoryPath, newItems);
                 Commit currentCommit = activeRepository.getCommits().get(pointedCommitSha1);
-                String rootFolderSha1 = currentCommit.getRootFolderSHA1();
+                String rootFolderSha1 = currentCommit.getRootFolderSha1();
 
                 if (rootFolderSha1 != null) {
                     Folder currentRootFolder = activeRepository.getFolders().get(rootFolderSha1);
@@ -1326,9 +1326,9 @@ public class Engine implements IEngine {
             }
         }
 
-        if(commit.getRootFolderSHA1() != null && !commit.getRootFolderSHA1().isEmpty()) {
-            loadFolderFile(commit.getRootFolderSHA1());
-            activeRepository.getFolders().get(commit.getRootFolderSHA1()).setIsRoot(true);
+        if(commit.getRootFolderSha1() != null && !commit.getRootFolderSha1().isEmpty()) {
+            loadFolderFile(commit.getRootFolderSha1());
+            activeRepository.getFolders().get(commit.getRootFolderSha1()).setIsRoot(true);
         }
     }
 
@@ -1439,7 +1439,7 @@ public class Engine implements IEngine {
                 }
 
                 RootFolder magitRootFolder = new RootFolder();
-                magitRootFolder.setId(commitEntry.getValue().getRootFolderSHA1());
+                magitRootFolder.setId(commitEntry.getValue().getRootFolderSha1());
                 magitCommit.setRootFolder(magitRootFolder);
 
                 magitCommit.setPrecedingCommits(precedingCommits);
@@ -1452,14 +1452,14 @@ public class Engine implements IEngine {
 
                 //////////////////////////////////////////////////////////////////////////////////
 
-                if(!rootFoldersTracker.contains(commitEntry.getValue().getRootFolderSHA1())) {
-                    rootFoldersTracker.add(commitEntry.getValue().getRootFolderSHA1());
+                if(!rootFoldersTracker.contains(commitEntry.getValue().getRootFolderSha1())) {
+                    rootFoldersTracker.add(commitEntry.getValue().getRootFolderSha1());
                     MagitSingleFolder magitFolder = new MagitSingleFolder();
                     magitFolder.setName(null);
                     magitFolder.setLastUpdater(commitEntry.getValue().getLastChanger());
                     magitFolder.setLastUpdateDate(commitEntry.getValue().getLastUpdate());
                     magitFolder.setIsRoot(true);
-                    magitFolder.setId(commitEntry.getValue().getRootFolderSHA1());
+                    magitFolder.setId(commitEntry.getValue().getRootFolderSha1());
 
                     createMagitFolders(i_MagitRepository, magitFolder, sha1TrackerSet);
                 }

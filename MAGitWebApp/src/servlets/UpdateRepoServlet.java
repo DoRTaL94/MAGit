@@ -23,18 +23,13 @@ public class UpdateRepoServlet extends HttpServlet {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
         Gson gson = new Gson();
+        Repository repository = Engine.Creator.getInstance().getActiveRepository();
 
-        try {
-            Repository repository = Engine.Creator.getInstance().getActiveRepository();
-            Commit currCommit = repository.getCommits().get(repository.getHeadBranch().getPointedCommitSha1());
-
-            currCommit.getSha1(); // updates the sha1
-            repository.setOwner(ServletsUtils.getUsersManager(getServletContext()).getLoggedInUser().getName());
-
+        if(repository == null) {
+            out.print("User has no repositories.");
+        } else {
             out.print(gson.toJson(repository));
             out.flush();
-        } catch (NullPointerException e) {
-            out.print("User has no repositories.");
         }
     }
 }

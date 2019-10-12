@@ -92,7 +92,7 @@ public class CommitFileTree extends TreeView<Folder.Data> {
 
     public void CreateTree(Commit i_Commit) {
         Folder.Data rootFolderData = new Folder.Data();
-        rootFolderData.setSHA1(i_Commit.getRootFolderSHA1());
+        rootFolderData.setSHA1(i_Commit.getRootFolderSha1());
         rootFolderData.setlastUpdate(i_Commit.getLastUpdate());
         rootFolderData.setLastChanger(i_Commit.getLastChanger());
         rootFolderData.setName(f_ActiveRepository.getName());

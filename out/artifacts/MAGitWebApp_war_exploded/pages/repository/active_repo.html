@@ -81,7 +81,7 @@
                                 <a class="nav-link dropdown-toggle" href="#" id="branch-drop-down" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     Branch: master
                                 </a>
-                                <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                                <div class="dropdown-menu Branches" aria-labelledby="navbarDropdownMenuLink">
                                     <a class="dropdown-item" href="#">master</a>
                                     <a class="dropdown-item" href="#">example</a>
                                 </div>
@@ -121,44 +121,19 @@
                             </tr>
                         </table>
                     </a>
-                    <a href="#" class="Commit-list-item list-group-item list-group-item-action active">
-                        <table>
-                            <tr>
-                                <td>
-                                    <img id="file-icon" src="../../common/file-icon.svg"/>
-                                    stam.txt
-                                </td>
-                                <td>
-                                    dor tal
-                                </td>
-                                <td>
-                                    123121231adsgarew2312
-                                </td>
-                                <td>
-                                    12/3/2019
-                                </td>
-                            </tr>
-                        </table>
-                    </a>
-                    <a href="#" class="Commit-list-item list-group-item list-group-item-action">
-                        <table>
-                            <tr>
-                                <td>
-                                    <img id="folder-icon" src="../../common/folder-icon.svg"/>
-                                    sss
-                                </td>
-                                <td>
-                                    administrator
-                                </td>
-                                <td>
-                                    12f2efqasdfg141rfwds
-                                </td>
-                                <td>
-                                    3/3/3
-                                </td>
-                            </tr>
-                        </table>
-                    </a>
+                    <div id="root-folder-files">
+                        <a href="#" class="Commit-list-item list-group-item list-group-item-action active">
+                            <div id="table" class="table">
+                                <div class="table-row">
+                                    <div id="file-name" class="table-cell"><img id="file-icon" src="../../common/folder-icon.svg"/>
+                                        sss</div>
+                                    <div id="file-last-changer" class="table-cell">asdas</div>
+                                    <div id="file-sha1" class="table-cell">asdasdasdasdasdasdasdasdasdasd</div>
+                                    <div id="file-last-update" class="table-cell">asdasd</div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
                 </div>
             </div>
             <div class="tab-pane fade" id="pullrequests" role="tabpanel" aria-labelledby="pull-requests-tab">

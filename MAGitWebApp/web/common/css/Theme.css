@@ -126,15 +126,6 @@ img {
     padding-right: 3px;
 }
 
-table {
-    width: 100%;
-}
-
-td {
-    word-break: break-word;
-    width: 25%;
-}
-
 #file-icon,
 #folder-icon {
     height: 20px;
@@ -490,4 +481,33 @@ a:hover {
 .Btn-upload-container {
     position: relative;
     width: 100%;
+}
+
+.table {
+    position: relative;
+    width: 100%;
+    display: table;
+}
+
+.table .table-row {
+    position: relative;
+    display: table-row;
+}
+
+.table .table-cell {
+    position: relative;
+    display: table-cell;
+    text-align: left;
+    padding-left: 10px;
+    padding-right: 10px;
+    width: 25%;
+}
+
+#table {
+    padding: 0;
+    margin: 0;
+}
+
+#file-last-update {
+    text-align: right;
 }

@@ -89,17 +89,17 @@ public class Folder implements IRepositoryFile {
     public static class Data {
         private String name;
         private String sha1;
-        private eFileType fileType;
+        private eFileType type;
         private String lastChanger;
         private String lastUpdate;
 
         @Override
         public String toString(){
-            return String.format("%s;%s;%s;%s;%s", name, sha1, fileType.toString().toLowerCase(), lastChanger, lastUpdate);
+            return String.format("%s;%s;%s;%s;%s", name, sha1, type.toString().toLowerCase(), lastChanger, lastUpdate);
         }
 
         public String toStringForSha1() {
-            return String.format("%s;%s;%s", name, sha1, fileType.toString().toLowerCase());
+            return String.format("%s;%s;%s", name, sha1, type.toString().toLowerCase());
         }
 
         public String getName() {
@@ -119,11 +119,11 @@ public class Folder implements IRepositoryFile {
         }
 
         public eFileType getFileType() {
-            return fileType;
+            return type;
         }
 
         public void setFileType(eFileType i_FileType) {
-            fileType = i_FileType;
+            type = i_FileType;
         }
 
         public String getLastChanger() {

@@ -16,6 +16,7 @@ let btnUpload =
         <span id="import-btn-text">Import repository</span>
     </button>`;
 let messagesForm ='<ul id="form-messages"></ul>';
+let repository = null;
 
 $(onLoad);
 
@@ -257,13 +258,58 @@ function onUpdateRepoError(response) {
 
 function onUpdateRepoSuccess(response) {
     if(response !== 'User has no repositories') {
-        let commitListHeader = $('#commit-list-header');
-
-        let headBranch = response.headBranch;
-        let currCommit = response.commits[headBranch.pointedCommitSha1];
-        commitListHeader.find('div#commiter-name').empty().text(response.owner);
-        commitListHeader.find('td#commit-description').empty().text(currCommit.message);
-        commitListHeader.find('td#commit-sha1').empty().text(currCommit.sha1);
-        commitListHeader.find('td#commit-date').empty().text(currCommit.lastUpdate);
+        repository = response;
+        updateRepo(repository.headBranch.name)
     }
+}
+
+function updateRepo(branchName) {
+    let branch = repository.branches[branchName];
+    let commitListHeader = $('#commit-list-header');
+    let currCommit = repository.commits[branch.pointedCommitSha1];
+    let rootFolder = repository.folders[currCommit.rootFolderSha1];
+    let branchesList = $('.Branches');
+    let rootFolderFiles = $('#root-folder-files');
+
+    branchesList.empty();
+    rootFolderFiles.empty();
+
+    commitListHeader.find('div#commiter-name').empty().text(currCommit.lastChanger);
+    commitListHeader.find('td#commit-description').empty().text(currCommit.message);
+    commitListHeader.find('td#commit-sha1').empty().text(currCommit.sha1);
+    commitListHeader.find('td#commit-date').empty().text(currCommit.lastUpdate);
+
+    $('.Repo-name').empty().text(`${ repository.owner } / ${ repository.repoName }`);
+    $('#branch-drop-down').empty().text(`Branch: ${ branch.name }`);
+
+    for(let key in repository.branches) {
+        if(repository.branches.hasOwnProperty(key)) {
+            branchesList.append(`<a class="dropdown-item" id="${ key }" onclick="updateRepo(this.id)" href="#">${ key }</a>`)
+        }
+    }
+
+    rootFolder.files.forEach(function (file) {
+        rootFolderFiles.append(buildListItem(file));
+        id = `#${ file.sha1 }`;
+        $(id).on('click', function () {
+            rootFolderFiles.find('a').each(function () {
+                $(this).removeClass('active');
+            });
+            $(this).addClass('active')
+        })
+    })
+}
+
+function buildListItem(file) {
+    let icon = file.type === 'FOLDER' ? 'folder-icon' : 'file-icon';
+    return `<a href="#" id="${ file.sha1 }" class="Commit-list-item list-group-item list-group-item-action">
+    <div id="table" class="table">
+        <div class="table-row">
+            <div id="file-name" class="table-cell"><img id="${ icon }" src="../../common/${ icon }.svg"/> ${ file.name }</div>
+            <div id="file-last-changer" class="table-cell">${ file.lastChanger }</div>
+            <div id="file-sha1" class="table-cell">${ file.sha1 }</div>
+            <div id="file-last-update" class="table-cell">${ file.lastUpdate }</div>
+        </div>
+    </div>
+</a>`;
 }

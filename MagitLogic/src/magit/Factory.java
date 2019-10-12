@@ -153,7 +153,7 @@ public class Factory {
     }
 
     void createFolderFromCommit(Commit i_Commit, String i_Location) {
-        String rootFolderSha1    = i_Commit.getRootFolderSHA1();
+        String rootFolderSha1    = i_Commit.getRootFolderSha1();
         Folder rootFolder        = engine.getActiveRepository().getFolders().get(rootFolderSha1);
 
         createWcRec(rootFolder, i_Location);
@@ -210,13 +210,13 @@ public class Factory {
         }
 
         // Setting root folder
-        String rootFolderSha1 = i_Commit.getRootFolderSHA1();
+        String rootFolderSha1 = i_Commit.getRootFolderSha1();
         Folder rootFolder     = engine.getActiveRepository().getFolders().get(rootFolderSha1);
         String objectsPath    = Paths.get(engine.getActiveRepository().getLocationPath(), ".magit", "objects").toString();
         rootFolderSha1        = spreadCommitAndSetNewSha1sRec(rootFolder, "", i_Commit.getLastUpdate(), engine.getRepositoryPath(), false);
 
         engine.getActiveRepository().getFolders().put(rootFolderSha1, rootFolder);
-        i_Commit.setRootFolderSHA1(rootFolderSha1);
+        i_Commit.setRootFolderSha1(rootFolderSha1);
 
         // Zip and files management
         String commitSha1 = DigestUtils.sha1Hex(i_Commit.toStringForSha1());
@@ -333,7 +333,7 @@ public class Factory {
 
     Map<String, String> createPathToSha1MapFromCommit(Commit i_Commit) {
         HashMap<String, String> map = new HashMap<>();
-        Folder rootFolder = engine.getActiveRepository().getFolders().get(i_Commit.getRootFolderSHA1());
+        Folder rootFolder = engine.getActiveRepository().getFolders().get(i_Commit.getRootFolderSha1());
 
         createCurrentCommitPathToSha1MapRec(rootFolder, engine.getRepositoryPath(), map);
 

@@ -56,6 +56,7 @@ public class ImportRepoServlet extends HttpServlet {
             out.print(toOut);
             out.flush();
         } else {
+            engine.getActiveRepository().setOwner(ServletsUtils.getUsersManager(getServletContext()).getLoggedInUser().getName());
             // לעדכן את הרפוזיטורי הנוכחי של המשתמש
             // להוסיף לרשימת הרפוזיטוריס של המשתמש
         }
