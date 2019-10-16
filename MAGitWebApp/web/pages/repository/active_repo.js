@@ -17,6 +17,8 @@ let btnUpload =
     </button>`;
 let messagesForm ='<ul id="form-messages"></ul>';
 let repository = null;
+let recentFolderSha1 = null;
+let prevFoldersStack = [];
 
 $(onLoad);
 
@@ -259,20 +261,25 @@ function onUpdateRepoError(response) {
 function onUpdateRepoSuccess(response) {
     if(response !== 'User has no repositories') {
         repository = response;
-        updateRepo(repository.headBranch.name)
+        updateRepo(repository.headBranch.name);
+        $('#download').on('click', () => window.location.href = `download?repository=${ repository.repoName }`);
     }
+}
+
+function exportXmlErrorFunc(response) {
+
+}
+
+function exportXmlSuccessFunc(response) {
+
 }
 
 function updateRepo(branchName) {
     let branch = repository.branches[branchName];
     let commitListHeader = $('#commit-list-header');
     let currCommit = repository.commits[branch.pointedCommitSha1];
-    let rootFolder = repository.folders[currCommit.rootFolderSha1];
     let branchesList = $('.Branches');
-    let rootFolderFiles = $('#root-folder-files');
-
     branchesList.empty();
-    rootFolderFiles.empty();
 
     commitListHeader.find('span#commiter-name').empty().text(currCommit.lastChanger);
     commitListHeader.find('div.commit-description').empty().text(currCommit.message);
@@ -288,28 +295,78 @@ function updateRepo(branchName) {
         }
     }
 
-    rootFolder.files.forEach(function (file) {
-        rootFolderFiles.append(buildListItem(file));
+    updateRootFolder(currCommit.rootFolderSha1);
+}
+
+function updateRootFolder(folderSha1) {
+    let folder = repository.folders[folderSha1];
+    let folderFiles = $('#root-folder-files');
+    folderFiles.empty();
+
+    if(folder.isRoot === false && prevFoldersStack.length > 0) {
+        folderFiles.append(
+            `<a href="#" id="${ prevFoldersStack[prevFoldersStack.length - 1] }" onclick="openPrevFolder()" class="Commit-list-item list-group-item list-group-item-action">
+    <div class="Table">
+        <div class="table-row">
+            <div class="table-cell prev-folder">
+                <span class="Back-caret-left"/> Back
+            </div>
+        </div>
+    </div>
+</a>`);
+    }
+
+    sortFiles(folder.files);
+
+    folder.files.forEach(function (file) {
+        folderFiles.append(buildListItem(file));
         id = `#${ file.sha1 }`;
         $(id).on('click', function () {
-            rootFolderFiles.find('a').each(function () {
+            folderFiles.find('a').each(function () {
                 $(this).removeClass('active');
             });
             $(this).addClass('active')
         })
-    })
+    });
+
+    recentFolderSha1 = folderSha1;
 }
 
 function buildListItem(file) {
     let icon = file.type === 'FOLDER' ? 'folder-icon' : 'file-icon';
-    return `<a href="#" id="${ file.sha1 }" class="Commit-list-item list-group-item list-group-item-action">
-    <div id="table" class="table">
+    let attributes = file.type === 'FOLDER' ? `href="#" onclick="openFolder('${ file.sha1 }')"` : `href="#${ file.sha1 }-content" data-toggle="collapse" aria-expanded="false" aria-controls="${ file.sha1 }-content"`;
+    let expander = file.type === 'FOLDER' ? '' : `<div class="collapse" id="${ file.sha1 }-content"><div class="blob-content card card-body">${ repository.blobs[file.sha1].text }</div></div>`;
+
+    return `<a ${ attributes } role="button" id="${ file.sha1 }" class="Commit-list-item list-group-item list-group-item-action">
+    <div class="Table">
         <div class="table-row">
             <div class="table-cell file-name"><img id="${ icon }" src="../../common/${ icon }.svg"/> ${ file.name }</div>
             <div class="table-cell file-last-changer">${ file.lastChanger }</div>
             <div class="table-cell file-sha1">${ file.sha1 }</div>
-            <div class="table-cell file-last-update">${ file.lastUpdate }</div>
+            <div class="table-cell file-last-update">${ file.lastUpdate }</div>    
         </div>
     </div>
-</a>`;
+</a>
+${ expander }`;
+}
+
+function openPrevFolder() {
+    updateRootFolder(prevFoldersStack.pop());
+}
+
+function openFolder(sha1) {
+    prevFoldersStack.push(recentFolderSha1);
+    updateRootFolder(sha1);
+}
+
+function sortFiles(files) {
+    files.sort(function (file1, file2) {
+        if(file1.type === file2.type) {
+            return file2.creationTimeMillis - file1.creationTimeMillis;
+        } else if(file1.type === 'FOLDER' && file2.type !== 'FOLDER') {
+            return -1;
+        } else if(file1.type !== 'FOLDER' && file2.type === 'FOLDER') {
+            return 1;
+        }
+    });
 }

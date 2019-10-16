@@ -2,6 +2,7 @@ body, html {
     margin: 0;
     padding: 0;
     font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji;
+    overflow-x: hidden;
 }
 
 .Container {
@@ -98,6 +99,10 @@ img {
     padding-top: 30px;
     margin-bottom: 30px;
     border: 1px solid #dee2e6;
+}
+
+div > .tab-content {
+    margin-bottom: 70px;
 }
 
 .Magit-body {
@@ -229,13 +234,26 @@ input[type=password] {
     -webkit-transform: rotate(45deg);
 }
 
-.Back-caret {
-    border: solid black;
-    border-width: 2px 2px 0 0;
+.Back-caret,
+.Back-caret-left {
     display: inline-block;
     padding: 3px;
     transform: rotate(45deg);
     -webkit-transform: rotate(45deg);
+}
+
+.Back-caret {
+    border: solid black;
+    border-width: 2px 2px 0 0;
+}
+
+.Back-caret-left {
+    border: solid #495057;
+    border-width: 0 0 2px 2px;
+}
+
+.prev-folder {
+    font-weight: bold;
 }
 
 .SignInOrUp {
@@ -483,13 +501,13 @@ a:hover {
     width: 100%;
 }
 
-.table {
+.Table {
     position: relative;
     width: 100%;
     display: table;
 }
 
-.table .table-row {
+.Table .table-row {
     position: relative;
     display: table-row;
 }
@@ -498,7 +516,7 @@ a:hover {
     text-align: right;
 }
 
-.table .table-cell {
+.Table .table-cell {
     position: relative;
     display: table-cell;
     padding-left: 10px;
@@ -506,8 +524,28 @@ a:hover {
     word-break: break-word;
 }
 
-#table,
-#table-commit {
-    padding: 0;
-    margin: 0;
+div > .blob-content {
+    background-color: #f0f0f0;
+    height: 400px;
+    white-space: pre;
+    overflow-y: auto;
+    padding-bottom: 2px;
+    padding-top: 2px;
+}
+
+div > .blob-content::-webkit-scrollbar {
+    width: 12px;
+    background-color: #f0f0f0;
+}
+
+div > .blob-content::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+    border-radius: 10px;
+    background-color: #f0f0f0;
+}
+
+div > .blob-content::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.3);
+    background-color: #555;
 }

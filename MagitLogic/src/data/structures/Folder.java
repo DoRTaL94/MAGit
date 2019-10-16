@@ -92,6 +92,7 @@ public class Folder implements IRepositoryFile {
         private eFileType type;
         private String lastChanger;
         private String lastUpdate;
+        private long creationTimeMillis;
 
         @Override
         public String toString(){
@@ -146,12 +147,19 @@ public class Folder implements IRepositoryFile {
             return name.compareTo(i_Data.getName());
         }
 
+        public void setCreationTimeMillis(long i_Millis) {
+            creationTimeMillis = i_Millis;
+        }
+
+        public long getCreationTimeMillis() { return creationTimeMillis; }
+
         public static Folder.Data Parse(File i_File, String i_Sha1) {
             Folder.Data data = new Folder.Data();
             boolean isFolder = i_File.isDirectory();
 
             data.setFileType(isFolder ? eFileType.FOLDER : eFileType.BLOB);
             data.setName(i_File.getName());
+            data.setCreationTimeMillis(i_File.lastModified());
             data.setlastUpdate(new SimpleDateFormat(Engine.DATE_FORMAT).format(new Date(i_File.lastModified())));
             data.setLastChanger(Engine.Creator.getInstance().getCurrentUserName());
             data.setSHA1(i_Sha1);

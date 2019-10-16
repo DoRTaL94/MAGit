@@ -14,60 +14,10 @@
     <facet type="web" name="Web2">
       <configuration>
         <descriptors>
-          <deploymentDescriptor name="web.xml" url="file://$MODULE_DIR$/src/lib/apache-tomcat-8.5.46/conf/web.xml" />
+          <deploymentDescriptor name="web.xml" url="file://$MODULE_DIR$/src/lib/apache-tomcat-8.5.23/conf/web.xml" />
         </descriptors>
         <webroots>
-          <root url="file://$MODULE_DIR$/src/lib/apache-tomcat-8.5.46/conf" relative="/WEB-INF" />
-        </webroots>
-      </configuration>
-    </facet>
-    <facet type="web" name="Web3">
-      <configuration>
-        <descriptors>
-          <deploymentDescriptor name="web.xml" url="file://$MODULE_DIR$/src/lib/apache-tomcat-8.5.46/webapps/docs/appdev/sample/web/WEB-INF/web.xml" />
-        </descriptors>
-        <webroots>
-          <root url="file://$MODULE_DIR$/src/lib/apache-tomcat-8.5.46/webapps/docs/appdev/sample/web" relative="/" />
-        </webroots>
-      </configuration>
-    </facet>
-    <facet type="web" name="Web4">
-      <configuration>
-        <descriptors>
-          <deploymentDescriptor name="web.xml" url="file://$MODULE_DIR$/src/lib/apache-tomcat-8.5.46/webapps/host-manager/WEB-INF/web.xml" />
-        </descriptors>
-        <webroots>
-          <root url="file://$MODULE_DIR$/src/lib/apache-tomcat-8.5.46/webapps/host-manager" relative="/" />
-        </webroots>
-      </configuration>
-    </facet>
-    <facet type="web" name="Web5">
-      <configuration>
-        <descriptors>
-          <deploymentDescriptor name="web.xml" url="file://$MODULE_DIR$/src/lib/apache-tomcat-8.5.46/webapps/docs/WEB-INF/web.xml" />
-        </descriptors>
-        <webroots>
-          <root url="file://$MODULE_DIR$/src/lib/apache-tomcat-8.5.46/webapps/docs" relative="/" />
-        </webroots>
-      </configuration>
-    </facet>
-    <facet type="web" name="Web6">
-      <configuration>
-        <descriptors>
-          <deploymentDescriptor name="web.xml" url="file://$MODULE_DIR$/src/lib/apache-tomcat-8.5.46/webapps/ROOT/WEB-INF/web.xml" />
-        </descriptors>
-        <webroots>
-          <root url="file://$MODULE_DIR$/src/lib/apache-tomcat-8.5.46/webapps/ROOT" relative="/" />
-        </webroots>
-      </configuration>
-    </facet>
-    <facet type="web" name="Web7">
-      <configuration>
-        <descriptors>
-          <deploymentDescriptor name="web.xml" url="file://$MODULE_DIR$/src/lib/apache-tomcat-8.5.46/webapps/manager/WEB-INF/web.xml" />
-        </descriptors>
-        <webroots>
-          <root url="file://$MODULE_DIR$/src/lib/apache-tomcat-8.5.46/webapps/manager" relative="/" />
+          <root url="file://$MODULE_DIR$/src/lib/apache-tomcat-8.5.23/conf" relative="/WEB-INF" />
         </webroots>
       </configuration>
     </facet>
@@ -81,6 +31,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="gson-2.8.5" level="project" />
     <orderEntry type="module" module-name="MagitLogic" />
-    <orderEntry type="library" scope="PROVIDED" name="Tomcat 8.5.46" level="application_server_libraries" />
+    <orderEntry type="library" scope="PROVIDED" name="Tomcat 8.5.23" level="application_server_libraries" />
   </component>
 </module>
