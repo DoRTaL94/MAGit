@@ -16,7 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-@WebServlet("/pages/repository/update_repo")
+@WebServlet("/pages/repository/update-repo")
 public class UpdateRepoServlet extends HttpServlet {
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {

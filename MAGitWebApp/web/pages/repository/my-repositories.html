@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Repositories</title>
+    <link rel="stylesheet" type="text/css" href="../../common/css/Theme.css"/>
+    <link rel="stylesheet" type="text/css" href="../../common/css/bootstrap.min.css">
+    <script type="text/javascript" src="../../common/js/jquery-3.4.1.js"></script>
+    <script type="text/javascript" src="../../common/js/popper.min.js"></script>
+    <script type="text/javascript" src="../../common/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="my-repositories.js"></script>
+    <script type="text/javascript" src="active-repo.js"></script>
+</head>
+<body>
+<div class="Container">
+    <div class="Header">
+        <div class="Header-icon Header-item">
+            <img src="../../common/MAGit.png" alt="magit-icon"/>
+            <a href="active-repo.html" id="home-link">Home</a>
+        </div>
+        <div id="header-drop-downs">
+            <nav>
+                <ul>
+                    <li>
+                        <div>
+                            <div class="Header-item">
+                                <img class="Notification-icon" src="../../common/notification-icon.svg" alt="notifications"/>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="Repo-options Header-item">
+                            <div class="Options-plus-sign">
+                                <div class="Bar Horizontal"></div>
+                                <div class="Bar Vertical"></div>
+                            </div>
+                            <span class="Dropdown-caret Repo"></span>
+                        </div>
+                        <ul>
+                            <li><a id="import-repo-xml" href="#">Import repository from xml</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <div class="User-options Header-item">
+                            <img src="../../common/user-icon.png" alt="user-icon"/>
+                            <span class="Dropdown-caret"></span>
+                        </div>
+                        <ul>
+                            <li><a id="my-repositories" href="#">My repositories</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+    <div class="Content">
+        <div class="Magit-body">
+            <div class="Table">
+                <div class="table-row">
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

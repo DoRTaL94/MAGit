@@ -7,7 +7,7 @@
     <script type="text/javascript" src="../../common/js/jquery-3.4.1.js"></script>
     <script type="text/javascript" src="../../common/js/popper.min.js"></script>
     <script type="text/javascript" src="../../common/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="active_repo.js"></script>
+    <script type="text/javascript" src="active-repo.js"></script>
     <title>MAGit</title>
 </head>
 <body>
@@ -15,7 +15,7 @@
     <div class="Header">
         <div class="Header-icon Header-item">
             <img src="../../common/MAGit.png" alt="magit-icon"/>
-            <a href="active_repo.html" id="home-link">Home</a>
+            <a href="active-repo.html" id="home-link">Home</a>
         </div>
         <div id="header-drop-downs">
         <nav>
@@ -36,7 +36,6 @@
                         <span class="Dropdown-caret Repo"></span>
                     </div>
                     <ul>
-                        <li><a href="#">Create new repository</a></li>
                         <li><a id="import-repo-xml" href="#">Import repository from xml</a></li>
                     </ul>
                 </li>
@@ -46,9 +45,7 @@
                         <span class="Dropdown-caret"></span>
                     </div>
                     <ul>
-                        <li><a href="#">My repositories</a></li>
-                        <li><a href="#">Settings</a></li>
-                        <li><a href="#">Help</a></li>
+                        <li><a id="my-repositories" href="#">My repositories</a></li>
                     </ul>
                 </li>
             </ul>
@@ -69,6 +66,11 @@
         </div>
         <div class="tab-content Magit-body">
             <div class="tab-pane fade show active" id="code" role="tabpanel" aria-labelledby="code-tab">
+                <div id="repo-details">
+                    <div id="branches-count" class="repo-detail">asdasdasd</div>
+                    <div id="commits-count" class="repo-detail">asdasdasdads</div>
+                    <div class="Separator Green"></div>
+                </div>
                 <nav class="navbar navbar-expand-lg navbar-light bg-light">
                     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
                         <span class="navbar-toggler-icon"></span>
@@ -94,12 +96,12 @@
                 <div class="list-group Commits-list">
                     <a id="commit-list-header" class="list-group-item disabled">
                         <div class="Table">
-                            <div class="table-row">
-                                <div class="table-cell">Last commit:</div>
-                                <div class="table-cell"><img id="commiter-icon" src="../../common/user-icon.png" alt="commiter icon"/><span id="commiter-name"></span></div>
-                                <div class="table-cell commit-description"></div>
-                                <div class="table-cell commit-sha1"></div>
-                                <div class="table-cell file-last-update"></div>
+                            <div class="Table-row">
+                                <div class="Table-cell">Pointed commit:</div>
+                                <div class="Table-cell"><img id="commiter-icon" src="../../common/user-icon.png" alt="commiter icon"/><span id="commiter-name"></span></div>
+                                <div class="Table-cell commit-description"></div>
+                                <div class="Table-cell commit-sha1"></div>
+                                <div class="Table-cell file-last-update"></div>
                             </div>
                         </div>
                     </a>

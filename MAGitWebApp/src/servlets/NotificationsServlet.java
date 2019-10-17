@@ -18,7 +18,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-@WebServlet("/pages/repository/active_repo")
+@WebServlet("/pages/repository/active-repo")
 public class NotificationsServlet extends HttpServlet {
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");

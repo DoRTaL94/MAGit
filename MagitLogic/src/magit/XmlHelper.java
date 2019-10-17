@@ -67,8 +67,7 @@ public class XmlHelper {
             if(m_XmlPath.contains("magit-ex3")) {
                 createFolder(m_XmlPath);
                 m_MagitRepository = LoadMagitRepository(m_XmlInputStream);
-                String folderName = new File(m_MagitRepository.getLocation()).getName();
-                m_MagitRepository.setLocation(Paths.get(m_XmlPath, folderName).toString());
+                m_MagitRepository.setLocation(Paths.get(m_XmlPath, m_MagitRepository.getName()).toString());
             } else {
                 m_MagitRepository = LoadMagitRepository(new FileInputStream(m_XmlPath));
             }

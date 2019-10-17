@@ -107,7 +107,7 @@ div > .tab-content {
 
 .Magit-body {
     position: relative;
-    width: 60%;
+    width: 70%;
     margin: auto;
     padding: 10px 10px 0;
 }
@@ -118,11 +118,12 @@ div > .tab-content {
 }
 
 .Commits-list {
-    margin-top: 20px;
+    margin-top: 10px;
 }
 
 #commit-list-header {
-    background-color: rgba(0, 131, 255, 0.15);
+    background-color: rgb(192, 231, 255);
+    border-radius: 0;
 }
 
 .Last-commit {
@@ -135,10 +136,6 @@ div > .tab-content {
 #folder-icon {
     height: 20px;
     width: 20px;
-}
-
-.Commit-list-item {
-    font-size: 0.9em;
 }
 
 #form-messages {
@@ -507,17 +504,18 @@ a:hover {
     display: table;
 }
 
-.Table .table-row {
+.Table .Table-row {
     position: relative;
     display: table-row;
 }
 
-.file-last-update {
-    text-align: right;
+.Table > .Table-row > .file-last-update {
+    float: right;
 }
 
-.Table .table-cell {
+.Table .Table-cell {
     position: relative;
+    float: left;
     display: table-cell;
     padding-left: 10px;
     padding-right: 10px;
@@ -529,8 +527,27 @@ div > .blob-content {
     height: 400px;
     white-space: pre;
     overflow-y: auto;
-    padding-bottom: 2px;
-    padding-top: 2px;
+    padding: 0;
+    border-radius: 0;
+}
+
+div > .blob-content-edit-mode {
+    background-color: #f0f0f0;
+    height: 400px;
+    white-space: pre;
+    overflow-y: auto;
+    padding: 0;
+    border: 2px solid #5ab2ff;
+    border-radius: 0;
+}
+
+.Editable {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    padding-top: 15px;
+    padding-left: 25px;
+    z-index: 0;
 }
 
 div > .blob-content::-webkit-scrollbar {
@@ -539,13 +556,158 @@ div > .blob-content::-webkit-scrollbar {
 }
 
 div > .blob-content::-webkit-scrollbar-track {
-    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
-    border-radius: 10px;
     background-color: #f0f0f0;
 }
 
 div > .blob-content::-webkit-scrollbar-thumb {
-    border-radius: 10px;
-    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.3);
-    background-color: #555;
+    background-color: #68c1ff;
+}
+
+#head-branch-mark {
+    height: 12px;
+    width: 10px;
+    margin: 0;
+    padding: 0;
+}
+
+#repo-details {
+    border-radius: 7px 7px 0 0;
+    background-color: #e1ffdb;
+    text-align: center;
+}
+
+.repo-detail {
+    position: relative;
+    color: #595959;
+    padding: .5rem 1rem;
+    display: inline-block;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.Separator {
+    height: 3px;
+    margin-bottom: 10px;
+}
+
+.Green {
+    background-color: #b9eca8;
+}
+
+.Editor {
+    z-index: 1;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 10px;
+    margin-right: 10px;
+}
+
+.Table > .Table-row > .Table-cell > .Table-row > .Table-cell,
+.Table > .Table-row > .Table-cell > .Table-row > .Table-cell,
+.Table > .Table-row > .Table-cell > .Table-row > .Table-cell {
+    padding: 0;
+    margin: 0;
+}
+
+.Save,
+.Edit,
+.Delete {
+    z-index: 2;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.blob-content > .Editor > .Save,
+.blob-content > .Editor > .Edit {
+    margin-left: 4px;
+}
+
+.Delete {
+    background-color: #ff9997;
+    border: 1.5px solid #b46058;
+}
+
+.Delete:hover {
+    background-color: #ff736b;
+    border: 1.5px solid #b46058;
+}
+
+.Delete:focus {
+    outline: 0;
+}
+
+.Delete:active {
+    background-color: #ff9997;
+}
+
+.Save,
+.Edit {
+    background-color: #e0e0e0;
+    border: 1.5px solid #b4b4b4;
+}
+
+.Edit-selected {
+    z-index: 1;
+    margin-left: 10px;
+    background-color: #95dfff;
+    border: 1.5px solid #5ab2ff;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.Save:disabled {
+    cursor: default;
+}
+
+.Save:focus {
+    outline: 0;
+    border: 1.5px solid #5ab2ff;
+}
+
+.Edit:focus {
+    outline: 0;
+}
+
+.Commit-list-item {
+    position: relative;
+    font-size: 0.9em;
+}
+
+div > .Commit-list-item > .Item-link {
+    border-radius: 0;
+}
+
+div > .active > a,
+div > .active > a:hover,
+div > .active > a:focus{
+    color: white;
+}
+
+.edit-mode-pencil {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 20px;
+    height: 20px;
+    -ms-transform: translate(-110%, -50%);
+    transform: translate(-110%, -50%);
+    cursor: pointer;
+}
+
+div > .edit-mode-content {
+    background-color: #fbfbfb;
+    border-radius: 0;
+}
+
+.Table > .Table-row > .Table-cell > label > input {
+    margin-left: 10px;
+    margin-right: 10px;
+    background-color: #ffffff;
+    border: 1px solid #6b7683;
+}
+
+.edit-mode-content > .Table-row > .Table-cell {
+    padding-left: 3px;
+    padding-right: 3px;
 }
