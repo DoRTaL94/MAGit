@@ -1,9 +1,7 @@
 package utils;
 
-import IO.FileUtilities;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import data.structures.Blob;
 import data.structures.Folder;
 import data.structures.Repository;
 import data.structures.eFileType;
@@ -16,8 +14,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.io.File;
 import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class ServletsUtils {
     private static final String USER_MANAGER_ATTRIBUTE_NAME = "usersManager";
@@ -71,13 +67,13 @@ public class ServletsUtils {
                     path = Paths.get(path, fileData.getName()).toString();
 
                     if (fileData.getFileType().equals(eFileType.FOLDER)) {
-                        root = folders.get(fileData.getSHA1());
-
                         if(i + 1  == reqDataSize - 1) {
-                            res = i_ApplyOnFile.apply(new File(path), fileData);
+                            res = i_ApplyOnFile.apply(root, new File(path), fileData);
                         }
+
+                        root = folders.get(fileData.getSHA1());
                     } else {
-                        res = i_ApplyOnFile.apply(new File(path), fileData);
+                        res = i_ApplyOnFile.apply(root, new File(path), fileData);
                     }
                 }
             }

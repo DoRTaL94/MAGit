@@ -5,12 +5,13 @@ import data.structures.Branch;
 import data.structures.Repository;
 import javafx.beans.property.StringProperty;
 
+import javax.xml.bind.JAXBException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 
 public interface IEngine {
-    void loadRepositoryFromXml(String i_XmlPath, StringProperty i_ProgressProperty) throws FileNotFoundException, RepositoryAlreadyExistsException, xmlErrorsException, FolderInLocationAlreadyExistsException;
+    void loadRepositoryFromXml(String i_XmlPath, StringProperty i_ProgressProperty) throws FileNotFoundException, RepositoryAlreadyExistsException, xmlErrorsException, FolderInLocationAlreadyExistsException, JAXBException;
     void loadDataFromRepository(String i_RepositoryFullPath) throws IOException;
     void changeActiveRepository(String i_RepositoryFullPath) throws NotRepositoryFolderException, IOException;
     List<String> showCurrentCommitFiles();

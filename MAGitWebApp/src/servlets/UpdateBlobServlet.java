@@ -33,7 +33,7 @@ public class UpdateBlobServlet extends HttpServlet {
         }
     }
 
-    private boolean changeBlobContent(File i_Blob, Folder.Data i_Data) {
+    private boolean changeBlobContent(Folder i_Parent, File i_Blob, Folder.Data i_Data) {
         boolean res =  false;
 
         if(i_Blob.exists()) {

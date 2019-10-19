@@ -30,6 +30,8 @@ import puk.team.course.magit.ancestor.finder.AncestorFinder;
 import resources.jaxb.schema.generated.*;
 import string.StringUtilities;
 
+import javax.xml.bind.JAXBException;
+
 public class Engine implements IEngine {
     public static final String DATE_FORMAT  = "dd.MM.yyyy-HH:mm:ss:SSS";
     public final StringProperty currentNameProperty;
@@ -362,7 +364,7 @@ public class Engine implements IEngine {
     }
 
     @Override
-    public void loadRepositoryFromXml(String i_XmlPath, StringProperty i_ProgressProperty) throws FileNotFoundException, RepositoryAlreadyExistsException, xmlErrorsException, FolderInLocationAlreadyExistsException {
+    public void loadRepositoryFromXml(String i_XmlPath, StringProperty i_ProgressProperty) throws FileNotFoundException, RepositoryAlreadyExistsException, xmlErrorsException, FolderInLocationAlreadyExistsException, JAXBException {
         Path xmlPath;
         i_ProgressProperty.set("Reading xml file...");
         sleep();
@@ -381,7 +383,7 @@ public class Engine implements IEngine {
         loadRepositoryFromXml(xmlChecker, i_ProgressProperty);
     }
 
-    public void LoadRepositoryFromXml(InputStream i_XmlStream, String i_CurrentUserName, StringProperty i_ProgressProperty) throws FileNotFoundException, RepositoryAlreadyExistsException, xmlErrorsException, FolderInLocationAlreadyExistsException {
+    public void LoadRepositoryFromXml(InputStream i_XmlStream, String i_CurrentUserName, StringProperty i_ProgressProperty) throws FileNotFoundException, RepositoryAlreadyExistsException, xmlErrorsException, FolderInLocationAlreadyExistsException, JAXBException {
         Path xmlPath;
         i_ProgressProperty.set("Reading xml file...");
         sleep();
@@ -391,12 +393,12 @@ public class Engine implements IEngine {
         loadRepositoryFromXml(xmlChecker, i_ProgressProperty);
     }
 
-    private void loadRepositoryFromXml(XmlHelper i_XmlHelper, StringProperty i_ProgressProperty) throws FileNotFoundException, RepositoryAlreadyExistsException, FolderInLocationAlreadyExistsException, xmlErrorsException {
+    private void loadRepositoryFromXml(XmlHelper i_XmlHelper, StringProperty i_ProgressProperty) throws FileNotFoundException, RepositoryAlreadyExistsException, FolderInLocationAlreadyExistsException, xmlErrorsException, JAXBException {
         remoteRepositoryClonedProperty.set(false);
-        this.Clear();
         List<String> errors = i_XmlHelper.RunCheckOnXmlFile();
 
         if(errors.size() == 0) {
+            this.Clear();
             i_ProgressProperty.set("Xml is valid.");
             sleep();
             MagitRepository magitRepository = i_XmlHelper.getMagitRepository();

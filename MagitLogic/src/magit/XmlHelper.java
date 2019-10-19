@@ -40,7 +40,7 @@ public class XmlHelper {
         return m_XmlPath != null && m_XmlPath.endsWith(".xml") || m_XmlPath.contains("magit-ex3");
     }
 
-    public List<String> RunCheckOnXmlFile() throws FileNotFoundException {
+    public List<String> RunCheckOnXmlFile() throws FileNotFoundException, JAXBException {
         List<String> errors;
 
         if (IsValidXmlPath()) {
@@ -60,24 +60,27 @@ public class XmlHelper {
         return (MagitRepository)u.unmarshal(i_XmlInputStream);
     }
 
-    private List<String> LoadRepositoryFromXml() throws FileNotFoundException {
+    private List<String> LoadRepositoryFromXml() throws FileNotFoundException, JAXBException {
         List<String> errors = new ArrayList<>();
 
-        try {
-            if(m_XmlPath.contains("magit-ex3")) {
-                createFolder(m_XmlPath);
+        if(m_XmlPath.contains("magit-ex3")) {
+            createFolder(m_XmlPath);
+            MagitRepository temp = m_MagitRepository;
+
+            try {
                 m_MagitRepository = LoadMagitRepository(m_XmlInputStream);
-                m_MagitRepository.setLocation(Paths.get(m_XmlPath, m_MagitRepository.getName()).toString());
-            } else {
-                m_MagitRepository = LoadMagitRepository(new FileInputStream(m_XmlPath));
+            } catch (JAXBException e) {
+                m_MagitRepository = temp;
+                throw e;
             }
 
-            errors.addAll(CheckErrorsInRepo(m_MagitRepository));
-            errors.addAll(CheckDuplicateKeyInMagitRepo(m_MagitRepository));
+            m_MagitRepository.setLocation(Paths.get(m_XmlPath, m_MagitRepository.getName()).toString());
+        } else {
+            m_MagitRepository = LoadMagitRepository(new FileInputStream(m_XmlPath));
         }
-        catch (JAXBException e) {
-            e.printStackTrace();
-        }
+
+        errors.addAll(CheckErrorsInRepo(m_MagitRepository));
+        errors.addAll(CheckDuplicateKeyInMagitRepo(m_MagitRepository));
 
         return errors;
     }

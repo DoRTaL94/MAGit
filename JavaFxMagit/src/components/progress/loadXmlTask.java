@@ -11,6 +11,7 @@ import javafx.beans.property.StringProperty;
 import javafx.concurrent.Task;
 import magit.Engine;
 
+import javax.xml.bind.JAXBException;
 import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -52,6 +53,8 @@ public class loadXmlTask extends Task {
                 this.cancel();
             } catch (FolderInLocationAlreadyExistsException e) {
                 FolderInLocationAlreadyExistsProperty.set(e.getMessage());
+                this.cancel();
+            } catch (JAXBException e) {
                 this.cancel();
             }
         }

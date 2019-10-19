@@ -1,9 +1,12 @@
 package IO;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -11,10 +14,9 @@ import java.util.zip.ZipOutputStream;
 
 public class FileUtilities {
     public static void WriteToFile(String i_FilePath, String i_Content) {
-        try(BufferedWriter writer = new BufferedWriter(new FileWriter(i_FilePath))) {
+        try(BufferedWriter writer = new BufferedWriter(Files.newBufferedWriter(Paths.get(i_FilePath)))) {
             writer.write(i_Content);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -26,7 +28,7 @@ public class FileUtilities {
             ZipEntry zipEntry = new ZipEntry(i_FileToZipName);
             out.putNextEntry(zipEntry);
 
-            byte[] data = i_Content.getBytes(Charset.forName("UTF-8"));
+            byte[] data = i_Content.getBytes(StandardCharsets.UTF_8);
             out.write(data, 0, data.length);
             out.closeEntry();
         }
@@ -78,5 +80,9 @@ public class FileUtilities {
         }
 
         return content;
+    }
+
+    public static boolean removeFile(File i_File) {
+        return FileUtils.deleteQuietly(i_File);
     }
 }

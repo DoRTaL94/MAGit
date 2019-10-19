@@ -8,15 +8,15 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 
 public class Folder implements IRepositoryFile {
-    private final List<Data> files = new ArrayList<>();
+    private final LinkedList<Data> files = new LinkedList<>();
     private boolean isRoot = false;
 
-    public final List<Data> getFiles() {
+    public final LinkedList<Data> getFiles() {
         return files;
     }
 

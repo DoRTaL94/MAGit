@@ -20,14 +20,14 @@ public class UpdateFileNameServlet extends HttpServlet {
         reqData = ServletsUtils.getReqData(request);
         boolean isSuccess = ServletsUtils.applyOnDbFile(ServletsUtils.getUsersManager(getServletContext()).getLoggedInUser().getName(), reqData, this::changeFileName);
 
-        if(isSuccess) {
+        if(!isSuccess) {
             response.setContentType("text/html");
             PrintWriter out = response.getWriter();
             out.print("failed to update");
         }
     }
 
-    private boolean changeFileName(File i_File, Folder.Data i_Data) {
+    private boolean changeFileName(Folder i_Parent, File i_File, Folder.Data i_Data) {
         boolean res = false;
         int reqDataSize = reqData.size();
         String newName = reqData.get(reqDataSize - 1);

@@ -1,13 +1,8 @@
 package servlets;
 
 import com.google.gson.Gson;
-import data.structures.Commit;
-import data.structures.Folder;
-import data.structures.IRepositoryFile;
 import data.structures.Repository;
 import magit.Engine;
-import users.UsersManager;
-import utils.ServletsUtils;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;

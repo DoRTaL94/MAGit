@@ -12,6 +12,7 @@ import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
+import javax.xml.bind.JAXBException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,7 +47,10 @@ public class ImportRepoServlet extends HttpServlet {
             errors.add(e.getMessage());
         } catch (xmlErrorsException e) {
             errors.addAll(e.getErrors());
-        } catch (FolderInLocationAlreadyExistsException ignored) {}
+        } catch (FolderInLocationAlreadyExistsException ignored) {
+        } catch (JAXBException e) {
+            errors.add("File is not xml file");
+        }
 
         if (errors.size() > 0) {
             response.setContentType("application/json;charset=UTF-8");

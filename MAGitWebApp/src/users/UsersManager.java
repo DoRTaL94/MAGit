@@ -6,6 +6,7 @@ import MagitExceptions.xmlErrorsException;
 import javafx.beans.property.SimpleStringProperty;
 import magit.Engine;
 
+import javax.xml.bind.JAXBException;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,13 +23,10 @@ public class UsersManager {
         nameToUserMap.put(i_Name, user);
     }
 
-    public void addRepo(String i_UserName, String i_XmlPath) {
-        try {
-            Engine.Creator.getInstance().loadRepositoryFromXml(i_XmlPath, new SimpleStringProperty());
-            // לבדוק אם הרפו כבר קיים
-            nameToUserMap.get(i_UserName).addRepo(Engine.Creator.getInstance().getActiveRepository());
-        } catch (FileNotFoundException | FolderInLocationAlreadyExistsException | xmlErrorsException | RepositoryAlreadyExistsException ignored) {
-        }
+    public void addRepo(String i_UserName, String i_XmlPath) throws FileNotFoundException, RepositoryAlreadyExistsException, JAXBException, xmlErrorsException, FolderInLocationAlreadyExistsException {
+        Engine.Creator.getInstance().loadRepositoryFromXml(i_XmlPath, new SimpleStringProperty());
+        // לבדוק אם הרפו כבר קיים
+        nameToUserMap.get(i_UserName).addRepo(Engine.Creator.getInstance().getActiveRepository());
     }
 
     public boolean isUserExists(String i_Name) {

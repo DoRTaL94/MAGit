@@ -343,17 +343,19 @@ function updateRootFolder(folderSha1) {
     sortFiles(folder.files);
 
     folder.files.forEach(function (file) {
-        folderFiles.append(buildListItem(file, isActiveBranch));
-        let editMode = `#edit-mode-${ file.sha1 }`;
-        let id = `#${ file.sha1 }`;
-        $(editMode).hover(onEditModeMouseEnter, onEditModeMouseLeave);
-        $(editMode).click(onEditModeClicked);
-        $(id).on('click', function () {
-            folderFiles.find('a').each(function () {
-                $(this).removeClass('active');
-            });
-            $(this).addClass('active')
-        })
+        if(file !== 'undefined') {
+            folderFiles.append(buildListItem(file, isActiveBranch));
+            let editMode = `#edit-mode-${file.sha1}`;
+            let id = `#file-${file.sha1}`;
+            $(editMode).hover(onEditModeMouseEnter, onEditModeMouseLeave);
+            $(editMode).click(onEditModeClicked);
+            $(id).on('click', function () {
+                folderFiles.find('a').each(function () {
+                    $(this).removeClass('active');
+                });
+                $(this).addClass('active')
+            })
+        }
     });
 
     recentFolderSha1 = folderSha1;
@@ -381,11 +383,51 @@ function onEditModeMouseLeave() {
 
 function buildListItem(file, isActiveBranch) {
     let icon = file.type === 'FOLDER' ? 'folder-icon' : 'file-icon';
-    let attributes = file.type === 'FOLDER' ? `href="#" onclick="openFolder('${ file.sha1 }')"` : `href="#content-${ file.sha1 }" data-toggle="collapse" aria-expanded="false" aria-controls="content-${ file.sha1 }"`;
-    let contentEditor = isActiveBranch ? `<div class="Editor"><button type="button" id="${ file.sha1 }-edit" class="Edit" onclick="editBlob('${ file.sha1 }')">Edit</button><button type="button" id="${ file.sha1 }-save" onclick="saveBlob('${ file.sha1 }')" class="Save" disabled>Save</button></div>` : '';
-    let editModeIcon = isActiveBranch ? `<a href="#edit-mode-content-${ file.sha1 }" data-toggle="collapse" aria-expanded="false" aria-controls="edit-mode-content-${ file.sha1 }"><img id="edit-mode-${ file.sha1 }" class="edit-mode-pencil" src="../${ASSETS_LOCATION}/edit-mode-pencil.svg" alt="edit-mode"/></a>` : '';
-    let editModeExpander = isActiveBranch ?
-`<div class="collapse" id="edit-mode-content-${ file.sha1 }">
+
+    return `<div class="Commit-list-item">
+    ${ buildEditModeIcon(file, isActiveBranch) }
+    <a ${ buildAtrributes(file) } id="file-${ file.sha1 }" role="button" class="Item-link list-group-item list-group-item-action">
+        <div class="Table">
+            <div class="Table-row">
+                <div class="Table-cell file-name"><img id="${ icon }" src="../${ASSETS_LOCATION}/${ icon }.svg"/> <span class="${ getFileExtension(file) }" id="file-name-${ file.sha1 }">${ file.name }</span></div>
+                <div class="Table-cell file-last-changer">${ file.lastChanger }</div>
+                <div class="Table-cell file-sha1">${ file.sha1 }</div>
+                <div class="Table-cell file-last-update">${ file.lastUpdate }</div>  
+            </div>
+        </div>
+    </a>
+    ${ buildEditModeExpander(file, isActiveBranch) }
+    ${ buildContentExpander(file, isActiveBranch) }
+</div>`;
+}
+
+function buildEditModeIcon(file, isActiveBranch) {
+    return isActiveBranch ?
+`<a href="#edit-mode-content-${ file.sha1 }" data-toggle="collapse" aria-expanded="false" aria-controls="edit-mode-content-${ file.sha1 }">
+    <img id="edit-mode-${ file.sha1 }" class="edit-mode-pencil" src="../${ASSETS_LOCATION}/edit-mode-pencil.svg" alt="edit-mode"/>
+</a>` : '';
+}
+
+function buildAtrributes(file) {
+    return file.type === 'FOLDER' ?
+        `href="#" onclick="openFolder('${ file.sha1 }')"`
+        : `href="#content-${ file.sha1 }" data-toggle="collapse" aria-expanded="false" aria-controls="content-${ file.sha1 }"`;
+}
+
+function getFileExtension(file) {
+    let fileExtension = '';
+
+    if(file.type !== 'FOLDER') {
+        let period = file.name.lastIndexOf('.');
+        fileExtension = file.name.substring(period);
+    }
+
+    return fileExtension;
+}
+
+function buildEditModeExpander(file, isActiveBranch) {
+    return isActiveBranch ?
+        `<div class="collapse" id="edit-mode-content-${ file.sha1 }">
     <div class="Table edit-mode-content card card-body">
         <div class="Table-row">
             <div class="Table-cell">
@@ -402,36 +444,22 @@ function buildListItem(file, isActiveBranch) {
         </div>  
     </div>
 </div>` : '';
-    let contentExpander = file.type === 'FOLDER' ? '' :
+}
+
+function buildContentExpander(file, isActiveBranch) {
+    let contentEditor = isActiveBranch ?
+`<div class="Editor">
+    <button type="button" id="${ file.sha1 }-edit" class="Edit" onclick="editBlob('${ file.sha1 }')">Edit</button>
+    <button type="button" id="${ file.sha1 }-save" onclick="saveBlob('${ file.sha1 }')" class="Save" disabled>Save</button>
+</div>` : '';
+
+    return file.type === 'FOLDER' ? '' :
 `<div class="collapse" id="content-${ file.sha1 }">
     <div class="blob-content card card-body">
         ${ contentEditor }
         <div class="Editable">${ repository.blobs[file.sha1].text }</div>
     </div>
 </div>`;
-
-    let fileExtension = '';
-
-    if(file.type !== 'FOLDER') {
-        let period = file.name.lastIndexOf('.');
-        fileExtension = file.name.substring(period);
-    }
-
-    return `<div class="Commit-list-item">
-    ${ editModeIcon }
-    <a ${ attributes } id="${ file.sha1 }" role="button" class="Item-link list-group-item list-group-item-action">
-        <div class="Table">
-            <div class="Table-row">
-                <div class="Table-cell file-name"><img id="${ icon }" src="../${ASSETS_LOCATION}/${ icon }.svg"/> <span class="${ fileExtension }" id="file-name-${ file.sha1 }">${ file.name }</span></div>
-                <div class="Table-cell file-last-changer">${ file.lastChanger }</div>
-                <div class="Table-cell file-sha1">${ file.sha1 }</div>
-                <div class="Table-cell file-last-update">${ file.lastUpdate }</div>  
-            </div>
-        </div>
-    </a>
-</div>
-${ editModeExpander }
-${ contentExpander }`;
 }
 
 function saveFileName(sha1) {
@@ -440,12 +468,12 @@ function saveFileName(sha1) {
     fileName.text(newName);
 
     updateFileData(sha1, 'POST', newName, 'update-file-name', null, null);
-    let file = getFileDataInCurrentDir(sha1);
+    let file = getFileDataInCurrentDir(sha1, recentFolderSha1);
     file.name = newName;
 }
 
-function getFileDataInCurrentDir(sha1) {
-    let files = repository.folders[recentFolderSha1].files;
+function getFileDataInCurrentDir(sha1, currFolderSha1) {
+    let files = repository.folders[currFolderSha1].files;
     let length = files.length;
     let file = null;
 
@@ -460,9 +488,37 @@ function getFileDataInCurrentDir(sha1) {
 }
 
 function deleteFile(sha1) {
+    let files = repository.folders[recentFolderSha1].files;
+    let length = files.length;
+    let file = getFileDataInCurrentDir(sha1, recentFolderSha1);
 
+    $('#root-folder-files').on('click', '.Delete', function() {
+        $(this).closest('.Commit-list-item').remove();
+    });
+
+    updateFileData(sha1, 'POST', '', 'delete-file', null, null);
+    deleteFileFromDb(file);
+
+    for(let i = 0; i < length; i++) {
+        if(sha1 === files[i].sha1) {
+            delete files[i];
+        }
+    }
 }
 
+function deleteFileFromDb(fileData) {
+    if(fileData.type === 'FOLDER') {
+        let folder = repository.folders[fileData.sha1];
+
+        folder.files.forEach(function (file) {
+            deleteFileFromDb(file);
+        });
+
+        delete repository.folders[fileData.sha1];
+    } else {
+        delete repository.blobs[fileData.sha1];
+    }
+}
 
 function saveBlob(sha1) {
     setSavedStyle(sha1);

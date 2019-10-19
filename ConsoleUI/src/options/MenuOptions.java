@@ -8,6 +8,8 @@ import menus.ActionItem;
 import menus.Menu;
 import menus.SubMenu;
 import org.apache.commons.io.FileUtils;
+
+import javax.xml.bind.JAXBException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -95,6 +97,9 @@ public class MenuOptions {
                     break;
                 } catch (IOException e) {
                     e.printStackTrace();
+                } catch (JAXBException e) {
+                    System.out.println("ERROR: File is not xml file.");
+                    System.out.println();
                 }
             }
         }));
