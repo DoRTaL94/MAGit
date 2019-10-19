@@ -1,11 +1,8 @@
 package servlets;
 
 import com.google.gson.Gson;
-import data.structures.Repository;
 import notifications.ForkNotification;
 import notifications.INotification;
-import notifications.NotificationManager;
-import users.User;
 import users.UsersManager;
 import utils.ServletsUtils;
 
@@ -18,7 +15,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-@WebServlet("/pages/repository/active-repo")
+@WebServlet("/pages/active-repo")
 public class NotificationsServlet extends HttpServlet {
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");

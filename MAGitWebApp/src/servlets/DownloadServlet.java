@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.nio.file.Paths;
 
-@WebServlet("/pages/repository/download")
+@WebServlet("/pages/download")
 public class DownloadServlet extends HttpServlet {
     private static final String DATABASE_LOCATION = "c:/magit-ex3";
     private static final String XML_DIR_NAME = "xml files";

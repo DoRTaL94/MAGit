@@ -1,20 +1,34 @@
-const HEADER_ITEM = "#header-drop-downs > nav > ul > li";
-const HEADER_LIST_ITEM = "#header-drop-downs > nav > ul > li > ul > li";
-const SERVER_ERROR_MESSAGE = '<li>' + "Failed to send data to the server..." + '</li>';
-const HOME = "../repository/active-repo.html";
+import { getMapSize, sortFiles } from './utils.js';
+
+window.uploadFile           = uploadFile;
+window.updateRepo           = updateRepo;
+window.openPrevFolder       = openPrevFolder;
+window.editBlob             = editBlob;
+window.saveBlob             = saveBlob;
+window.openFolder           = openFolder;
+window.saveFileName         = saveFileName;
+window.deleteFile           = deleteFile;
+
+const HEADER_ITEM           = "#header-drop-downs > nav > ul > li";
+const HEADER_LIST_ITEM      = "#header-drop-downs > nav > ul > li > ul > li";
+const SERVER_ERROR_MESSAGE  = '<li>' + "Failed to send data to the server..." + '</li>';
+const HOME                  = "../pages/active-repo.html";
+const ASSETS_LOCATION       = "assets";
 
 let uploadForm =
-    `<form id="uploadForm" action="import" enctype="multipart/form-data" method="POST">
-        <input class="File-chooser" accept=".xml" type="file" name="repoXml">
-        <input class="Btn-file-upload" type="submit">
-    </form>`;
+`<form id="uploadForm" action="import" enctype="multipart/form-data" method="POST">
+    <input class="File-chooser" accept=".xml" type="file" name="repoXml">
+    <input class="Btn-file-upload" type="submit">
+</form>`;
+
 let btnUpload =
-    `<button id="btn-upload-file" class="btn btn-primary" type="button" onclick="uploadFile()">
-        <div id="loading-container">
-            <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
-        </div>
-        <span id="import-btn-text">Import repository</span>
-    </button>`;
+`<button id="btn-upload-file" class="btn btn-primary" type="button" onclick="uploadFile()">
+    <div id="loading-container">
+        <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
+    </div>
+    <span id="import-btn-text">Import repository</span>
+</button>`;
+
 let messagesForm ='<ul id="form-messages"></ul>';
 let repository = null;
 let recentFolderSha1 = null;
@@ -300,7 +314,7 @@ function updateRepo(branchName) {
 
     for(let key in repository.branches) {
         if(repository.branches.hasOwnProperty(key)) {
-            let headBranchMark = key === repository.headBranch.name ? '<img id="head-branch-mark" src="../../common/head-branch.svg"/>' : '';
+            let headBranchMark = key === repository.headBranch.name ? `<img id="head-branch-mark" src="../${ ASSETS_LOCATION }/head-branch.svg"/>` : '';
             branchesList.append(`<a class="dropdown-item" id="${ key }" onclick="updateRepo(this.id)" href="#">${ headBranchMark } ${ key }</a>`)
         }
     }
@@ -348,20 +362,20 @@ function updateRootFolder(folderSha1) {
 function onEditModeClicked() {
     if($(this).attr('alt')==='edit-mode') {
         $(this).attr('alt', 'edit-mode-selected');
-        $(this).attr('src', '../../common/edit-mode-pencil-selected.svg');
+        $(this).attr('src', `../${ ASSETS_LOCATION }/edit-mode-pencil-selected.svg`);
     } else {
         $(this).attr('alt', 'edit-mode');
-        $(this).attr('src', '../../common/edit-mode-pencil.svg');
+        $(this).attr('src', `../${ ASSETS_LOCATION }/edit-mode-pencil.svg`);
     }
 }
 
 function onEditModeMouseEnter() {
-    $(this).attr('src', '../../common/edit-mode-pencil-selected.svg');
+    $(this).attr('src', `../${ ASSETS_LOCATION }/edit-mode-pencil-selected.svg`);
 }
 
 function onEditModeMouseLeave() {
     if($(this).attr('alt') !== 'edit-mode-selected') {
-        $(this).attr('src', '../../common/edit-mode-pencil.svg');
+        $(this).attr('src', `../${ ASSETS_LOCATION }/edit-mode-pencil.svg`);
     }
 }
 
@@ -369,35 +383,46 @@ function buildListItem(file, isActiveBranch) {
     let icon = file.type === 'FOLDER' ? 'folder-icon' : 'file-icon';
     let attributes = file.type === 'FOLDER' ? `href="#" onclick="openFolder('${ file.sha1 }')"` : `href="#content-${ file.sha1 }" data-toggle="collapse" aria-expanded="false" aria-controls="content-${ file.sha1 }"`;
     let contentEditor = isActiveBranch ? `<div class="Editor"><button type="button" id="${ file.sha1 }-edit" class="Edit" onclick="editBlob('${ file.sha1 }')">Edit</button><button type="button" id="${ file.sha1 }-save" onclick="saveBlob('${ file.sha1 }')" class="Save" disabled>Save</button></div>` : '';
-    let editModeIcon = isActiveBranch ? `<a href="#edit-mode-content-${ file.sha1 }" data-toggle="collapse" aria-expanded="false" aria-controls="edit-mode-content-${ file.sha1 }"><img id="edit-mode-${ file.sha1 }" class="edit-mode-pencil" src="../../common/edit-mode-pencil.svg" alt="edit-mode"/></a>` : '';
-    let editModeExpander = isActiveBranch ? `
-    <div class="collapse" id="edit-mode-content-${ file.sha1 }">
-        <div class="Table edit-mode-content card card-body">
-            <div class="Table-row">
-                <div class="Table-cell">
-                    <label>
-                        Edit file name <input type="text" class="New-name-input" name="newname" spellcheck="false">
-                    </label>
-                </div>
-                <div class="Table-cell">
-                    <button type="button" class="Save">Save</button>
-                </div>
-                <div class="Table-cell">
-                    <button type="button" class="Delete">Delete file</button>
-                </div>
-            </div>  
-        </div>
-    </div> 
-    
-    ` : '';
-    let contentExpander = file.type === 'FOLDER' ? '' : `<div class="collapse" id="content-${ file.sha1 }"><div class="blob-content card card-body">${ contentEditor }<div class="Editable" contenteditable="false">${ repository.blobs[file.sha1].text }</div></div></div>`;
+    let editModeIcon = isActiveBranch ? `<a href="#edit-mode-content-${ file.sha1 }" data-toggle="collapse" aria-expanded="false" aria-controls="edit-mode-content-${ file.sha1 }"><img id="edit-mode-${ file.sha1 }" class="edit-mode-pencil" src="../${ASSETS_LOCATION}/edit-mode-pencil.svg" alt="edit-mode"/></a>` : '';
+    let editModeExpander = isActiveBranch ?
+`<div class="collapse" id="edit-mode-content-${ file.sha1 }">
+    <div class="Table edit-mode-content card card-body">
+        <div class="Table-row">
+            <div class="Table-cell">
+                <label>
+                    Edit file name <input type="text" id="file-new-name-${ file.sha1 }" class="New-name-input" name="newname" spellcheck="false">
+                </label>
+            </div>
+            <div class="Table-cell">
+                <button type="button" onclick="saveFileName('${ file.sha1 }')" class="Save">Save</button>
+            </div>
+            <div class="Table-cell">
+                <button type="button" onclick="deleteFile('${ file.sha1 }')" class="Delete">Delete file</button>
+            </div>
+        </div>  
+    </div>
+</div>` : '';
+    let contentExpander = file.type === 'FOLDER' ? '' :
+`<div class="collapse" id="content-${ file.sha1 }">
+    <div class="blob-content card card-body">
+        ${ contentEditor }
+        <div class="Editable">${ repository.blobs[file.sha1].text }</div>
+    </div>
+</div>`;
+
+    let fileExtension = '';
+
+    if(file.type !== 'FOLDER') {
+        let period = file.name.lastIndexOf('.');
+        fileExtension = file.name.substring(period);
+    }
 
     return `<div class="Commit-list-item">
     ${ editModeIcon }
     <a ${ attributes } id="${ file.sha1 }" role="button" class="Item-link list-group-item list-group-item-action">
         <div class="Table">
             <div class="Table-row">
-                <div class="Table-cell file-name"><img id="${ icon }" src="../../common/${ icon }.svg"/> ${ file.name }</div>
+                <div class="Table-cell file-name"><img id="${ icon }" src="../${ASSETS_LOCATION}/${ icon }.svg"/> <span class="${ fileExtension }" id="file-name-${ file.sha1 }">${ file.name }</span></div>
                 <div class="Table-cell file-last-changer">${ file.lastChanger }</div>
                 <div class="Table-cell file-sha1">${ file.sha1 }</div>
                 <div class="Table-cell file-last-update">${ file.lastUpdate }</div>  
@@ -409,27 +434,62 @@ ${ editModeExpander }
 ${ contentExpander }`;
 }
 
+function saveFileName(sha1) {
+    let fileName = $('#file-name-' + sha1);
+    let newName = $('#file-new-name-' + sha1).val() + fileName.attr('class');
+    fileName.text(newName);
+
+    updateFileData(sha1, 'POST', newName, 'update-file-name', null, null);
+    let file = getFileDataInCurrentDir(sha1);
+    file.name = newName;
+}
+
+function getFileDataInCurrentDir(sha1) {
+    let files = repository.folders[recentFolderSha1].files;
+    let length = files.length;
+    let file = null;
+
+    for(let i = 0; i < length; i++) {
+        if(files[i].sha1 === sha1) {
+            file = files[i];
+            break;
+        }
+    }
+
+    return file;
+}
+
+function deleteFile(sha1) {
+
+}
+
+
 function saveBlob(sha1) {
     setSavedStyle(sha1);
-    let editor = $(`#content-${sha1} > .blob-content > .Editable`);
 
+    let editor = $(`#content-${sha1} > .blob-content > .Editable`);
+    repository.blobs[sha1].text = editor.text();
+
+    updateFileData(sha1, 'POST', editor.text(), 'update-blob', onUpdateBlobSuccess, onUpdateBlobError)
+}
+
+function updateFileData(sha1, method, data, url, onSuccess, onError) {
     prevFoldersStack.push(recentFolderSha1);
-    prevFoldersStack.push(sha1); //adds the changed blob to the end of the stack.
-    prevFoldersStack.push(editor.text()); //adds the changed blob to the end of the stack.
+    prevFoldersStack.push(sha1);
+    prevFoldersStack.push(data);
     let prevFolderStack = JSON.stringify(prevFoldersStack);
     prevFoldersStack.pop();
     prevFoldersStack.pop();
 
-    let data = 'prevFolders=' + prevFolderStack;
-    repository.blobs[sha1].text = editor.text();
+    let dataToSend = 'data=' + prevFolderStack;
 
     $.ajax({
-        method: 'POST',
-        data: data,
-        url: 'update-blob',
+        method: method,
+        data: dataToSend,
+        url: url,
         timeout: 3000,
-        error: onUpdateBlobError,
-        success: onUpdateBlobSuccess
+        error: onError,
+        success: onSuccess
     });
 }
 
@@ -451,7 +511,6 @@ function setSavedStyle(sha1) {
     let blobContent = $(`#content-${sha1} > .blob-content`);
 
     $(`#${ sha1 }-save`).prop('disabled', true);
-    $(`#content-${sha1} > .blob-content > .Editable`).prop('contenteditable', false);
 
     if(btnEdit.hasClass('Edit-selected')) {
         btnEdit.removeClass('Edit-selected');
@@ -459,35 +518,64 @@ function setSavedStyle(sha1) {
 
     if(blobContent.hasClass('blob-content-edit-mode')) {
         blobContent.removeClass('blob-content-edit-mode');
+        setNotEditable($(`#content-${sha1} > .blob-content > .Editable`));
     }
 }
 
 function setEditStyle(sha1) {
     let editor = $(`#content-${sha1} > .blob-content > .Editable`);
-    let isEditMode = editor.attr('contenteditable') === 'false';
+    let isEditMode = editor.is('div');
 
     if(isEditMode) {
+        let editableText = $("<textarea>").addClass('Editable');
+        editableText.val(editor.text());
+        editor.replaceWith(editableText);
         $(`#${sha1}-save`).prop('disabled', false);
-        editor.prop('contenteditable', true);
-        editor.on('keydown .editable', onTabPressed);
+        $(document).delegate('.Editable', 'keydown', onTabPressed);
     } else {
-        editor.prop('contenteditable', false);
+        setNotEditable(editor);
     }
 
     $(`#${sha1}-edit`).toggleClass('Edit-selected');
-    $(`#content-${sha1} > .blob-content`).toggleClass('blob-content-edit-mode')
+    $(`#content-${sha1} > .blob-content`).toggleClass('blob-content-edit-mode');
+}
+
+function setNotEditable(editor) {
+    let notEditable = $("<div>").addClass('Editable');
+    notEditable.text(editor.val());
+    editor.replaceWith(notEditable);
 }
 
 function onTabPressed(e) {
-    if (e.keyCode == 9 && e.shiftKey) {
-        document.execCommand('styleWithCSS', true, null);
-        document.execCommand('outdent', true, null);
+    let keyCode = e.keyCode || e.which;
+
+    if (e.keyCode === 9 && e.shiftKey) {
         e.preventDefault();
-    } else if (e.keyCode == 9) {
-        console.log("key", e.keyCode);
-        document.execCommand('styleWithCSS', true, null);
-        document.execCommand('indent', true, null);
+        let start = this.selectionStart;
+        let content = $(this).val();
+        let i;
+
+        for(i = start; i >= 0; i--) {
+            if(i !== start && content[i] === '\n') {
+                break;
+            }
+
+            if(content[i] === '\t') {
+               $(this).val(content.substring(0, i) + content.substring(i + 1));
+                this.selectionStart = this.selectionEnd = i;
+                break;
+            }
+        }
+    } else if (keyCode === 9) {
         e.preventDefault();
+        let start = this.selectionStart;
+        let end = this.selectionEnd;
+
+        $(this).val($(this).val().substring(0, start)
+            + "\t"
+            + $(this).val().substring(end));
+
+        this.selectionStart = this.selectionEnd = start + 1;
     }
 }
 
@@ -498,35 +586,4 @@ function openPrevFolder() {
 function openFolder(sha1) {
     prevFoldersStack.push(recentFolderSha1);
     updateRootFolder(sha1);
-}
-
-function sortFiles(files) {
-    files.sort(function (file1, file2) {
-        if(file1.type === file2.type) {
-            return file2.creationTimeMillis - file1.creationTimeMillis;
-        } else if(file1.type === 'FOLDER' && file2.type !== 'FOLDER') {
-            return -1;
-        } else if(file1.type !== 'FOLDER' && file2.type === 'FOLDER') {
-            return 1;
-        }
-    });
-}
-
-function getMapSize(object, filter) {
-    let count = 0;
-    let isFunc = isFunction(filter);
-
-    for(let key in object) {
-        if(isFunc && filter(key)) {
-            count++;
-        } else if(!isFunc) {
-            count++;
-        }
-    }
-
-    return count;
-}
-
-function isFunction(functionToCheck) {
-    return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
 }

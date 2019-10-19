@@ -2,19 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" type="text/css" href="../../common/css/Theme.css"/>
-    <link rel="stylesheet" type="text/css" href="../../common/css/bootstrap.min.css">
-    <script type="text/javascript" src="../../common/js/jquery-3.4.1.js"></script>
-    <script type="text/javascript" src="../../common/js/popper.min.js"></script>
-    <script type="text/javascript" src="../../common/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="active-repo.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/Theme.css"/>
+    <link rel="stylesheet" type="text/css" href="../css/bootstrap.min.css">
+    <script type="text/javascript" src="../js/third-parties/jquery-3.4.1.js"></script>
+    <script type="text/javascript" src="../js/third-parties/popper.min.js"></script>
+    <script type="text/javascript" src="../js/third-parties/bootstrap.min.js"></script>
+    <script type="module" src="../js/magit/active-repo.js"></script>
     <title>MAGit</title>
 </head>
 <body>
 <div class="Container">
     <div class="Header">
         <div class="Header-icon Header-item">
-            <img src="../../common/MAGit.png" alt="magit-icon"/>
+            <img src="../assets/MAGit.png" alt="magit-icon"/>
             <a href="active-repo.html" id="home-link">Home</a>
         </div>
         <div id="header-drop-downs">
@@ -23,7 +23,7 @@
                 <li>
                     <div>
                         <div class="Header-item">
-                            <img class="Notification-icon" src="../../common/notification-icon.svg" alt="notifications"/>
+                            <img class="Notification-icon" src="../assets/notification-icon.svg" alt="notifications"/>
                         </div>
                     </div>
                 </li>
@@ -41,7 +41,7 @@
                 </li>
                 <li>
                     <div class="User-options Header-item">
-                        <img src="../../common/user-icon.png" alt="user-icon"/>
+                        <img src="../assets/user-icon.png" alt="user-icon"/>
                         <span class="Dropdown-caret"></span>
                     </div>
                     <ul>
@@ -98,13 +98,14 @@
                         <div class="Table">
                             <div class="Table-row">
                                 <div class="Table-cell">Pointed commit:</div>
-                                <div class="Table-cell"><img id="commiter-icon" src="../../common/user-icon.png" alt="commiter icon"/><span id="commiter-name"></span></div>
+                                <div class="Table-cell"><img id="commiter-icon" src="../assets/user-icon.png" alt="commiter icon"/><span id="commiter-name"></span></div>
                                 <div class="Table-cell commit-description"></div>
                                 <div class="Table-cell commit-sha1"></div>
                                 <div class="Table-cell file-last-update"></div>
                             </div>
                         </div>
                     </a>
+                    <div class="Separator Blue"></div>
                     <div id="root-folder-files"></div>
                 </div>
             </div>

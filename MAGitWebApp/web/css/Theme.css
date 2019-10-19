@@ -122,6 +122,7 @@ div > .tab-content {
 }
 
 #commit-list-header {
+    color: #2f2f2f;
     background-color: rgb(192, 231, 255);
     border-radius: 0;
 }
@@ -548,18 +549,25 @@ div > .blob-content-edit-mode {
     padding-top: 15px;
     padding-left: 25px;
     z-index: 0;
+    border: 0;
+    resize: none;
+    background-color: #fbfbfb;
 }
 
-div > .blob-content::-webkit-scrollbar {
-    width: 12px;
+.Editable:focus {
+    outline: 0;
+}
+
+div > .blob-content > .Editable::-webkit-scrollbar {
+    width: 8px;
     background-color: #f0f0f0;
 }
 
-div > .blob-content::-webkit-scrollbar-track {
+div > .blob-content > .Editable::-webkit-scrollbar-track {
     background-color: #f0f0f0;
 }
 
-div > .blob-content::-webkit-scrollbar-thumb {
+div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     background-color: #68c1ff;
 }
 
@@ -588,6 +596,14 @@ div > .blob-content::-webkit-scrollbar-thumb {
 .Separator {
     height: 3px;
     margin-bottom: 10px;
+}
+
+.Commits-list > .Separator {
+    margin: 0;
+}
+
+.Blue {
+    background-color: #48a3ec;
 }
 
 .Green {

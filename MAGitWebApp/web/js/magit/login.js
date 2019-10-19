@@ -1,4 +1,4 @@
-const HOME = '../repository/active-repo.html';
+const HOME = '../pages/active-repo.html';
 const REGISTER_LINK_TXT = "Don't have an account yet? Register";
 
 $(setupLogin);

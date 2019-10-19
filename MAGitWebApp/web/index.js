@@ -1,3 +1,3 @@
 $(function (e) {
-    window.location.href = 'pages/signin/login.html';
+    window.location.href = 'pages/login.html';
 });
