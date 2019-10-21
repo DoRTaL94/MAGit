@@ -3,12 +3,14 @@ body, html {
     padding: 0;
     font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji;
     overflow-x: hidden;
+    height: 100%;
+    width: 100%;
 }
 
 .Container {
     position: absolute;
-    height: 100vh;
-    width: 100vw;
+    min-height: 100%;
+    min-width: 100%;
     box-sizing: border-box;
     margin: auto;
     padding: 0;
@@ -299,7 +301,7 @@ a:hover {
 }
 
 #header-drop-downs > nav a:hover {
-    color: #4abcff;
+    color: #6acaff;
 }
 
 #header-drop-downs > nav > ul {
@@ -348,12 +350,11 @@ a:hover {
     z-index: 1;
 }
 
-.Content-relative {
-    position: relative;
+.Content-absolute {
+    position: absolute;
     padding-top: 70px;
-    width: 100%;
-    height: 100%;
-    min-height: 300px;
+    min-width: 100%;
+    min-height: 100%;
     transform: translateY(-70px);
     z-index: 0;
 }
@@ -420,7 +421,6 @@ a:hover {
 #home-link {
     margin-left: 60px;
     text-decoration: none;
-    color: white;
     font-size: 1.1em;
 }
 
@@ -626,9 +626,33 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     margin: 0;
 }
 
+#btn-commit,
+#btn-checkout {
+    position: relative;
+    float: right;
+    margin-left: 10px;
+    color: #373737;
+    background-color: #ebebeb;
+    border: 2px solid #e0e0e0;
+}
+
+#btn-commit:hover,
+#btn-checkout:hover {
+    background-color: #d7d7d7;
+}
+
+#btn-commit:active,
+#btn-checkout:active {
+    color: white;
+    background-color: #4cabff;
+    border: 2px solid #7dcdff;
+}
+
 .Save,
 .Edit,
-.Delete {
+.Delete,
+#btn-commit,
+#btn-checkout {
     z-index: 2;
     border-radius: 3px;
     cursor: pointer;
@@ -649,7 +673,9 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     border: 1.5px solid #b46058;
 }
 
-.Delete:focus {
+.Delete:focus,
+#btn-commit:focus,
+#btn-checkout:focus {
     outline: 0;
 }
 
@@ -659,26 +685,51 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
 
 .Save,
 .Edit {
-    background-color: #e0e0e0;
-    border: 1.5px solid #b4b4b4;
+    color: #373737;
+    background-color: #ebebeb;
+    border: 2px solid #e0e0e0;
 }
 
 .Edit-selected {
     z-index: 1;
     margin-left: 10px;
-    background-color: #95dfff;
-    border: 1.5px solid #5ab2ff;
+    color: white;
+    background-color: #4cabff;
+    border: 2px solid #7dcdff;
     border-radius: 3px;
     cursor: pointer;
 }
 
+#btn-checkout:disabled,
+#btn-commit:disabled,
 .Save:disabled {
+    color: #989898;
+    background-color: #ebebeb;
+    border: 2px solid #ebebeb;
     cursor: default;
 }
 
 .Save:focus {
     outline: 0;
-    border: 1.5px solid #5ab2ff;
+    color: white;
+    background-color: #4cabff;
+    border: 2px solid #7dcdff;;
+}
+
+.Popup-buttons > .Save:focus,
+.edit-mode-content > .Table-row > .Table-cell > .Save:focus {
+    outline: 0;
+    color: #373737;
+    background-color: #ebebeb;
+    border: 2px solid #e0e0e0;
+}
+
+.Popup-buttons > .Save:active,
+.edit-mode-content > .Table-row > .Table-cell > .Save:active {
+    outline: 0;
+    color: white;
+    background-color: #4cabff;
+    border: 2px solid #7dcdff;
 }
 
 .Edit:focus {
@@ -726,4 +777,114 @@ div > .edit-mode-content {
 .edit-mode-content > .Table-row > .Table-cell {
     padding-left: 3px;
     padding-right: 3px;
+}
+
+.Popup-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    min-width: 100%;
+    min-height: 100%;
+    background-color: rgba(0, 0, 0, 0.29);
+    z-index: 3;
+}
+
+.Popup {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 25%;
+    border: none;
+    border-radius: 3px;
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    z-index: 4;
+    background-color: #ffffff;
+}
+
+.Popup-header {
+    position: relative;
+    text-align: center;
+    font-size: 2em;
+    padding: 10px;
+    color: #404040;
+    border: none;
+    border-top-right-radius: 3px;
+    border-top-left-radius: 3px;
+    margin: 0;
+}
+
+.Popup-content {
+    position: relative;
+    font-size: 1em;
+    padding: 10px;
+    width: 100%;
+    border: none;
+    margin: 0;
+}
+
+.Popup-content > .Popup-textarea {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 3px;
+    resize: none;
+    box-shadow: 0 0 5px rgba(128, 128, 128, 0.42);
+    background-color: rgba(255, 255, 255, 0.91);
+    min-height: 100px;
+    padding: 10px;
+}
+
+.Popup-buttons {
+    border: none;
+    position: relative;
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.91);
+    text-align: right;
+    border-bottom-right-radius: 3px;
+    border-bottom-left-radius: 3px;
+    margin: 0;
+}
+
+.Popup-buttons > button {
+    font-size: 1.1em;
+    width: 50%;
+    height: 100%;
+    min-height: 50px;
+    border: none;
+    cursor: pointer;
+}
+
+.Popup-buttons > button:focus {
+    outline: 0;
+}
+
+.Popup-buttons > .Btn-cancel {
+    border-bottom-right-radius: 3px;
+    border-left: 1px solid #e3e3e3;
+}
+
+.Popup-buttons > .Btn-ok {
+    background-color: #8ed4ff;
+    border-bottom-left-radius: 3px;
+    border-right: 1px solid #d0d0d0;
+}
+
+.Popup-buttons > .Btn-ok:hover {
+    background-color: #6ac6ff;
+}
+
+.Popup-warning-text {
+    font-size: 1.1em;
+    padding: 10px;
+}
+
+.Link {
+    color: white;
+    cursor: pointer;
+}
+
+.Link:hover {
+    color: #6acaff;
 }

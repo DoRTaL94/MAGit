@@ -21,6 +21,28 @@ public class FileUtilities {
         }
     }
 
+    public static void createFoldersInPath(String i_Path) {
+        if(i_Path == null) {
+            return;
+        }
+
+        File folder = new File(i_Path);
+        String parentPath = folder.getParent();
+
+        createFoldersInPath(parentPath);
+
+        int lastIndexOfDot = i_Path.lastIndexOf('.');;
+        int lastIndexOfBackSlash = i_Path.lastIndexOf('\\');
+        int lastIndexOfForwardSlash = i_Path.lastIndexOf('/');
+
+        boolean test1 = lastIndexOfBackSlash == -1 || lastIndexOfDot == -1 || lastIndexOfDot == lastIndexOfBackSlash + 1;
+        boolean test2 = lastIndexOfForwardSlash == -1 || lastIndexOfDot == -1 || lastIndexOfDot == lastIndexOfForwardSlash + 1;
+
+        if(!folder.exists() && test1 && test2) {
+            folder.mkdir();
+        }
+    }
+
     public static void ZipFile(String i_FileToZipName, String i_Content, String i_ZipPath) throws IOException {
         File zipFile = new File(i_ZipPath);
 

@@ -17,7 +17,9 @@ import java.util.Map;
 
 public class ServletsUtils {
     private static final String USER_MANAGER_ATTRIBUTE_NAME = "usersManager";
+    private static final String REPOSITORY_MANAGER_ATTRIBUTE_NAME = "repositoryManager";
     private static final Object userManagerLock = new Object();
+    private static final Object repositoryManagerLock = new Object();
 
     public static UsersManager getUsersManager(ServletContext i_ServletContext) {
 
@@ -28,6 +30,17 @@ public class ServletsUtils {
         }
 
         return (UsersManager) i_ServletContext.getAttribute(USER_MANAGER_ATTRIBUTE_NAME);
+    }
+
+    public static RepositoryManager getRepositoryManager(ServletContext i_ServletContext) {
+
+        synchronized (repositoryManagerLock) {
+            if (i_ServletContext.getAttribute(REPOSITORY_MANAGER_ATTRIBUTE_NAME) == null) {
+                i_ServletContext.setAttribute(REPOSITORY_MANAGER_ATTRIBUTE_NAME, new RepositoryManager());
+            }
+        }
+
+        return (RepositoryManager) i_ServletContext.getAttribute(REPOSITORY_MANAGER_ATTRIBUTE_NAME);
     }
 
     public static Folder.Data getFile(Folder i_Folder, String i_FileSha1) {

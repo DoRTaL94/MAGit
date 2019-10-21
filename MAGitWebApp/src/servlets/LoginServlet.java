@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import users.UsersManager;
 import utils.ServletsUtils;
 
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -16,7 +18,7 @@ import java.util.List;
 @WebServlet("/pages/login")
 public class LoginServlet extends HttpServlet {
 
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         String username = request.getParameter("username");
         String password = request.getParameter("password");
         UsersManager userManager = ServletsUtils.getUsersManager(getServletContext());
@@ -30,8 +32,9 @@ public class LoginServlet extends HttpServlet {
             errors.add("Password cannot be empty.");
         }
 
-        if(errors.size() == 0 && (!userManager.isUserExists(username) ||
-                !userManager.getUser(username).getPassword().equals(password))) {
+        if(errors.size() == 0
+                && (!userManager.isUserExists(username) || !userManager.getUser(username).getPassword().equals(password))
+                && !userManager.loginFromDb(username, password)) {
             errors.add("User name or password is invalid.");
         }
 
@@ -42,11 +45,12 @@ public class LoginServlet extends HttpServlet {
             out.print(gson.toJson(errors));
             out.flush();
         } else {
-            response.setContentType("text/html");
-            PrintWriter out = response.getWriter();
-            out.print("success");
             userManager.setLoggedInUser(userManager.getUser(username));
-            out.flush();
+            response.sendRedirect("load-repository?username=" + username + "&auth=" + userManager.getAuthString(username, password));
+//            response.setContentType("text/html");
+//            PrintWriter out = response.getWriter();
+//            out.print("success");
+//            out.flush();
         }
     }
 

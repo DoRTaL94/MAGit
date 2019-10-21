@@ -13,7 +13,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class Folder implements IRepositoryFile {
-    private final LinkedList<Data> files = new LinkedList<>();
+    private LinkedList<Data> files = new LinkedList<>();
     private boolean isRoot = false;
 
     public final LinkedList<Data> getFiles() {
@@ -86,6 +86,25 @@ public class Folder implements IRepositoryFile {
         return newFolder;
     }
 
+    public Folder clone() {
+        Folder clone = null;
+
+        try {
+            clone = (Folder) super.clone();
+            clone.files = new LinkedList<>();
+
+            for(Data data: this.files) {
+                clone.files.add(data.clone());
+            }
+
+            clone.isRoot = this.isRoot;
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
+        }
+
+        return clone;
+    }
+
     public static class Data {
         private String name;
         private String sha1;
@@ -152,6 +171,18 @@ public class Folder implements IRepositoryFile {
         }
 
         public long getCreationTimeMillis() { return creationTimeMillis; }
+
+        public Data clone() {
+            Data clone = null;
+
+            try {
+                clone = (Data) super.clone();
+            } catch (CloneNotSupportedException e) {
+                e.printStackTrace();
+            }
+
+            return clone;
+        }
 
         public static Folder.Data Parse(File i_File, String i_Sha1) {
             Folder.Data data = new Folder.Data();

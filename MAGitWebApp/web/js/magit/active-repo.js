@@ -1,4 +1,6 @@
 import { getMapSize, sortFiles } from './utils.js';
+import * as popups from "./popups.js";
+export { setOpenChanges }
 
 window.uploadFile           = uploadFile;
 window.updateRepo           = updateRepo;
@@ -8,11 +10,12 @@ window.saveBlob             = saveBlob;
 window.openFolder           = openFolder;
 window.saveFileName         = saveFileName;
 window.deleteFile           = deleteFile;
+window.enableSaveButton     = enableSaveButton;
 
 const HEADER_ITEM           = "#header-drop-downs > nav > ul > li";
 const HEADER_LIST_ITEM      = "#header-drop-downs > nav > ul > li > ul > li";
 const SERVER_ERROR_MESSAGE  = '<li>' + "Failed to send data to the server..." + '</li>';
-const HOME                  = "../pages/active-repo.html";
+const HOME                  = "active-repo.html";
 const ASSETS_LOCATION       = "assets";
 
 let uploadForm =
@@ -34,6 +37,7 @@ let repository = null;
 let recentFolderSha1 = null;
 let prevFoldersStack = [];
 let isActiveBranch = null;
+let isOpenChanges = false;
 
 $(onLoad);
 
@@ -44,6 +48,20 @@ function onLoad() {
 }
 
 function setHeaderItemsOnClick() {
+    window.addEventListener("beforeunload", function(event) {
+        if(isOpenChanges) {
+            event.returnValue = "Changes you made would not be saved.";
+
+            $.ajax({
+                method: 'POST',
+                url: "clean-open-changes",
+                timeout: 2000
+            });
+        }
+    });
+
+    $('#home-link').on('click', () => window.location.href = HOME);
+
     $(HEADER_ITEM).on("click", function() {
         let notification = $(this).find("img.Notification-icon");
 
@@ -53,6 +71,10 @@ function setHeaderItemsOnClick() {
             handleNotificationClicked();
         }
     });
+}
+
+function setOpenChanges(state) {
+    isOpenChanges = state;
 }
 
 function handleDropdown(clicked) {
@@ -93,7 +115,7 @@ function handleNotificationClicked() {
 function showNotifications() {
     let container = $("div.Content");
     container.empty();
-    container.addClass("Content-relative");
+    container.addClass("Content-absolute");
 
     let notificationsContainer = $("<div>").addClass("Notifications-container");
     let notifications = $("<div>").addClass("Notifications Magit-body");
@@ -288,7 +310,8 @@ function onUpdateRepoError(response) {
 
 function onUpdateRepoSuccess(response) {
     if(response !== 'User has no repositories') {
-        repository = response;
+        repository = response['repository'];
+        isOpenChanges = response['isOpenChanges'];
         updateRepo(repository.headBranch.name);
         $('#download').on('click', () => window.location.href = `download?repository=${ repository.repoName }`);
     }
@@ -299,8 +322,26 @@ function updateRepo(branchName) {
     let commitListHeader = $('#commit-list-header');
     let currCommit = repository.commits[branch.pointedCommitSha1];
     let branchesList = $('.Branches');
+
     isActiveBranch = repository.headBranch.name === branchName;
     branchesList.empty();
+
+    if(!isActiveBranch) {
+        let btnCheckout = $('#btn-checkout');
+
+        btnCheckout.prop('disabled', false);
+        $('#btn-commit').prop('disabled', true);
+
+        btnCheckout.on('click', onBtnCheckoutClick)
+
+
+    } else {
+        let btnCommit = $('#btn-commit');
+
+        $('#btn-checkout').prop('disabled', true);
+        btnCommit.prop('disabled', !isOpenChanges);
+        btnCommit.on('click', popups.showCommitPopup);
+    }
 
     commitListHeader.find('span#commiter-name').empty().text(currCommit.lastChanger);
     commitListHeader.find('div.commit-description').empty().text(currCommit.message);
@@ -320,6 +361,33 @@ function updateRepo(branchName) {
     }
 
     updateRootFolder(currCommit.rootFolderSha1);
+}
+
+function onBtnCheckoutClick() {
+    if(isOpenChanges) {
+        popups.showOpenChangesPopup(checkout);
+    } else {
+        checkout();
+    }
+}
+
+function checkout() {
+    isOpenChanges = false;
+    let branchName = $('#branch-drop-down').text();
+    branchName = branchName.substring(8);
+
+    $.ajax({
+        method: 'POST',
+        data: 'branchname=' + branchName + '&checkwc=false',
+        url: 'checkout',
+        timeout: 2000,
+        error: function(response) {
+            console.log(response);
+        },
+        success: function () {
+            window.location.href = HOME;
+        }
+    });
 }
 
 function updateRootFolder(folderSha1) {
@@ -432,11 +500,11 @@ function buildEditModeExpander(file, isActiveBranch) {
         <div class="Table-row">
             <div class="Table-cell">
                 <label>
-                    Edit file name <input type="text" id="file-new-name-${ file.sha1 }" class="New-name-input" name="newname" spellcheck="false">
+                    Edit file name <input type="text" onkeydown="enableSaveButton('${ file.sha1 }')" onkeyup="enableSaveButton('${ file.sha1 }')" id="file-new-name-${ file.sha1 }" class="New-name-input" name="newname" spellcheck="false">
                 </label>
             </div>
             <div class="Table-cell">
-                <button type="button" onclick="saveFileName('${ file.sha1 }')" class="Save">Save</button>
+                <button id="btn-save-${ file.sha1 }" type="button" onclick="saveFileName('${ file.sha1 }')" class="Save" disabled>Save</button>
             </div>
             <div class="Table-cell">
                 <button type="button" onclick="deleteFile('${ file.sha1 }')" class="Delete">Delete file</button>
@@ -446,12 +514,19 @@ function buildEditModeExpander(file, isActiveBranch) {
 </div>` : '';
 }
 
+function enableSaveButton(sha1) {
+    let inputText = $('#file-new-name-' + sha1).val();
+    let btnSave = $('#btn-save-' + sha1);
+
+    if(inputText !== '' && btnSave.prop('disabled') === true) {
+        btnSave.prop('disabled', false);
+    } else if(inputText === '') {
+        btnSave.prop('disabled', true);
+    }
+}
+
 function buildContentExpander(file, isActiveBranch) {
-    let contentEditor = isActiveBranch ?
-`<div class="Editor">
-    <button type="button" id="${ file.sha1 }-edit" class="Edit" onclick="editBlob('${ file.sha1 }')">Edit</button>
-    <button type="button" id="${ file.sha1 }-save" onclick="saveBlob('${ file.sha1 }')" class="Save" disabled>Save</button>
-</div>` : '';
+    let contentEditor = isActiveBranch ? `<div class="Editor"><button type="button" id="${ file.sha1 }-edit" class="Edit" onclick="editBlob('${ file.sha1 }')">Edit</button><button type="button" id="${ file.sha1 }-save" onclick="saveBlob('${ file.sha1 }')" class="Save" disabled>Save</button></div>` : '';
 
     return file.type === 'FOLDER' ? '' :
 `<div class="collapse" id="content-${ file.sha1 }">
@@ -464,8 +539,14 @@ function buildContentExpander(file, isActiveBranch) {
 
 function saveFileName(sha1) {
     let fileName = $('#file-name-' + sha1);
+    let oldName = fileName.text();
     let newName = $('#file-new-name-' + sha1).val() + fileName.attr('class');
     fileName.text(newName);
+
+    if(oldName !== newName) {
+        isOpenChanges = true;
+        $('#btn-commit').prop('disabled', !isOpenChanges);
+    }
 
     updateFileData(sha1, 'POST', newName, 'update-file-name', null, null);
     let file = getFileDataInCurrentDir(sha1, recentFolderSha1);
@@ -490,43 +571,34 @@ function getFileDataInCurrentDir(sha1, currFolderSha1) {
 function deleteFile(sha1) {
     let files = repository.folders[recentFolderSha1].files;
     let length = files.length;
-    let file = getFileDataInCurrentDir(sha1, recentFolderSha1);
 
     $('#root-folder-files').on('click', '.Delete', function() {
         $(this).closest('.Commit-list-item').remove();
     });
 
     updateFileData(sha1, 'POST', '', 'delete-file', null, null);
-    deleteFileFromDb(file);
 
     for(let i = 0; i < length; i++) {
         if(sha1 === files[i].sha1) {
             delete files[i];
         }
     }
-}
 
-function deleteFileFromDb(fileData) {
-    if(fileData.type === 'FOLDER') {
-        let folder = repository.folders[fileData.sha1];
-
-        folder.files.forEach(function (file) {
-            deleteFileFromDb(file);
-        });
-
-        delete repository.folders[fileData.sha1];
-    } else {
-        delete repository.blobs[fileData.sha1];
-    }
+    isOpenChanges = true;
+    $('#btn-commit').prop('disabled', !isOpenChanges);
 }
 
 function saveBlob(sha1) {
     setSavedStyle(sha1);
 
     let editor = $(`#content-${sha1} > .blob-content > .Editable`);
-    repository.blobs[sha1].text = editor.text();
 
-    updateFileData(sha1, 'POST', editor.text(), 'update-blob', onUpdateBlobSuccess, onUpdateBlobError)
+    if(repository.blobs[sha1].text !== editor.text()) {
+        isOpenChanges = true;
+        $('#btn-commit').prop('disabled', !isOpenChanges);
+        repository.blobs[sha1].text = editor.text();
+        updateFileData(sha1, 'POST', editor.text(), 'update-blob', onUpdateBlobSuccess, onUpdateBlobError);
+    }
 }
 
 function updateFileData(sha1, method, data, url, onSuccess, onError) {

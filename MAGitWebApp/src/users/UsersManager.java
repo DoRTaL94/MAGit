@@ -1,15 +1,20 @@
 package users;
 
+import IO.FileUtilities;
 import MagitExceptions.FolderInLocationAlreadyExistsException;
 import MagitExceptions.RepositoryAlreadyExistsException;
 import MagitExceptions.xmlErrorsException;
 import javafx.beans.property.SimpleStringProperty;
 import magit.Engine;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import javax.xml.bind.JAXBException;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.io.File;
 
 public class UsersManager {
     private final Map<String, User> nameToUserMap = new HashMap<>();
@@ -21,6 +26,14 @@ public class UsersManager {
         user.setName(i_Name);
         user.setPassword(i_Password);
         nameToUserMap.put(i_Name, user);
+        saveToDB(user);
+    }
+
+    private void saveToDB(User i_User) {
+        String authString = DigestUtils.sha1Hex(i_User.toString());
+        String path = Paths.get("c:/magit-ex3", i_User.getName(), "auth.txt").toString();
+        FileUtilities.createFoldersInPath(path);
+        FileUtilities.WriteToFile(path, authString);
     }
 
     public void addRepo(String i_UserName, String i_XmlPath) throws FileNotFoundException, RepositoryAlreadyExistsException, JAXBException, xmlErrorsException, FolderInLocationAlreadyExistsException {
@@ -52,5 +65,38 @@ public class UsersManager {
 
     public User getLoggedInUser() {
         return loggedInUser;
+    }
+
+    public boolean loginFromDb(String i_Username, String i_Password) throws IOException {
+        String authFilePath = Paths.get("c:/magit-ex3", i_Username, "auth.txt").toString();
+        User user = new User();
+        user.setPassword(i_Password);
+        user.setName(i_Username);
+
+        File authFile = new File(authFilePath);
+        boolean success = false;
+
+        if(authFile.exists()) {
+            String authString = FileUtilities.ReadTextFromFile(authFilePath);
+            success = DigestUtils.sha1Hex(user.toString()).equals(authString);
+
+            if(success) {
+                addUser(user);
+            }
+        }
+
+        return success;
+    }
+
+    public String getAuthString(String i_Username, String i_Password) {
+        return DigestUtils.sha1Hex(i_Username + ":" + i_Password);
+    }
+
+    private void addUser(User i_User) {
+        String name = i_User.getName();
+
+        if (!name.isEmpty() && !i_User.getPassword().isEmpty()) {
+            nameToUserMap.put(name, i_User);
+        }
     }
 }

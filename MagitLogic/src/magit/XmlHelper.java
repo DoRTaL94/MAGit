@@ -1,5 +1,6 @@
 package magit;
 
+import IO.FileUtilities;
 import resources.jaxb.schema.generated.*;
 
 import javax.xml.bind.JAXBContext;
@@ -64,7 +65,7 @@ public class XmlHelper {
         List<String> errors = new ArrayList<>();
 
         if(m_XmlPath.contains("magit-ex3")) {
-            createFolder(m_XmlPath);
+            FileUtilities.createFoldersInPath(m_XmlPath);
             MagitRepository temp = m_MagitRepository;
 
             try {
@@ -83,21 +84,6 @@ public class XmlHelper {
         errors.addAll(CheckDuplicateKeyInMagitRepo(m_MagitRepository));
 
         return errors;
-    }
-
-    private void createFolder(String i_Path) {
-        if(i_Path == null) {
-            return;
-        }
-
-        File folder = new File(i_Path);
-        String parentPath = folder.getParent();
-
-        createFolder(parentPath);
-
-        if(!folder.exists()) {
-            folder.mkdir();
-        }
     }
 
     private List<String> CheckDuplicateKeyInMagitRepo(MagitRepository i_MagitRepository) {

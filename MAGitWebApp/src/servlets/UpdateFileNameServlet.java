@@ -1,6 +1,8 @@
 package servlets;
 
 import data.structures.Folder;
+import data.structures.Repository;
+import utils.RepositoryManager;
 import utils.ServletsUtils;
 
 import javax.servlet.annotation.WebServlet;
@@ -18,7 +20,8 @@ public class UpdateFileNameServlet extends HttpServlet {
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         reqData = ServletsUtils.getReqData(request);
-        boolean isSuccess = ServletsUtils.applyOnDbFile(ServletsUtils.getUsersManager(getServletContext()).getLoggedInUser().getName(), reqData, this::changeFileName);
+        boolean isSuccess = ServletsUtils.applyOnDbFile(ServletsUtils.getUsersManager(getServletContext()).getLoggedInUser().getName(),
+                reqData, this::changeFileName);
 
         if(!isSuccess) {
             response.setContentType("text/html");
@@ -34,9 +37,7 @@ public class UpdateFileNameServlet extends HttpServlet {
         File fileWithNewName = new File(i_File.getParent(), newName);
 
         if (!fileWithNewName.exists()) {
-            i_File.renameTo(fileWithNewName);
-            i_Data.setName(newName);
-            res = true;
+            res = i_File.renameTo(fileWithNewName);
         }
 
         return res;

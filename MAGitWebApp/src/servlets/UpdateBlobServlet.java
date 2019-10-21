@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import data.structures.*;
 import magit.Engine;
+import utils.RepositoryManager;
 import utils.ServletsUtils;
 
 import javax.servlet.annotation.WebServlet;
@@ -35,14 +36,13 @@ public class UpdateBlobServlet extends HttpServlet {
 
     private boolean changeBlobContent(Folder i_Parent, File i_Blob, Folder.Data i_Data) {
         boolean res =  false;
+        RepositoryManager repositoryManager = ServletsUtils.getRepositoryManager(getServletContext());
 
         if(i_Blob.exists()) {
-            Repository repository = Engine.Creator.getInstance().getActiveRepository();
-            Map<String, Blob> blobs = repository.getBlobs();
             int reqDataSize = reqData.size();
 
             FileUtilities.WriteToFile(i_Blob.toPath().toString(), reqData.get(reqDataSize - 1));
-            blobs.get(reqData.get(reqDataSize - 2)).setText(reqData.get(reqDataSize - 1));
+            repositoryManager.changeBlobText(reqData.get(reqDataSize - 2), reqData.get(reqDataSize - 1));
             res = true;
         }
 

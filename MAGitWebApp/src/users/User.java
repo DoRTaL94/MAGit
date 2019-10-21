@@ -39,4 +39,9 @@ public class User {
     public NotificationManager getNotificationManager() {
         return notificationManager;
     }
+
+    @Override
+    public String toString() {
+        return name + ":" + password;
+    }
 }

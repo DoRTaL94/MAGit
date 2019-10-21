@@ -1,5 +1,6 @@
 package servlets;
 
+import IO.FileUtilities;
 import MagitExceptions.FolderInLocationAlreadyExistsException;
 import MagitExceptions.RepositoryAlreadyExistsException;
 import MagitExceptions.xmlErrorsException;
@@ -17,6 +18,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -43,6 +45,11 @@ public class ImportRepoServlet extends HttpServlet {
             // This is a slighting different 'LoadRepositoryFromXml' function we will pass to it the input stream we've created and the username logged in to
             // the server. We're passing the username because inside the xml file there is a username parameter that it might no be the current user whom logged in.
             engine.LoadRepositoryFromXml(xmlStream, username, new SimpleStringProperty());
+            engine.setCurrentUserName(username);
+            String recentRepoPath = Paths.get("c:/magit-ex3", username, "repositories", "recent.txt").toString();
+            String repoName = engine.getActiveRepository().getName();
+
+            FileUtilities.WriteToFile(recentRepoPath, repoName);
         } catch (RepositoryAlreadyExistsException e) {
             errors.add(e.getMessage());
         } catch (xmlErrorsException e) {

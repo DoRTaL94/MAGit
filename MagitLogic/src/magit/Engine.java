@@ -452,14 +452,16 @@ public class Engine implements IEngine {
 
         remoteRepositoryLocation = repoDetailsList.size() == 2 ? repoDetailsList.get(1) : "";
         activeRepositoryName = repoDetailsList.get(0);
+        repositories = repositories == null ? new HashMap<>() : repositories;
         repositories.put(activeRepositoryName, new Repository());
-        repositories.get(activeRepositoryName).setName(repoDetailsList.get(0));
-        repositories.get(activeRepositoryName).setBranches(new HashMap<>());
-        repositories.get(activeRepositoryName).setCommits(new HashMap<>());
-        repositories.get(activeRepositoryName).setFolders(new HashMap<>());
-        repositories.get(activeRepositoryName).setBlobs(new HashMap<>());
-        repositories.get(activeRepositoryName).setLocationPath(Paths.get(i_RepositoryFullPath).toString());
-        activeRepositoryPath = repositories.get(activeRepositoryName).getLocationPath();
+        Repository repository = repositories.get(activeRepositoryName);
+        repository.setName(repoDetailsList.get(0));
+        repository.setBranches(new HashMap<>());
+        repository.setCommits(new HashMap<>());
+        repository.setFolders(new HashMap<>());
+        repository.setBlobs(new HashMap<>());
+        repository.setLocationPath(Paths.get(i_RepositoryFullPath).toString());
+        activeRepositoryPath = repository.getLocationPath();
 
         File branchesDirectory = new File(Paths.get(i_RepositoryFullPath, ".magit", "branches").toString());
         File[] branches = branchesDirectory.listFiles();
@@ -1527,10 +1529,7 @@ public class Engine implements IEngine {
     }
 
     public void Clear() {
-        if(activeRepositoryName != null) {
-            repositories.remove(activeRepositoryName);
-        }
-
+        activeRepositoryName = "";
         activeRepositoryName = null;
         activeRepositoryPath = null;
         remoteRepositoryLocation = "";

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" type="text/css" href="../css/Theme.css"/>
+    <link rel="stylesheet" type="text/css" href="../css/style.css"/>
     <link rel="stylesheet" type="text/css" href="../css/bootstrap.min.css">
     <script type="text/javascript" src="../js/third-parties/jquery-3.4.1.js"></script>
     <script type="text/javascript" src="../js/third-parties/popper.min.js"></script>
@@ -15,7 +15,7 @@
     <div class="Header">
         <div class="Header-icon Header-item">
             <img src="../assets/MAGit.png" alt="magit-icon"/>
-            <a href="active-repo.html" id="home-link">Home</a>
+            <span class="Link" id="home-link">Home</span>
         </div>
         <div id="header-drop-downs">
         <nav>
@@ -92,6 +92,8 @@
                             </li>
                         </ul>
                     </div>
+                    <button id="btn-commit" type="button">Commit</button>
+                    <button id="btn-checkout" type="button">Checkout</button>
                 </nav>
                 <div class="list-group Commits-list">
                     <a id="commit-list-header" class="list-group-item disabled">
