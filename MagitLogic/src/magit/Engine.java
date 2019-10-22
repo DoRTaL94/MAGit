@@ -46,12 +46,16 @@ public class Engine implements IEngine {
     private String remoteRepositoryLocation = "";
 
     // Engine is a singleton class.
-    private Engine() {
+    public Engine() {
         currentNameProperty = new SimpleStringProperty("Administrator");
         loadedProperty = new SimpleBooleanProperty(false);
         repositoryChangedProperty = new SimpleBooleanProperty(false);
         remoteRepositoryClonedProperty = new SimpleBooleanProperty(false);
         factory = new Factory(this);
+    }
+
+    public Map<String, Repository> getRepositories() {
+        return repositories;
     }
 
     public ConflictsManager MergeBranches(Branch i_Ours, Branch i_Theirs,
@@ -100,7 +104,7 @@ public class Engine implements IEngine {
                     if (conflicts.size() == 0) {
                         i_GetCommitDescriptionAction.accept(s -> handleNoConflictsInMerge(s, i_Theirs, i_MergeExceptionMessageAction));
                     } else {
-                        conflictsManager = new ConflictsManager(conflicts, i_Theirs);
+                        conflictsManager = new ConflictsManager(this, conflicts, i_Theirs);
                         conflictsManager.SetActionToGetCommitDesctiprionFromUser(i_GetCommitDescriptionAction);
                         conflictsManager.SetErrorMessageAction(i_MergeExceptionMessageAction);
                     }
@@ -174,13 +178,13 @@ public class Engine implements IEngine {
                 case SAME_NAME_EQU_SHA1:
                 case CHANGED_TO_SAME_IN_BOTH:
                 case CHANGED_TO_DIFF_IN_BOTH:
-                    Conflict conflict = new Conflict(i_Ours, i_Theirs, i_Ancestor);
+                    Conflict conflict = new Conflict(this, i_Ours, i_Theirs, i_Ancestor);
                     conflict.SetConflictSituation(mergeSituation);
                     conflict.SetFileLocation(i_CurrentPath);
                     conflicts.add(conflict);
                     break;
                 case OURS_SAME_THEIR_CHANGED:
-                    mergeSituation.Solve(i_CurrentPath, i_Theirs);
+                    mergeSituation.Solve(this, i_CurrentPath, i_Theirs);
                     break;
             }
         }
@@ -199,13 +203,13 @@ public class Engine implements IEngine {
         switch (mergeSituation) {
             case OURS_CHANGED_THEIRS_DELETED:
             case OURS_DELETED_THEIRS_CHANGED:
-                Conflict conflict = new Conflict(i_Ours, i_Theirs, i_Ancestor);
+                Conflict conflict = new Conflict(this, i_Ours, i_Theirs, i_Ancestor);
                 conflict.SetConflictSituation(mergeSituation);
                 conflict.SetFileLocation(i_CurrentPath);
                 conflicts.add(conflict);
                 break;
             case OURS_SAME_THEIRS_DELETED:
-                mergeSituation.Solve(i_CurrentPath, i_Ours);
+                mergeSituation.Solve(this, i_CurrentPath, i_Ours);
                 break;
             default:
                 conflicts.addAll(checkInsideFolder(i_CurrentPath, i_Ours, i_PathToSha1Maps, this::findDeletedFiles));
@@ -220,7 +224,7 @@ public class Engine implements IEngine {
         eMergeSituation mergeSituation = findMergeSituation(i_CurrentPath, i_Ours, i_Theirs, i_Ancestor, i_PathToSha1Maps);
 
         if(mergeSituation.equals(eMergeSituation.NEW_FILE_IN_THEIRS)) {
-            mergeSituation.Solve(i_CurrentPath, i_Theirs);
+            mergeSituation.Solve(this, i_CurrentPath, i_Theirs);
         }
 
         return new ArrayList<>(checkInsideFolder(i_CurrentPath, i_Theirs, i_PathToSha1Maps, this::findNewFiles));
@@ -379,7 +383,7 @@ public class Engine implements IEngine {
 
         i_ProgressProperty.set("Checking xml for errors...");
 
-        XmlHelper xmlChecker = new XmlHelper(xmlPath);
+        XmlHelper xmlChecker = new XmlHelper(this, xmlPath);
         loadRepositoryFromXml(xmlChecker, i_ProgressProperty);
     }
 
@@ -389,7 +393,7 @@ public class Engine implements IEngine {
         sleep();
         i_ProgressProperty.set("Checking xml for errors...");
         sleep();
-        XmlHelper xmlChecker = new XmlHelper(i_XmlStream, i_CurrentUserName);
+        XmlHelper xmlChecker = new XmlHelper(this, i_XmlStream, i_CurrentUserName);
         loadRepositoryFromXml(xmlChecker, i_ProgressProperty);
     }
 
@@ -662,7 +666,7 @@ public class Engine implements IEngine {
                 }
 
                 if (sha1 != null) {
-                    Folder.Data itemDataToAdd = Folder.Data.Parse(file, sha1);
+                    Folder.Data itemDataToAdd = Folder.Data.Parse(file, sha1, getCurrentUserName());
                     itemDataToAdd.setLastChanger(ref_LastChanger.get());
 
                     if (file.lastModified() > maxLastModified) {
@@ -860,10 +864,7 @@ public class Engine implements IEngine {
 
     @Override
     public List<List<String>> getWorkingCopyDelta() {
-        String pointedCommitSha1 = repositories.get(activeRepositoryName).getHeadBranch().getPointedCommitSha1();
         List<List<String>> wcStatus = new ArrayList<>();
-
-        Map<String, String> pathToSha1Map = factory.createPathToSha1Map(repositories.get(activeRepositoryName).getHeadBranch());
         List<String> deletedItems = new ArrayList<>();
         List<String> newItems = new ArrayList<>();
         List<String> changedItems = new ArrayList<>();
@@ -872,20 +873,25 @@ public class Engine implements IEngine {
         wcStatus.add(newItems);
         wcStatus.add(changedItems);
 
-        if(!pointedCommitSha1.isEmpty()) {
-            try {
-                getNewItems(pathToSha1Map, activeRepositoryPath, newItems);
-                Commit currentCommit = repositories.get(activeRepositoryName).getCommits().get(pointedCommitSha1);
-                String rootFolderSha1 = currentCommit.getRootFolderSha1();
+        if(repositories != null && repositories.get(activeRepositoryName) != null && repositories.get(activeRepositoryName).getHeadBranch() != null) {
+            String pointedCommitSha1 = repositories.get(activeRepositoryName).getHeadBranch().getPointedCommitSha1();
+            Map<String, String> pathToSha1Map = factory.createPathToSha1Map(repositories.get(activeRepositoryName).getHeadBranch());
 
-                if (rootFolderSha1 != null) {
-                    Folder currentRootFolder = repositories.get(activeRepositoryName).getFolders().get(rootFolderSha1);
-                    getDeletedItems(currentRootFolder, activeRepositoryPath, deletedItems);
+            if (!pointedCommitSha1.isEmpty()) {
+                try {
+                    getNewItems(pathToSha1Map, activeRepositoryPath, newItems);
+                    Commit currentCommit = repositories.get(activeRepositoryName).getCommits().get(pointedCommitSha1);
+                    String rootFolderSha1 = currentCommit.getRootFolderSha1();
+
+                    if (rootFolderSha1 != null) {
+                        Folder currentRootFolder = repositories.get(activeRepositoryName).getFolders().get(rootFolderSha1);
+                        getDeletedItems(currentRootFolder, activeRepositoryPath, deletedItems);
+                    }
+
+                    getChangedItems(pathToSha1Map, activeRepositoryPath, changedItems);
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-
-                getChangedItems(pathToSha1Map, activeRepositoryPath, changedItems);
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
 
@@ -933,11 +939,11 @@ public class Engine implements IEngine {
 
                 if (i_PathToSha1Map.containsKey(path)) {
                     if (file.isDirectory()) {
-                        sha1 = factory.createFolder(path, null);
+                        sha1 = factory.createFolder(path, null, this.getCurrentUserName());
 
                         if (!repositories.get(activeRepositoryName).getFolders().containsKey(sha1)) {
 
-                            Folder.Data folderData = Folder.Data.Parse(file, sha1);
+                            Folder.Data folderData = Folder.Data.Parse(file, sha1, getCurrentUserName());
                             i_ChangedItems.add(itemDataToString(folderData, i_CurrentPath));
                             getChangedItems(i_PathToSha1Map, path, i_ChangedItems);
                         }
@@ -945,7 +951,7 @@ public class Engine implements IEngine {
                         sha1 = factory.createBlob(path);
 
                         if (!repositories.get(activeRepositoryName).getBlobs().containsKey(sha1)) {
-                            Folder.Data folderData = Folder.Data.Parse(file, sha1);
+                            Folder.Data folderData = Folder.Data.Parse(file, sha1, getCurrentUserName());
                             i_ChangedItems.add(itemDataToString(folderData, i_CurrentPath));
                         }
                     }
@@ -968,19 +974,19 @@ public class Engine implements IEngine {
                 String path = file.toPath().toString();
                 if (!i_PathToSha1Map.containsKey(path)) {
                     if (file.isDirectory()) {
-                        sha1 = factory.createFolder(path, new SimpleDateFormat(DATE_FORMAT).format(new Date(file.lastModified())));
+                        sha1 = factory.createFolder(path, new SimpleDateFormat(DATE_FORMAT).format(new Date(file.lastModified())), this.getCurrentUserName());
                         List<String> newItems = folderDataToStringList(factory.getTmpFolders().get(sha1).getFiles(), path);
                         i_NewItems.addAll(newItems);
 
                         // empty folder is not considered new item
                         if(newItems.size() != 0) {
-                            Folder.Data folderData = Folder.Data.Parse(file, sha1);
+                            Folder.Data folderData = Folder.Data.Parse(file, sha1, getCurrentUserName());
                             String folderDataString = itemDataToString(folderData, i_CurrentPath);
                             i_NewItems.add(folderDataString);
                         }
                     } else {
                         sha1 = factory.createBlob(path);
-                        Folder.Data blobData = Folder.Data.Parse(file, sha1);
+                        Folder.Data blobData = Folder.Data.Parse(file, sha1, getCurrentUserName());
                         i_NewItems.add(itemDataToString(blobData, i_CurrentPath));
                     }
                 } else {
@@ -1187,7 +1193,7 @@ public class Engine implements IEngine {
             }
 
             if(i_IsCreateNew) {
-                Engine.Creator.getInstance().CreateNewFileOnSystem(i_File, i_FullPath);
+                CreateNewFileOnSystem(i_File, i_FullPath);
             }
         }
         else {
@@ -1376,7 +1382,7 @@ public class Engine implements IEngine {
             throw new xmlErrorsException("Input is not a path.");
         }
 
-        XmlHelper xmlHelper = new XmlHelper(xmlPath);
+        XmlHelper xmlHelper = new XmlHelper(this, xmlPath);
 
         if(xmlHelper.IsValidXmlPath()) {
             if(repositories.get(activeRepositoryName) != null) {

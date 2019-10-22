@@ -3,6 +3,7 @@ package servlets;
 import IO.FileUtilities;
 import magit.Engine;
 import utils.ServletsUtils;
+import utils.SessionUtils;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -17,7 +18,7 @@ import java.io.File;
 public class LoadRepositoryServlet extends HttpServlet {
 
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        String username= request.getParameter("username");
+        String username = SessionUtils.getUsername(request);
         String auth = request.getParameter("auth");
         String authFilePath = Paths.get("c:/magit-ex3", username, "auth.txt").toString();
         File authFile = new File(authFilePath);
@@ -30,9 +31,9 @@ public class LoadRepositoryServlet extends HttpServlet {
                 File recentRepoFile = new File(recentPath);
 
                 if(recentRepoFile.exists()) {
+                    Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
                     String recentRepoName = FileUtilities.ReadTextFromFile(recentPath);
                     String repoPath = Paths.get("c:/magit-ex3", username, "repositories", recentRepoName).toString();
-                    Engine engine = Engine.Creator.getInstance();
                     engine.loadDataFromRepository(repoPath);
                     engine.getActiveRepository().setOwner(username);
                     engine.setCurrentUserName(username);

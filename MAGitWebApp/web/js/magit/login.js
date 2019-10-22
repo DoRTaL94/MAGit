@@ -10,7 +10,9 @@ function setupLogin() {
     showForm(true);
     $('#signup').on('click', setupSignUp);
 
-    $('.Login-or-signup-form').submit(function () {
+    let btnSubmit = $('.Login-or-signup-form');
+
+    btnSubmit.submit(function () {
         $.ajax({
             method: 'GET',
             data: $(this).serialize(),
@@ -23,7 +25,7 @@ function setupLogin() {
         });
 
         return false;
-    })
+    });
 }
 
 function showForm(isLogin) {

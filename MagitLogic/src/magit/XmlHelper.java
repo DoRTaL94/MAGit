@@ -21,15 +21,18 @@ public class XmlHelper {
     private MagitRepository m_MagitRepository;
     private String m_XmlPath;
     private InputStream m_XmlInputStream;
+    private Engine m_Engine;
 
-    XmlHelper(Path i_XmlPath) {
+    XmlHelper(Engine i_Engine, Path i_XmlPath) {
+        m_Engine = i_Engine;
         m_XmlPath = i_XmlPath.toString();
         m_MagitRepository = null;
     }
 
-    public XmlHelper(InputStream i_XmlInputStream, String i_CurrentUserName) {
-        Engine.Creator.getInstance().setCurrentUserName(i_CurrentUserName);
-        m_XmlPath = Paths.get("c:/magit-ex3", Engine.Creator.getInstance().getCurrentUserName(), "repositories").toString();
+    public XmlHelper(Engine i_Engine, InputStream i_XmlInputStream, String i_CurrentUserName) {
+        m_Engine = i_Engine;
+        m_Engine.setCurrentUserName(i_CurrentUserName);
+        m_XmlPath = Paths.get("c:/magit-ex3", i_CurrentUserName, "repositories").toString();
         m_XmlInputStream = i_XmlInputStream;
     }
 

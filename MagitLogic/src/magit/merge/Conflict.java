@@ -1,6 +1,7 @@
 package magit.merge;
 
 import data.structures.IRepositoryFile;
+import magit.Engine;
 
 public class Conflict {
     private eMergeSituation m_ConflictSituation;
@@ -9,8 +10,10 @@ public class Conflict {
     private IRepositoryFile m_Ancestor;
     private String m_FullPath;
     private IRepositoryFile m_Solution;
+    private Engine m_Engine;
 
-    public Conflict(IRepositoryFile i_Ours, IRepositoryFile i_Theirs, IRepositoryFile i_Ancestor) {
+    public Conflict(Engine i_Engine, IRepositoryFile i_Ours, IRepositoryFile i_Theirs, IRepositoryFile i_Ancestor) {
+        m_Engine = i_Engine;
         m_Ours = i_Ours;
         m_Theirs = i_Theirs;
         m_Ancestor = i_Ancestor;
@@ -45,6 +48,6 @@ public class Conflict {
     }
 
     public void Solve() {
-        m_ConflictSituation.Solve(m_FullPath, m_Solution);
+        m_ConflictSituation.Solve(m_Engine, m_FullPath, m_Solution);
     }
 }

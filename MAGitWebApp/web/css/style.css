@@ -888,3 +888,72 @@ div > .edit-mode-content {
 .Link:hover {
     color: #6acaff;
 }
+
+.Profile-image {
+    width: 80px;
+    height: 80px;
+}
+
+.Profile-image > img {
+    width: 60px;
+    height: 60px;
+}
+
+.Profile {
+    padding-top: 35px;
+}
+
+#repositories-list-header {
+    position: relative;
+    background-color: #fdfdfd;
+}
+
+.Repositories-list > a,
+.Repositories-list > a > .Table,
+.Repositories-list > a > .Table > .Table-row,
+#repositories-list-items > a,
+#repositories-list-items > a > .Table,
+#repositories-list-items > a > .Table > .Table-row {
+    width: 100%;
+}
+
+#repositories-list-items > .active {
+    color: white;
+}
+
+#repositories-list-items > a {
+    cursor: pointer;
+}
+
+#repositories-list-items {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+#repositories-list-items > a > .Table > .Table-row > .Table-cell,
+.Repositories-list > a > .Table > .Table-row > .Table-cell {
+    width: 20%;
+    text-align: center;
+}
+
+.Repositories-list-header-title {
+    position: relative;
+    width: 100%;
+    text-align: center;
+    background-color: #f4f4f4;
+    padding: 5px;
+    font-size: 1.5em;
+    border-top-left-radius: .25rem;
+    border-top-right-radius: .25rem;
+    border: 1px solid rgba(52, 52, 52, 0.12);
+}
+
+.Profile > .Table > .Table-row > .Repositories-list > .list-group-item {
+    border-radius: 0;
+}
+
+.Repositories-list > .Separator {
+    margin-bottom: 5px;
+}

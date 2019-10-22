@@ -1,15 +1,9 @@
 package users;
 
 import IO.FileUtilities;
-import MagitExceptions.FolderInLocationAlreadyExistsException;
-import MagitExceptions.RepositoryAlreadyExistsException;
-import MagitExceptions.xmlErrorsException;
-import javafx.beans.property.SimpleStringProperty;
 import magit.Engine;
 import org.apache.commons.codec.digest.DigestUtils;
 
-import javax.xml.bind.JAXBException;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -18,15 +12,25 @@ import java.io.File;
 
 public class UsersManager {
     private final Map<String, User> nameToUserMap = new HashMap<>();
-    private boolean isUserLoggedIn = false;
-    private User loggedInUser;
+    private final Map<String, Boolean> nameToLoggedInUsers = new HashMap<>();
+    private final Map<String, Engine> nameToEngines = new HashMap<>();
 
     public void addUser(String i_Name, String i_Password) {
         User user = new User();
         user.setName(i_Name);
         user.setPassword(i_Password);
         nameToUserMap.put(i_Name, user);
+        nameToEngines.put(i_Name, new Engine());
+        nameToLoggedInUsers.put(i_Name, true);
         saveToDB(user);
+    }
+
+    public Engine getEngine(String i_Name) {
+        if(nameToEngines.get(i_Name) == null) {
+            nameToEngines.put(i_Name, new Engine());
+        }
+
+        return nameToEngines.get(i_Name);
     }
 
     private void saveToDB(User i_User) {
@@ -36,35 +40,36 @@ public class UsersManager {
         FileUtilities.WriteToFile(path, authString);
     }
 
-    public void addRepo(String i_UserName, String i_XmlPath) throws FileNotFoundException, RepositoryAlreadyExistsException, JAXBException, xmlErrorsException, FolderInLocationAlreadyExistsException {
-        Engine.Creator.getInstance().loadRepositoryFromXml(i_XmlPath, new SimpleStringProperty());
-        // לבדוק אם הרפו כבר קיים
-        nameToUserMap.get(i_UserName).addRepo(Engine.Creator.getInstance().getActiveRepository());
-    }
-
     public boolean isUserExists(String i_Name) {
-        return nameToUserMap.containsKey(i_Name);
+        boolean isExists = nameToUserMap.containsKey(i_Name);
+
+        if(!isExists) {
+            isExists = new File(Paths.get("c:/magit-ex3", i_Name).toString()).exists();
+        }
+
+        return isExists;
     }
 
     public void changePassword(String i_Name, String i_NewPassword) {
         nameToUserMap.get(i_Name).setPassword(i_NewPassword);
+        String newAuth = getAuthString(i_Name, i_NewPassword);
+        FileUtilities.WriteToFile(Paths.get("c:/magit-ex3", i_Name, "auth.txt").toString(), newAuth);
     }
 
     public User getUser(String i_Name) {
         return nameToUserMap.get(i_Name);
     }
 
-    public boolean isUserLoggedIn() {
-        return  isUserLoggedIn;
+    public boolean isUserLoggedIn(String i_Name) {
+        return nameToLoggedInUsers.get(i_Name);
     }
 
-    public void setLoggedInUser(User i_LoggedIn) {
-        isUserLoggedIn = true;
-        loggedInUser = i_LoggedIn;
-    }
-
-    public User getLoggedInUser() {
-        return loggedInUser;
+    public void setLoggedInUser(String i_Name) {
+        if(nameToLoggedInUsers.containsKey(i_Name)) {
+            nameToLoggedInUsers.replace(i_Name, true);
+        } else {
+            nameToLoggedInUsers.put(i_Name, true);
+        }
     }
 
     public boolean loginFromDb(String i_Username, String i_Password) throws IOException {

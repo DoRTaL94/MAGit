@@ -3,9 +3,8 @@ package servlets;
 import com.google.gson.Gson;
 import users.UsersManager;
 import utils.ServletsUtils;
+import utils.SessionUtils;
 
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -18,39 +17,52 @@ import java.util.List;
 @WebServlet("/pages/login")
 public class LoginServlet extends HttpServlet {
 
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        String username = request.getParameter("username");
-        String password = request.getParameter("password");
-        UsersManager userManager = ServletsUtils.getUsersManager(getServletContext());
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String usernameFromSession = SessionUtils.getUsername(request);
+        String authFromSession = SessionUtils.getAuth(request);
+
         List<String> errors = new ArrayList<>();
+        UsersManager userManager = ServletsUtils.getUsersManager(getServletContext());
 
-        if (username.isEmpty()) {
-            errors.add("User name cannot be empty.");
-        }
+        // user is not logged in yet.
+        if (usernameFromSession == null) {
+            String username = request.getParameter("username");
+            String password = request.getParameter("password");
 
-        if (password.isEmpty()) {
-            errors.add("Password cannot be empty.");
-        }
+            if(username != null && password != null) {
+                if (username.isEmpty()) {
+                    errors.add("User name cannot be empty.");
+                }
 
-        if(errors.size() == 0
-                && (!userManager.isUserExists(username) || !userManager.getUser(username).getPassword().equals(password))
-                && !userManager.loginFromDb(username, password)) {
-            errors.add("User name or password is invalid.");
-        }
+                if (password.isEmpty()) {
+                    errors.add("Password cannot be empty.");
+                }
 
-        if(errors.size() != 0) {
-            response.setContentType("application/json;charset=UTF-8");
-            PrintWriter out = response.getWriter();
-            Gson gson = new Gson();
-            out.print(gson.toJson(errors));
-            out.flush();
-        } else {
-            userManager.setLoggedInUser(userManager.getUser(username));
-            response.sendRedirect("load-repository?username=" + username + "&auth=" + userManager.getAuthString(username, password));
-//            response.setContentType("text/html");
-//            PrintWriter out = response.getWriter();
-//            out.print("success");
-//            out.flush();
+
+                if (errors.size() == 0 && !(userManager.isUserExists(username) && userManager.loginFromDb(username, password))) {
+                    errors.add("User name or password is invalid.");
+                }
+
+                if (errors.size() != 0) {
+                    response.setContentType("application/json;charset=UTF-8");
+                    PrintWriter out = response.getWriter();
+                    Gson gson = new Gson();
+                    out.print(gson.toJson(errors));
+                    out.flush();
+                } else {
+                    String authString = userManager.getAuthString(username, password);
+                    userManager.setLoggedInUser(username);
+                    request.getSession(true).setAttribute("username", username);
+                    request.getSession(true).setAttribute("auth", authString);
+                    response.sendRedirect("load-repository?username=" + username + "&auth=" + authString);
+                }
+            } else {
+                response.setContentType("text/html");
+                PrintWriter out = response.getWriter();
+                out.print("User didn't log in.");
+            }
+        } else if(authFromSession != null) {
+            response.sendRedirect("load-repository?username=" + usernameFromSession + "&auth=" + authFromSession);
         }
     }
 

@@ -184,7 +184,7 @@ public class Folder implements IRepositoryFile {
             return clone;
         }
 
-        public static Folder.Data Parse(File i_File, String i_Sha1) {
+        public static Folder.Data Parse(File i_File, String i_Sha1, String i_LastChanger) {
             Folder.Data data = new Folder.Data();
             boolean isFolder = i_File.isDirectory();
 
@@ -192,7 +192,7 @@ public class Folder implements IRepositoryFile {
             data.setName(i_File.getName());
             data.setCreationTimeMillis(i_File.lastModified());
             data.setlastUpdate(new SimpleDateFormat(Engine.DATE_FORMAT).format(new Date(i_File.lastModified())));
-            data.setLastChanger(Engine.Creator.getInstance().getCurrentUserName());
+            data.setLastChanger(i_LastChanger);
             data.setSHA1(i_Sha1);
 
             return data;

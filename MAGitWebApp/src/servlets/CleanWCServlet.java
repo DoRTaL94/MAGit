@@ -1,6 +1,8 @@
 package servlets;
 
 import magit.Engine;
+import utils.ServletsUtils;
+import utils.SessionUtils;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -11,10 +13,12 @@ import javax.servlet.http.HttpServletResponse;
 public class CleanWCServlet extends HttpServlet {
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) {
-        String headBranchName = Engine.Creator.getInstance().getActiveRepository().getHeadBranch().getName();
+        String username = SessionUtils.getUsername(request);
+        Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
+        String headBranchName = engine.getActiveRepository().getHeadBranch().getName();
 
         try {
-            Engine.Creator.getInstance().checkout(headBranchName ,true);
+            engine.checkout(headBranchName ,true);
         } catch (Exception e) {
             e.printStackTrace();
         }

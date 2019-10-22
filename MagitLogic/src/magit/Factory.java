@@ -380,7 +380,7 @@ public class Factory {
         return sha1;
     }
 
-    String createFolder(String i_Path, String i_PutLastModifiedIfNew) throws IOException {
+    String createFolder(String i_Path, String i_PutLastModifiedIfNew, String i_CurrentUserName) throws IOException {
         Path folderPath = Paths.get(i_Path);
 
         Folder folder = new Folder();
@@ -394,12 +394,12 @@ public class Factory {
 
                 if(!isFolder || file.listFiles().length != 0) {
                     if (isFolder) {
-                        sha1 = createFolder(file.toPath().toString(),i_PutLastModifiedIfNew);
+                        sha1 = createFolder(file.toPath().toString(), i_PutLastModifiedIfNew, i_CurrentUserName);
                     } else {
                         sha1 = createBlob(file.toPath().toString());
                     }
 
-                    Folder.Data fileData = Folder.Data.Parse(file, sha1);
+                    Folder.Data fileData = Folder.Data.Parse(file, sha1, i_CurrentUserName);
 
                     if(i_PutLastModifiedIfNew != null) {
                         fileData.setlastUpdate(i_PutLastModifiedIfNew);

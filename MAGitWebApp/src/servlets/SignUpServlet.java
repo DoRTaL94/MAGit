@@ -3,6 +3,7 @@ package servlets;
 import com.google.gson.Gson;
 import users.UsersManager;
 import utils.ServletsUtils;
+import utils.SessionUtils;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -34,7 +35,10 @@ public class SignUpServlet extends HttpServlet {
             errors.add("Passwords are not matched.");
         }
 
-        if(userManager.isUserExists(username)) {
+        String usernameFromSession = SessionUtils.getUsername(request);
+
+        if(userManager.isUserExists(username) ||
+                (usernameFromSession != null && usernameFromSession.equals(username))) {
             errors.add("User name is taken.");
         }
 

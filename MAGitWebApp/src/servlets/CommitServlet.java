@@ -3,6 +3,8 @@ package servlets;
 import MagitExceptions.CommitAlreadyExistsException;
 import MagitExceptions.EmptyWcException;
 import magit.Engine;
+import utils.ServletsUtils;
+import utils.SessionUtils;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -15,8 +17,10 @@ public class CommitServlet extends HttpServlet {
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) {
         try {
+            String username = SessionUtils.getUsername(request);
+            Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
             String description = request.getParameter("description");
-            Engine.Creator.getInstance().commit(description, null);
+           engine.commit(description, null);
         } catch (IOException | EmptyWcException | CommitAlreadyExistsException e) {
             e.printStackTrace();
         }

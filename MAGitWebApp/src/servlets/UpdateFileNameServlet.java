@@ -1,9 +1,9 @@
 package servlets;
 
 import data.structures.Folder;
-import data.structures.Repository;
-import utils.RepositoryManager;
+import magit.Engine;
 import utils.ServletsUtils;
+import utils.SessionUtils;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -19,9 +19,10 @@ public class UpdateFileNameServlet extends HttpServlet {
     private List<String> reqData = null;
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String username = SessionUtils.getUsername(request);
+        Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
         reqData = ServletsUtils.getReqData(request);
-        boolean isSuccess = ServletsUtils.applyOnDbFile(ServletsUtils.getUsersManager(getServletContext()).getLoggedInUser().getName(),
-                reqData, this::changeFileName);
+        boolean isSuccess = ServletsUtils.applyOnDbFile(engine, reqData, this::changeFileName);
 
         if(!isSuccess) {
             response.setContentType("text/html");
@@ -30,7 +31,7 @@ public class UpdateFileNameServlet extends HttpServlet {
         }
     }
 
-    private boolean changeFileName(Folder i_Parent, File i_File, Folder.Data i_Data) {
+    private boolean changeFileName(Engine i_Engine, Folder i_Parent, File i_File, Folder.Data i_Data) {
         boolean res = false;
         int reqDataSize = reqData.size();
         String newName = reqData.get(reqDataSize - 1);

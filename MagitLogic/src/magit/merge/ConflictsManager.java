@@ -16,8 +16,10 @@ public class ConflictsManager implements Iterable<Conflict> {
     private Branch m_MergedBranch;
     private Consumer<Consumer<String>> m_AskForCommitDescriptionAction;
     private Consumer<String> m_ErrorMessageAction;
+    private Engine m_Engine;
 
-    public ConflictsManager(List<Conflict> i_Conflicts, Branch i_MergedBranch) {
+    public ConflictsManager(Engine i_Engine, List<Conflict> i_Conflicts, Branch i_MergedBranch) {
+        m_Engine = i_Engine;
         m_Conflicts = i_Conflicts;
         m_MergedBranch = i_MergedBranch;
     }
@@ -34,7 +36,7 @@ public class ConflictsManager implements Iterable<Conflict> {
 
     private void commitWrapper(String i_Description) {
         try {
-            Engine.Creator.getInstance().commit(i_Description, m_MergedBranch);
+            m_Engine.commit(i_Description, m_MergedBranch);
         } catch (IOException | CommitAlreadyExistsException | EmptyWcException e) {
             m_ErrorMessageAction.accept(e.getMessage());
         }

@@ -2,21 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>My Repositories</title>
+    <title>My Profile</title>
     <link rel="stylesheet" type="text/css" href="../css/style.css"/>
     <link rel="stylesheet" type="text/css" href="../css/bootstrap.min.css">
     <script type="text/javascript" src="../js/third-parties/jquery-3.4.1.js"></script>
     <script type="text/javascript" src="../js/third-parties/popper.min.js"></script>
     <script type="text/javascript" src="../js/third-parties/bootstrap.min.js"></script>
-    <script type="text/javascript" src="../js/magit/my-repositories.js"></script>
-    <script type="text/javascript" src="../js/magit/active-repo.js"></script>
+    <script type="module" src="../js/magit/header.js"></script>
+    <script type="module" src="../js/magit/profile.js"></script>
 </head>
 <body>
 <div class="Container">
     <div class="Header">
         <div class="Header-icon Header-item">
             <img src="../assets/MAGit.png" alt="magit-icon"/>
-            <a href="active-repo.html" id="home-link">Home</a>
+            <span class="Link" id="home-link">Home</span>
         </div>
         <div id="header-drop-downs">
             <nav>
@@ -46,7 +46,8 @@
                             <span class="Dropdown-caret"></span>
                         </div>
                         <ul>
-                            <li><a id="my-repositories" href="#">My repositories</a></li>
+                            <li><a id="my-repositories" href="#">My profile</a></li>
+                            <li><a id="logout" href="login.html">Logout</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -54,10 +55,35 @@
         </div>
     </div>
     <div class="Content">
-        <div class="Magit-body">
+        <div class="Magit-body Profile">
             <div class="Table">
-                <div class="table-row">
+                <div class="Table-row Account-details">
+                    <div class="Table-cell Profile-image"><img src="../assets/user-icon.png" alt="user-icon"/></div>
+                    <div class="Table-cell Profile-details">
+                        <div class="table-row">Account name: dor</div>
+                    </div>
+                </div>
+                <div class="Table-row">
+                    <div class="Repositories-list-header-title">Repositories</div>
+                </div>
+                <div class="Table-row">
+                    <div class="list-group Repositories-list">
+                        <a id="" class="list-group-item disabled">
+                            <div class="Table">
+                                <div class="Table-row">
+                                    <div class="Table-cell Repository-name">Repository name</div>
+                                    <div class="Table-cell Active-branch-name">Active Branch</div>
+                                    <div class="Table-cell Branches-count">Branches Count</div>
+                                    <div class="Table-cell commit-last-update">Last Commit Date</div>
+                                    <div class="Table-cell commit-message">Commit Message</div>
+                                </div>
+                            </div>
+                        </a>
+                        <div class="Separator Blue"></div>
+                        <div id="repositories-list-items">
 
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

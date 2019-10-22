@@ -4,6 +4,8 @@ import MagitExceptions.RepositoryNotLoadedException;
 import MagitExceptions.xmlErrorsException;
 import data.structures.Repository;
 import magit.Engine;
+import utils.ServletsUtils;
+import utils.SessionUtils;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -23,8 +25,11 @@ public class DownloadServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
+            String username = SessionUtils.getUsername(request);
+            Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
+
             String xmlPath = getXmlPath(request);
-            Engine.Creator.getInstance().exportRepositoryToXml(xmlPath);
+            engine.exportRepositoryToXml(xmlPath);
             File downloadFile = new File(Paths.get(xmlPath).toString());
 
             try(InputStream in = new FileInputStream(xmlPath);
@@ -57,7 +62,10 @@ public class DownloadServlet extends HttpServlet {
     }
 
     private String getXmlPath(HttpServletRequest request) {
-        Repository repo = Engine.Creator.getInstance().getRepository(request.getParameter(PARAMETER_NAME));
+        String username = SessionUtils.getUsername(request);
+        Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
+
+        Repository repo = engine.getRepository(request.getParameter(PARAMETER_NAME));
         String xmlFilesLocation = Paths.get(DATABASE_LOCATION, repo.getOwner(), XML_DIR_NAME).toString();
         File xmlFilesDir = new File(xmlFilesLocation);
 

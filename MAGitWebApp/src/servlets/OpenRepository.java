@@ -1,8 +1,7 @@
 package servlets;
 
-import com.google.gson.Gson;
+import data.structures.Repository;
 import magit.Engine;
-import utils.RepositoryUpdates;
 import utils.ServletsUtils;
 import utils.SessionUtils;
 
@@ -13,24 +12,25 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-@WebServlet("/pages/update-repo")
-public class UpdateRepoServlet extends HttpServlet {
+@WebServlet("/pages/open-repository")
+public class OpenRepository extends HttpServlet {
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String username = SessionUtils.getUsername(request);
         Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
+        String repositoryName = request.getParameter("repositoryname");
 
-        response.setContentType("application/json;charset=UTF-8");
+        Repository repository = engine.getRepository(repositoryName);
+        response.setContentType("text/html");
         PrintWriter out = response.getWriter();
-        Gson gson = new Gson();
-        RepositoryUpdates repositoryUpdates = new RepositoryUpdates(engine);
 
-        if(repositoryUpdates.getRepository() == null) {
-            out.print("User has no repositories.");
+        if(repository != null) {
+            engine.setActiveRepository(repository);
+            out.print("success");
         } else {
-            out.print(gson.toJson(repositoryUpdates));
+            out.print("repository not exists");
         }
 
-        out.flush();
+
     }
 }

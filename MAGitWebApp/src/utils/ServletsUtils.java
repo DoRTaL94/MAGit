@@ -32,17 +32,6 @@ public class ServletsUtils {
         return (UsersManager) i_ServletContext.getAttribute(USER_MANAGER_ATTRIBUTE_NAME);
     }
 
-    public static RepositoryManager getRepositoryManager(ServletContext i_ServletContext) {
-
-        synchronized (repositoryManagerLock) {
-            if (i_ServletContext.getAttribute(REPOSITORY_MANAGER_ATTRIBUTE_NAME) == null) {
-                i_ServletContext.setAttribute(REPOSITORY_MANAGER_ATTRIBUTE_NAME, new RepositoryManager());
-            }
-        }
-
-        return (RepositoryManager) i_ServletContext.getAttribute(REPOSITORY_MANAGER_ATTRIBUTE_NAME);
-    }
-
     public static Folder.Data getFile(Folder i_Folder, String i_FileSha1) {
         Folder.Data res = null;
 
@@ -62,13 +51,14 @@ public class ServletsUtils {
         return gson.fromJson(prevFolders, new TypeToken<List<String>>(){}.getType());
     }
 
-    public static boolean applyOnDbFile(String i_UserName, List<String> i_ReqData, IFileChanger i_ApplyOnFile) {
+    public static boolean applyOnDbFile(Engine engine, List<String> i_ReqData, IFileChanger i_ApplyOnFile) {
         boolean res = false;
         int reqDataSize = i_ReqData.size();
 
-        Repository repository = Engine.Creator.getInstance().getActiveRepository();
+        Repository repository = engine.getActiveRepository();
+        String username = repository.getOwner();
         Map<String, Folder> folders = repository.getFolders();
-        String path = Paths.get("c:/magit-ex3", i_UserName, "repositories", repository.getName()).toString();
+        String path = Paths.get("c:/magit-ex3", username, "repositories", repository.getName()).toString();
         String rootSha1 = repository.getCommits().get(repository.getHeadBranch().getPointedCommitSha1()).getRootFolderSha1();
         Folder root = folders.get(rootSha1);
 
@@ -81,12 +71,12 @@ public class ServletsUtils {
 
                     if (fileData.getFileType().equals(eFileType.FOLDER)) {
                         if(i + 1  == reqDataSize - 1) {
-                            res = i_ApplyOnFile.apply(root, new File(path), fileData);
+                            res = i_ApplyOnFile.apply(engine, root, new File(path), fileData);
                         }
 
                         root = folders.get(fileData.getSHA1());
                     } else {
-                        res = i_ApplyOnFile.apply(root, new File(path), fileData);
+                        res = i_ApplyOnFile.apply(engine, root, new File(path), fileData);
                     }
                 }
             }

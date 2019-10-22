@@ -8,6 +8,7 @@ import com.google.gson.Gson;
 import javafx.beans.property.SimpleStringProperty;
 import magit.Engine;
 import utils.ServletsUtils;
+import utils.SessionUtils;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
@@ -29,9 +30,10 @@ import java.util.Scanner;
 public class ImportRepoServlet extends HttpServlet {
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        String username             = SessionUtils.getUsername(request);
+        Engine engine               = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
         Collection<Part> parts      = request.getParts(); // Uploading files sends them in parts to the server. Parts size could be configured in '@MultipartConfig' above.
         StringBuilder fileContent   = new StringBuilder(); // We will append each part and make one string out of them.
-        Engine engine               = Engine.Creator.getInstance();
         List<String> errors         = new ArrayList<>();
 
         for (Part part : parts) {
@@ -41,7 +43,6 @@ public class ImportRepoServlet extends HttpServlet {
         try {
             // In order to load the uploaded xml we will convert it into input stream so 'JAXB' could convert it to an object.
             InputStream xmlStream = new ByteArrayInputStream(fileContent.toString().getBytes());
-            String username = ServletsUtils.getUsersManager(getServletContext()).getLoggedInUser().getName();
             // This is a slighting different 'LoadRepositoryFromXml' function we will pass to it the input stream we've created and the username logged in to
             // the server. We're passing the username because inside the xml file there is a username parameter that it might no be the current user whom logged in.
             engine.LoadRepositoryFromXml(xmlStream, username, new SimpleStringProperty());
@@ -67,7 +68,7 @@ public class ImportRepoServlet extends HttpServlet {
             out.print(toOut);
             out.flush();
         } else {
-            engine.getActiveRepository().setOwner(ServletsUtils.getUsersManager(getServletContext()).getLoggedInUser().getName());
+            engine.getActiveRepository().setOwner(username);
             // לעדכן את הרפוזיטורי הנוכחי של המשתמש
             // להוסיף לרשימת הרפוזיטוריס של המשתמש
         }

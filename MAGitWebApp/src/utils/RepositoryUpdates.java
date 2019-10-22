@@ -4,15 +4,12 @@ import data.structures.Repository;
 import magit.Engine;
 
 public class RepositoryUpdates {
-    private Repository repository = null;
-    private boolean isOpenChanges = false;
+    private Repository repository;
+    private boolean isOpenChanges;
 
-    public void checkForUpdates() {
-        repository = Engine.Creator.getInstance().getActiveRepository();
-
-        if(repository != null) {
-            isOpenChanges = !Engine.Creator.getInstance().isWcClean();
-        }
+    public RepositoryUpdates(Engine i_Engine) {
+        repository = i_Engine.getActiveRepository();
+        isOpenChanges = !i_Engine.isWcClean();
     }
 
     public boolean getIsOpenChanges() {
