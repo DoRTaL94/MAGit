@@ -11,8 +11,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Array;
 import java.nio.file.Paths;
 import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @WebServlet("/pages/load-repository")
 public class LoadRepositoryServlet extends HttpServlet {
@@ -27,16 +32,18 @@ public class LoadRepositoryServlet extends HttpServlet {
             String savedAuth = FileUtilities.ReadTextFromFile(authFilePath);
 
             if(savedAuth.equals(auth)) {
-                String recentPath = Paths.get("c:/magit-ex3", username, "repositories", "recent.txt").toString();
-                File recentRepoFile = new File(recentPath);
+                String repositoriesPath = Paths.get("c:/magit-ex3", username, "repositories").toString();
+                File repositoriesDir = new File(repositoriesPath);
 
-                if(recentRepoFile.exists()) {
+                if(repositoriesDir.exists()) {
+                    List<String> repositories = Arrays.stream(Objects.requireNonNull(repositoriesDir.listFiles())).map(file -> file.toPath().toString()).collect(Collectors.toList());
                     Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
-                    String recentRepoName = FileUtilities.ReadTextFromFile(recentPath);
-                    String repoPath = Paths.get("c:/magit-ex3", username, "repositories", recentRepoName).toString();
-                    engine.loadDataFromRepository(repoPath);
-                    engine.getActiveRepository().setOwner(username);
-                    engine.setCurrentUserName(username);
+
+                    for(String path: repositories) {
+                        engine.loadDataFromRepository(path);
+                        engine.getActiveRepository().setOwner(username);
+                        engine.setCurrentUserName(username);
+                    }
                 }
 
                 response.setContentType("text/html");

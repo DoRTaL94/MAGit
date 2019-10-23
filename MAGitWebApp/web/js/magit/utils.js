@@ -1,4 +1,4 @@
-export { getMapSize, isFunction, sortFiles };
+export { getMapSize, isFunction, sortFiles, getSortedCommitsSha1s };
 
 function getMapSize(object, filter) {
     let count = 0;
@@ -17,6 +17,21 @@ function getMapSize(object, filter) {
 
 function isFunction(functionToCheck) {
     return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
+}
+
+function getSortedCommitsSha1s(repository) {
+    let commits = repository.commits;
+    let commitsSha1s = [];
+
+    for(let commitSha1 in commits) {
+        commitsSha1s.push(commitSha1);
+    }
+
+    commitsSha1s.sort(function (first, second) {
+        return commits[second].creationTimeMillis - commits[first].creationTimeMillis;
+    });
+
+    return commitsSha1s;
 }
 
 function sortFiles(files) {

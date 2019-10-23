@@ -1,6 +1,6 @@
 import { getIsOpenChanges, HOME } from './active-repo.js';
 
-const HEADER_ITEM           = "#header-drop-downs > nav > ul > li";
+const HEADER_ITEM = "#header-drop-downs > nav > ul > li";
 
 $(setHeaderItemsOnClick);
 
@@ -18,6 +18,17 @@ function setHeaderItemsOnClick() {
     });
 
     $('#home-link').on('click', () => window.location.href = HOME);
+
+    $('#logout').on('click', function () {
+        $.ajax({
+            method: 'POST',
+            url: "logout",
+            timeout: 2000,
+            success: function () {
+                window.location.href = 'login.html';
+            }
+        });
+    });
 
     $(HEADER_ITEM).on("click", function() {
         let notification = $(this).find("img.Notification-icon");

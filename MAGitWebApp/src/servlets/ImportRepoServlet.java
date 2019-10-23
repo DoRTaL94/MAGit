@@ -47,10 +47,6 @@ public class ImportRepoServlet extends HttpServlet {
             // the server. We're passing the username because inside the xml file there is a username parameter that it might no be the current user whom logged in.
             engine.LoadRepositoryFromXml(xmlStream, username, new SimpleStringProperty());
             engine.setCurrentUserName(username);
-            String recentRepoPath = Paths.get("c:/magit-ex3", username, "repositories", "recent.txt").toString();
-            String repoName = engine.getActiveRepository().getName();
-
-            FileUtilities.WriteToFile(recentRepoPath, repoName);
         } catch (RepositoryAlreadyExistsException e) {
             errors.add(e.getMessage());
         } catch (xmlErrorsException e) {

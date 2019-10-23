@@ -25,6 +25,10 @@ public class RepositoriesServlet extends HttpServlet {
         Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
         Map<String, Repository> repositories = engine.getRepositories();
 
+        Gson gson = new Gson();
+        response.setContentType("application/json;charset=UTF-8");
+        PrintWriter out = response.getWriter();
+
         if(repositories != null) {
             List<RepositoryDetails> details = new ArrayList<>();
 
@@ -32,10 +36,12 @@ public class RepositoriesServlet extends HttpServlet {
                 details.add(new RepositoryDetails(entry.getValue()));
             }
 
-            Gson gson = new Gson();
             String toOut = gson.toJson(details);
-            response.setContentType("application/json;charset=UTF-8");
-            PrintWriter out = response.getWriter();
+            out.print(toOut);
+        } else {
+            Repository repository = new Repository();
+            repository.setOwner(username);
+            String toOut = gson.toJson(new RepositoryDetails(repository));
             out.print(toOut);
         }
     }

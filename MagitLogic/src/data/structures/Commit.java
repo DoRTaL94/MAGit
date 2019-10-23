@@ -2,10 +2,13 @@ package data.structures;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 import IO.FileUtilities;
+import magit.Engine;
 import org.apache.commons.codec.digest.DigestUtils;
 import puk.team.course.magit.ancestor.finder.CommitRepresentative;
 import resources.jaxb.schema.generated.MagitSingleCommit;
@@ -19,6 +22,7 @@ public class Commit implements IRepositoryFile, CommitRepresentative {
     private String lastChanger = null;
     private String lastUpdate = null;
     private String sha1 = null;
+    private long creationTimeMillis;
 
     @Override
     public String toString() {
@@ -85,6 +89,11 @@ public class Commit implements IRepositoryFile, CommitRepresentative {
     }
 
     public void setLastUpdate(String i_LastUpdate) {
+        try {
+            creationTimeMillis = new SimpleDateFormat(Engine.DATE_FORMAT).parse(i_LastUpdate).getTime();
+        } catch (ParseException e) {
+            creationTimeMillis = 0;
+        }
         lastUpdate = i_LastUpdate;
         updateSha1();
     }

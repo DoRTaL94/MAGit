@@ -1,4 +1,4 @@
-const HOME = '../pages/active-repo.html';
+import { HOME } from './active-repo.js';
 const REGISTER_LINK_TXT = "Don't have an account yet? Register";
 
 $(setupLogin);

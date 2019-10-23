@@ -25,6 +25,11 @@ public class UsersManager {
         saveToDB(user);
     }
 
+    public void logoutUser(String i_Name) {
+        nameToLoggedInUsers.replace(i_Name, false);
+        nameToEngines.remove(i_Name);
+    }
+
     public Engine getEngine(String i_Name) {
         if(nameToEngines.get(i_Name) == null) {
             nameToEngines.put(i_Name, new Engine());

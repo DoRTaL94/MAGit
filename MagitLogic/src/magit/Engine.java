@@ -1255,7 +1255,8 @@ public class Engine implements IEngine {
     @Override
     public void setActiveRepository(Repository i_Repository) {
         activeRepositoryName = i_Repository.getName();
-
+        activeRepositoryPath = i_Repository.getLocationPath();
+        
         if(!repositories.containsKey(i_Repository.getName())) {
             repositories.put(activeRepositoryName, i_Repository);
         }
@@ -1535,7 +1536,6 @@ public class Engine implements IEngine {
     }
 
     public void Clear() {
-        activeRepositoryName = "";
         activeRepositoryName = null;
         activeRepositoryPath = null;
         remoteRepositoryLocation = "";

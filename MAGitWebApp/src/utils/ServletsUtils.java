@@ -17,9 +17,7 @@ import java.util.Map;
 
 public class ServletsUtils {
     private static final String USER_MANAGER_ATTRIBUTE_NAME = "usersManager";
-    private static final String REPOSITORY_MANAGER_ATTRIBUTE_NAME = "repositoryManager";
     private static final Object userManagerLock = new Object();
-    private static final Object repositoryManagerLock = new Object();
 
     public static UsersManager getUsersManager(ServletContext i_ServletContext) {
 
