@@ -24,20 +24,21 @@ const lastCommitContent =
     <div class="collapse navbar-collapse" id="navbarNavDropdown">
         <ul class="navbar-nav">
             <li class="nav-item dropdown active">
-                <a class="nav-link dropdown-toggle" href="#" id="branch-drop-down" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></a>
+                <a class="Link nav-link dropdown-toggle" id="branch-drop-down" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></a>
                 <div class="dropdown-menu Branches" aria-labelledby="navbarDropdownMenuLink"></div>
             </li>
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="download-or-clone-dropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <a class="Link nav-link dropdown-toggle" id="download-or-clone-dropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     Download or clone
                 </a>
                 <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-                    <a class="dropdown-item" id="download" href="#">Download</a>
-                    <a class="dropdown-item" id="clone" href="#">Clone</a>
+                    <a class="Link dropdown-item" id="download">Download</a>
+                    <a class="Link dropdown-item" id="clone">Clone</a>
                 </div>
             </li>
         </ul>
     </div>
+    <button id="btn-create-file" type="button">Create File</button>
     <button id="btn-commit" type="button">Commit</button>
     <button id="btn-checkout" type="button">Checkout</button>
 </nav>
@@ -124,12 +125,12 @@ function buildCommitsList() {
         }
 
         $('.list-group').append(
-`<a class="list-group-item" href="#commit-${ commit.sha1 }" data-toggle="collapse" aria-expanded="false" aria-controls="commit-${ commit.sha1 }">
+`<a class="list-group-item Commit-list-item" href="#commit-${ commit.sha1 }" data-toggle="collapse" aria-expanded="false" aria-controls="commit-${ commit.sha1 }">
     <div class="Table">
         <div class="Table-row">
             <div class="Table-cell"><img id="commiter-icon" src="../assets/user-icon.png" alt="commiter icon"/> ${ commit.lastChanger }</span></div>
             ${ pointingBranches }
-            <div class="Table-cell">${ commit.sha1 }</div>
+            <div class="Table-cell Commit-sha1">${ commit.sha1 }</div>
             <div class="Table-cell commit-description">${ commit.message }</div>
             <div class="Table-cell file-last-update">${ commit.lastUpdate }</div>
         </div>
@@ -141,10 +142,25 @@ function buildCommitsList() {
     });
 
     $('.list-group > a').on('click', function () {
+        let commitSha1 = $(this).find('.Commit-sha1').text();
+        prevFoldersStack = [];
+        recentFolderSha1 = repository.commits[commitSha1].rootFolderSha1;
+
+        updateRootFolder(recentFolderSha1, `#commit-files-${ commitSha1 }`, false);
+
         $('.list-group').find('a').each(function () {
-            $(this).removeClass('active');
+            let otherCommitSha1 = $(this).find('.Commit-sha1').text();
+
+            if(otherCommitSha1 !== commitSha1) {
+                if($(this).attr('aria-expanded') === 'true') {
+                    $(this).trigger("click");
+                }
+
+                $(this).removeClass('active');
+            }
         });
-        $(this).addClass('active')
+
+        $(this).addClass('active');
     });
 
 }
@@ -362,8 +378,6 @@ function updateRepo(branchName) {
         $('#btn-commit').prop('disabled', true);
 
         btnCheckout.on('click', onBtnCheckoutClick)
-
-
     } else {
         let btnCommit = $('#btn-commit');
 
@@ -385,7 +399,7 @@ function updateRepo(branchName) {
     for(let key in repository.branches) {
         if(repository.branches.hasOwnProperty(key)) {
             let headBranchMark = key === repository.headBranch.name ? `<img id="head-branch-mark" src="../${ ASSETS_LOCATION }/head-branch.svg"/>` : '';
-            branchesList.append(`<a class="dropdown-item" id="${ key }" onclick="updateRepo(this.id)" href="#">${ headBranchMark } ${ key }</a>`)
+            branchesList.append(`<a class="Link dropdown-item" id="${ key }" onclick="updateRepo(this.id)">${ headBranchMark } ${ key }</a>`)
         }
     }
 
@@ -414,7 +428,7 @@ function checkout() {
             console.log(response);
         },
         success: function () {
-            window.location.href = HOME;
+            window.location.href = 'active-repo.html';
         }
     });
 }
@@ -426,7 +440,7 @@ function updateRootFolder(folderSha1, containerId, isEnableEditModeIfActiveBranc
 
     if(folder.isRoot === false && prevFoldersStack.length > 0) {
         folderFiles.append(
-            `<a href="#" id="${ prevFoldersStack[prevFoldersStack.length - 1] }" onclick="openPrevFolder('${ containerId }', ${ isEnableEditModeIfActiveBranch })" class="Commit-list-item list-group-item list-group-item-action">
+            `<a id="${ prevFoldersStack[prevFoldersStack.length - 1] }" onclick="openPrevFolder('${ containerId }', ${ isEnableEditModeIfActiveBranch })" class="Link Commit-list-item list-group-item list-group-item-action">
     <div class="Table">
         <div class="Table-row">
             <div class="Table-cell prev-folder">
@@ -487,7 +501,7 @@ function buildListItem(file, isActiveBranch, containerId, isEnableEditModeIfActi
 
     return `<div class="Commit-list-item">
     ${ editModeIcon }
-    <a ${ buildAtrributes(file, containerId, isEnableEditModeIfActiveBranch) } id="file-${ file.sha1 }" role="button" class="Item-link list-group-item list-group-item-action">
+    <a ${ buildAtrributes(file, containerId, isEnableEditModeIfActiveBranch) } id="file-${ file.sha1 }" role="button" class="Link list-group-item list-group-item-action">
         <div class="Table">
             <div class="Table-row">
                 <div class="Table-cell file-name"><img id="${ icon }" src="../${ASSETS_LOCATION}/${ icon }.svg"/> <span class="${ getFileExtension(file) }" id="file-name-${ file.sha1 }">${ file.name }</span></div>
@@ -498,7 +512,7 @@ function buildListItem(file, isActiveBranch, containerId, isEnableEditModeIfActi
         </div>
     </a>
     ${ editModeExpander }
-    ${ buildContentExpander(file, isActiveBranch) }
+    ${ buildContentExpander(file, isActiveBranch, isEnableEditModeIfActiveBranch) }
 </div>`;
 }
 
@@ -511,7 +525,7 @@ function buildEditModeIcon(file, isActiveBranch) {
 
 function buildAtrributes(file, containerId, isEnableEditModeIfActiveBranch) {
     return file.type === 'FOLDER' ?
-        `href="#" onclick="openFolder('${ file.sha1}', '${ containerId }', '${ isEnableEditModeIfActiveBranch }')"`
+        `onclick="openFolder('${ file.sha1}', '${ containerId }', ${ isEnableEditModeIfActiveBranch })"`
         : `href="#content-${ file.sha1 }" data-toggle="collapse" aria-expanded="false" aria-controls="content-${ file.sha1 }"`;
 }
 
@@ -558,8 +572,8 @@ function enableSaveButton(sha1) {
     }
 }
 
-function buildContentExpander(file, isActiveBranch) {
-    let contentEditor = isActiveBranch ? `<div class="Editor"><button type="button" id="${ file.sha1 }-edit" class="Edit" onclick="editBlob('${ file.sha1 }')">Edit</button><button type="button" id="${ file.sha1 }-save" onclick="saveBlob('${ file.sha1 }')" class="Save" disabled>Save</button></div>` : '';
+function buildContentExpander(file, isActiveBranch, isEnableEditModeIfActiveBranch) {
+    let contentEditor = isActiveBranch && isEnableEditModeIfActiveBranch ? `<div class="Editor"><button type="button" id="${ file.sha1 }-edit" class="Edit" onclick="editBlob('${ file.sha1 }')">Edit</button><button type="button" id="${ file.sha1 }-save" onclick="saveBlob('${ file.sha1 }')" class="Save" disabled>Save</button></div>` : '';
 
     return file.type === 'FOLDER' ? '' :
 `<div class="collapse" id="content-${ file.sha1 }">

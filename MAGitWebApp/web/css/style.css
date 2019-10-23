@@ -634,6 +634,11 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     margin: 0;
 }
 
+#btn-create-file {
+    margin-right: 10px;
+}
+
+#btn-create-file,
 #btn-commit,
 #btn-checkout {
     position: relative;
@@ -644,11 +649,13 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     border: 2px solid #e0e0e0;
 }
 
+#btn-create-file:hover,
 #btn-commit:hover,
 #btn-checkout:hover {
     background-color: #d7d7d7;
 }
 
+#btn-create-file:active,
 #btn-commit:active,
 #btn-checkout:active {
     color: white;
@@ -656,6 +663,7 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     border: 2px solid #7dcdff;
 }
 
+#btn-create-file,
 .Save,
 .Edit,
 .Delete,
@@ -681,6 +689,7 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     border: 1.5px solid #b46058;
 }
 
+#btn-create-file,
 .Delete:focus,
 #btn-commit:focus,
 #btn-checkout:focus {
@@ -744,13 +753,21 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     outline: 0;
 }
 
+.Commit-list-item > a:first-child,
+a.Commit-list-item:first-child {
+    border-top-right-radius: 3px;
+    border-top-left-radius: 3px;
+}
+
+.Commit-list-item > a:last-child,
+a.Commit-list-item:last-child {
+    border-bottom-right-radius: 3px;
+    border-bottom-left-radius: 3px;
+}
+
 .Commit-list-item {
     position: relative;
     font-size: 0.9em;
-}
-
-div > .Commit-list-item > .Item-link {
-    border-radius: 0;
 }
 
 div > .active > a,
@@ -963,10 +980,6 @@ div > .edit-mode-content {
     z-index: 2;
 }
 
-.Profile > .Table > .Table-row > .Repositories-list > .list-group-item {
-    border-radius: 0;
-}
-
 .Profile > .Table > .Separator,
 .Repositories-list > .Separator {
     position: relative;
@@ -1075,11 +1088,16 @@ div > .edit-mode-content {
     z-index: 0;
 }
 
-.list-group > a {
-    cursor: pointer;
-}
-
 .commit-files {
     padding-right: 5px;
     padding-left: 5px;
+}
+
+#last-commit-content > #commit-list-items > a {
+    font-size: 0.9em;
+    color: #495057;
+}
+#last-commit-content > #commit-list-items > .active {
+    font-size: 0.9em;
+    color: white;
 }

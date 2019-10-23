@@ -24,7 +24,9 @@ function getSortedCommitsSha1s(repository) {
     let commitsSha1s = [];
 
     for(let commitSha1 in commits) {
-        commitsSha1s.push(commitSha1);
+        if(commitSha1.length === 40) {
+            commitsSha1s.push(commitSha1);
+        }
     }
 
     commitsSha1s.sort(function (first, second) {
