@@ -1,6 +1,6 @@
 import { getMapSize, sortFiles, getSortedCommitsSha1s } from './utils.js';
 import * as popups from "./popups.js";
-export { getIsOpenChanges, setOpenChanges, HOME }
+export { getIsOpenChanges, setOpenChanges, getPrevFoldersStack, addBlob, addFolder, HOME }
 
 window.uploadFile           = uploadFile;
 window.updateRepo           = updateRepo;
@@ -386,6 +386,8 @@ function updateRepo(branchName) {
         btnCommit.on('click', popups.showCommitPopup);
     }
 
+    $('#btn-create-file').on('click', popups.showCreateFilePopup);
+
     commitListHeader.find('span#commiter-name').empty().text(currCommit.lastChanger);
     commitListHeader.find('div.commit-description').empty().text(currCommit.message);
     commitListHeader.find('div.commit-sha1').empty().text(currCommit.sha1);
@@ -648,6 +650,14 @@ function saveBlob(sha1) {
     }
 }
 
+function getPrevFoldersStack() {
+    prevFoldersStack.push(recentFolderSha1);
+    let prevFolderStack = JSON.stringify(prevFoldersStack);
+    prevFoldersStack.pop();
+
+    return prevFolderStack;
+}
+
 function updateFileData(sha1, method, data, url, onSuccess, onError) {
     prevFoldersStack.push(recentFolderSha1);
     prevFoldersStack.push(sha1);
@@ -761,4 +771,12 @@ function openPrevFolder(containerId, isEnableEditModeIfActiveBranch) {
 function openFolder(sha1, containerId, isEnableEditModeIfActiveBranch) {
     prevFoldersStack.push(recentFolderSha1);
     updateRootFolder(sha1, containerId, isEnableEditModeIfActiveBranch);
+}
+
+function addBlob(fileToAdd, sha1, prevFoldersStack) {
+
+}
+
+function addFolder(fileToAdd, sha1, prevFoldersStack) {
+
 }

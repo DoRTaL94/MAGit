@@ -374,6 +374,7 @@ public class Factory {
         Blob blob = new Blob();
 
         blob.setText(FileUtilities.ReadTextFromFile(i_Path));
+        blob.setName(new File(i_Path).getName());
         String sha1 = DigestUtils.sha1Hex(blob.toStringForSha1());
         tmpBlobs.put(sha1, blob);
 

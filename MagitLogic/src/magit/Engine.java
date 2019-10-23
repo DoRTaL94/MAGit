@@ -695,6 +695,7 @@ public class Engine implements IEngine {
 
             if(!repositories.get(activeRepositoryName).getBlobs().containsKey(sha1)) {
                 Blob blob = new Blob();
+                blob.setName(new File(filePath).getName());
                 blob.setText(blobContent);
                 repositories.get(activeRepositoryName).getBlobs().put(sha1, blob);
                 FileUtilities.ZipFile(sha1, blobContent, Paths.get(activeRepositoryPath,".magit", "objects", sha1).toString());

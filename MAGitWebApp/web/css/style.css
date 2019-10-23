@@ -885,6 +885,12 @@ div > .edit-mode-content {
     outline: 0;
 }
 
+.Popup-buttons > .Btn-error-ok {
+    background-color: #8ed4ff;
+    border-bottom-right-radius: 3px;
+    border-bottom-left-radius: 3px;
+}
+
 .Popup-buttons > .Btn-cancel {
     border-bottom-right-radius: 3px;
     border-left: 1px solid #e3e3e3;
@@ -896,6 +902,8 @@ div > .edit-mode-content {
     border-right: 1px solid #d0d0d0;
 }
 
+
+.Popup-buttons > .Btn-error-ok:hover,
 .Popup-buttons > .Btn-ok:hover {
     background-color: #6ac6ff;
 }
@@ -1097,7 +1105,23 @@ div > .edit-mode-content {
     font-size: 0.9em;
     color: #495057;
 }
+
 #last-commit-content > #commit-list-items > .active {
     font-size: 0.9em;
     color: white;
+}
+
+.File-name {
+    position: relative;
+    width: 60%;
+}
+
+#input-file-name {
+    width: 100%;
+    border: 1px solid #ced4da;
+    z-index: 1;
+}
+
+#extension-select {
+    width: 40%;
 }

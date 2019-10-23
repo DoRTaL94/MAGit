@@ -7,6 +7,7 @@ import resources.jaxb.schema.generated.MagitBlob;
 
 public class Blob implements IRepositoryFile {
     private String text;
+    private String name;
 
     public Blob() {
         text = null;
@@ -26,17 +27,19 @@ public class Blob implements IRepositoryFile {
 
     public static Blob parse(MagitBlob i_MagitBlob){
         Blob newBlob = new Blob();
+        newBlob.setName(i_MagitBlob.getName());
         newBlob.setText(i_MagitBlob.getContent());
         return newBlob;
     }
 
+    public void setName(String i_Name) {
+        name = i_Name;
+    }
+
     public static Blob parse(File i_BlobZippedFile) throws IOException {
         Blob newBlob = new Blob();
-        String blobContent = null;
-
-        blobContent = FileUtilities.UnzipFile(i_BlobZippedFile.getPath());
-
-        newBlob.setText(blobContent);
+        newBlob.setName(FileUtilities.getZippedFileName(i_BlobZippedFile.getPath()));
+        newBlob.setText(FileUtilities.UnzipFile(i_BlobZippedFile.getPath()));
         return newBlob;
     }
 
@@ -45,7 +48,7 @@ public class Blob implements IRepositoryFile {
         return text;
     }
 
-    public String toStringForSha1() { return text.replaceAll("\\s", ""); }
+    public String toStringForSha1() { return text.replaceAll("\\s", "") + name; }
 
     public Blob clone() {
         Blob clone = null;

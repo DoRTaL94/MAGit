@@ -74,6 +74,21 @@ public class FileUtilities {
         return content;
     }
 
+    public static String getZippedFileName(String i_ZipPath) throws IOException {
+        String name = null;
+
+        try(ZipFile zip = new ZipFile(i_ZipPath)) {
+            Enumeration e = zip.entries();
+
+            while (e.hasMoreElements()) {
+                ZipEntry entry = (ZipEntry) e.nextElement();
+                name = entry.getName();
+            }
+        }
+
+        return name;
+    }
+
     private static String getText(InputStream in)  {
         StringBuilder sb = new StringBuilder();
         String content = null;
