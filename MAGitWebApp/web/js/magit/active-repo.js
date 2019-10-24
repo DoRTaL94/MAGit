@@ -1,6 +1,6 @@
-import { getMapSize, sortFiles, getSortedCommitsSha1s } from './utils.js';
+import { getMapSize, sortFiles, getSortedCommitsSha1s, getParentsFoldersNames } from './utils.js';
 import * as popups from "./popups.js";
-export { getIsOpenChanges, setOpenChanges, getPrevFoldersStack, addBlob, addFolder, HOME }
+export { getIsOpenChanges, setOpenChanges, getPrevFoldersStack, addBlob, addFolder, getFileDataInCurrentDir, repository, getRecentFolderSha1, HOME }
 
 window.uploadFile           = uploadFile;
 window.updateRepo           = updateRepo;
@@ -74,7 +74,7 @@ const btnUpload =
 let messagesForm ='<ul id="form-messages"></ul>';
 let repository = null;
 let isActiveBranch = null;
-let isOpenChanges = false;
+export let isOpenChanges = false;
 let recentFolderSha1 = null;
 let prevFoldersStack = [];
 
@@ -437,12 +437,12 @@ function checkout() {
 
 function updateRootFolder(folderSha1, containerId, isEnableEditModeIfActiveBranch) {
     let folder = repository.folders[folderSha1];
-    let folderFiles = $(containerId);
-    folderFiles.empty();
+    let container = $(containerId);
+    container.empty();
 
     if(folder.isRoot === false && prevFoldersStack.length > 0) {
-        folderFiles.append(
-            `<a id="${ prevFoldersStack[prevFoldersStack.length - 1] }" onclick="openPrevFolder('${ containerId }', ${ isEnableEditModeIfActiveBranch })" class="Link Commit-list-item list-group-item list-group-item-action">
+        container.append(
+`<a id="${ prevFoldersStack[prevFoldersStack.length - 1] }" onclick="openPrevFolder('${ containerId }', ${ isEnableEditModeIfActiveBranch })" class="Link Commit-list-item list-group-item list-group-item-action">
     <div class="Table">
         <div class="Table-row">
             <div class="Table-cell prev-folder">
@@ -454,26 +454,28 @@ function updateRootFolder(folderSha1, containerId, isEnableEditModeIfActiveBranc
     }
 
     sortFiles(folder.files);
-
-    folder.files.forEach(function (file) {
-        if(file !== 'undefined') {
-            let editMode = `#edit-mode-${file.sha1}`;
-            let id = `#file-${file.sha1}`;
-
-            folderFiles.append(buildListItem(file, isActiveBranch, containerId, isEnableEditModeIfActiveBranch));
-
-            $(editMode).hover(onEditModeMouseEnter, onEditModeMouseLeave);
-            $(editMode).click(onEditModeClicked);
-            $(id).on('click', function () {
-                folderFiles.find('a').each(function () {
-                    $(this).removeClass('active');
-                });
-                $(this).addClass('active')
-            });
-        }
-    });
-
+    folder.files.forEach(file => addFileToList(file, containerId, isEnableEditModeIfActiveBranch));
     recentFolderSha1 = folderSha1;
+}
+
+function addFileToList(file, containerId, isEnableEditModeIfActiveBranch) {
+    let container = $(containerId);
+
+    if(file !== 'undefined') {
+        let editMode = `#edit-mode-${file.sha1}`;
+        let id = `#file-${file.sha1}`;
+
+        container.append(buildListItem(file, isActiveBranch, containerId, isEnableEditModeIfActiveBranch));
+
+        $(editMode).hover(onEditModeMouseEnter, onEditModeMouseLeave);
+        $(editMode).click(onEditModeClicked);
+        $(id).on('click', function () {
+            container.find('a').each(function () {
+                $(this).removeClass('active');
+            });
+            $(this).addClass('active')
+        });
+    }
 }
 
 function onEditModeClicked() {
@@ -556,7 +558,7 @@ function buildEditModeExpander(file, isActiveBranch) {
                 <button id="btn-save-${ file.sha1 }" type="button" onclick="saveFileName('${ file.sha1 }')" class="Save" disabled>Save</button>
             </div>
             <div class="Table-cell">
-                <button type="button" onclick="deleteFile('${ file.sha1 }')" class="Delete">Delete file</button>
+                <button type="button" onclick="deleteFile('${ file.sha1 }', '${ file.name }')" class="Delete">Delete file</button>
             </div>
         </div>  
     </div>
@@ -597,7 +599,7 @@ function saveFileName(sha1) {
         $('#btn-commit').prop('disabled', !isOpenChanges);
     }
 
-    updateFileData(sha1, 'POST', newName, 'update-file-name', null, null);
+    updateFileData(sha1, newName, 'POST', newName, 'update-file-name', null, null);
     let file = getFileDataInCurrentDir(sha1, recentFolderSha1);
     file.name = newName;
 }
@@ -617,7 +619,7 @@ function getFileDataInCurrentDir(sha1, currFolderSha1) {
     return file;
 }
 
-function deleteFile(sha1) {
+function deleteFile(sha1, name) {
     let files = repository.folders[recentFolderSha1].files;
     let length = files.length;
 
@@ -625,7 +627,7 @@ function deleteFile(sha1) {
         $(this).closest('.Commit-list-item').remove();
     });
 
-    updateFileData(sha1, 'POST', '', 'delete-file', null, null);
+    updateFileData(sha1, name, 'POST', '', 'delete-file', null, null);
 
     for(let i = 0; i < length; i++) {
         if(sha1 === files[i].sha1) {
@@ -641,32 +643,31 @@ function saveBlob(sha1) {
     setSavedStyle(sha1);
 
     let editor = $(`#content-${sha1} > .blob-content > .Editable`);
+    let blob = repository.blobs[sha1];
 
-    if(repository.blobs[sha1].text !== editor.text()) {
+    if(blob.text !== editor.text()) {
         isOpenChanges = true;
         $('#btn-commit').prop('disabled', !isOpenChanges);
-        repository.blobs[sha1].text = editor.text();
-        updateFileData(sha1, 'POST', editor.text(), 'update-blob', onUpdateBlobSuccess, onUpdateBlobError);
+        blob.text = editor.text();
+        updateFileData(sha1, blob.name, 'POST', editor.text(), 'update-blob', onUpdateBlobSuccess, onUpdateBlobError);
     }
 }
 
 function getPrevFoldersStack() {
-    prevFoldersStack.push(recentFolderSha1);
-    let prevFolderStack = JSON.stringify(prevFoldersStack);
-    prevFoldersStack.pop();
-
-    return prevFolderStack;
+    return prevFoldersStack;
 }
 
-function updateFileData(sha1, method, data, url, onSuccess, onError) {
-    prevFoldersStack.push(recentFolderSha1);
-    prevFoldersStack.push(sha1);
-    prevFoldersStack.push(data);
-    let prevFolderStack = JSON.stringify(prevFoldersStack);
-    prevFoldersStack.pop();
-    prevFoldersStack.pop();
+function getRecentFolderSha1() {
+    return recentFolderSha1;
+}
 
-    let dataToSend = 'data=' + prevFolderStack;
+function updateFileData(fileSha1, fileName, method, data, url, onSuccess, onError) {
+    let parentsFoldersNames = getParentsFoldersNames();
+    parentsFoldersNames.push(fileSha1);
+    parentsFoldersNames.push(fileName);
+    parentsFoldersNames.push(data);
+
+    let dataToSend = 'data=' + JSON.stringify(parentsFoldersNames);
 
     $.ajax({
         method: method,
@@ -773,10 +774,19 @@ function openFolder(sha1, containerId, isEnableEditModeIfActiveBranch) {
     updateRootFolder(sha1, containerId, isEnableEditModeIfActiveBranch);
 }
 
-function addBlob(fileToAdd, sha1, prevFoldersStack) {
-
+function addBlob(parentFolderSha1, fileData, file) {
+    addFile(repository.blobs, parentFolderSha1, fileData, file);
 }
 
-function addFolder(fileToAdd, sha1, prevFoldersStack) {
+function addFolder(parentFolderSha1, fileData, file) {
+    addFile(repository.folders, parentFolderSha1, fileData, file);
+}
 
+function addFile(dataBaseToPushFile, parentFolderSha1, fileData, file) {
+    dataBaseToPushFile[`${fileData.sha1}`] = file;
+    repository.folders[parentFolderSha1].files.push(fileData);
+    addFileToList(fileData, '#root-folder-files', true);
+
+    isOpenChanges = true;
+    $('#btn-commit').prop('disabled', !isOpenChanges);
 }

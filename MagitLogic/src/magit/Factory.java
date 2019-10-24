@@ -374,7 +374,8 @@ public class Factory {
         Blob blob = new Blob();
 
         blob.setText(FileUtilities.ReadTextFromFile(i_Path));
-        blob.setName(new File(i_Path).getName());
+        String name = new File(i_Path).getName();
+        blob.setName(name);
         String sha1 = DigestUtils.sha1Hex(blob.toStringForSha1());
         tmpBlobs.put(sha1, blob);
 
@@ -383,7 +384,7 @@ public class Factory {
 
     String createFolder(String i_Path, String i_PutLastModifiedIfNew, String i_CurrentUserName) throws IOException {
         Path folderPath = Paths.get(i_Path);
-
+        int filesCount = 0;
         Folder folder = new Folder();
         File folderFile = new File(i_Path);
         File[] filesInFolder = folderFile.listFiles();
@@ -391,6 +392,7 @@ public class Factory {
 
         if(filesInFolder != null) {
             for (File file : filesInFolder) {
+                filesCount++;
                 boolean isFolder = file.isDirectory();
 
                 if(!isFolder || file.listFiles().length != 0) {
@@ -400,30 +402,37 @@ public class Factory {
                         sha1 = createBlob(file.toPath().toString());
                     }
 
-                    Folder.Data fileData = Folder.Data.Parse(file, sha1, i_CurrentUserName);
+                    if(sha1 == null) {
+                        filesCount--;
+                    } else {
+                        Folder.Data fileData = Folder.Data.Parse(file, sha1, i_CurrentUserName);
 
-                    if(i_PutLastModifiedIfNew != null) {
-                        fileData.setlastUpdate(i_PutLastModifiedIfNew);
+                        if (i_PutLastModifiedIfNew != null) {
+                            fileData.setlastUpdate(i_PutLastModifiedIfNew);
+                        }
+
+                        folder.addFile(fileData);
                     }
-
-                    folder.addFile(fileData);
                 }
             }
 
-            if (i_Path.equals(engine.getRepositoryPath())) {
-                folder.setIsRoot(true);
-            }
+            if(filesCount > 0 || i_Path.equals(engine.getRepositoryPath()) || new File(i_Path).getParent().equals(engine.getRepositoryPath())) {
+                if (i_Path.equals(engine.getRepositoryPath())) {
+                    folder.setIsRoot(true);
+                }
 
-            folder.getFiles().sort(Folder.Data::compare);
+                folder.getFiles().sort(Folder.Data::compare);
 
-            if(engine.getRemoteRepositoryLocation().isEmpty()) {
-                sha1 = DigestUtils.sha1Hex(folder.toStringForSha1(folderPath));
+                if (engine.getRemoteRepositoryLocation().isEmpty()) {
+                    sha1 = DigestUtils.sha1Hex(folder.toStringForSha1(folderPath));
+                } else {
+                    sha1 = DigestUtils.sha1Hex(folder.toStringForSha1(Paths.get(engine.replaceRootPath(i_Path,
+                            engine.getRemoteRepositoryLocation(), 2))));
+                }
+                tmpFolders.put(sha1, folder);
+            } else {
+                sha1 = null;
             }
-            else {
-                sha1 = DigestUtils.sha1Hex(folder.toStringForSha1(Paths.get(engine.replaceRootPath(i_Path,
-                        engine.getRemoteRepositoryLocation(), 2))));
-            }
-            tmpFolders.put(sha1, folder);
         }
 
         return sha1;

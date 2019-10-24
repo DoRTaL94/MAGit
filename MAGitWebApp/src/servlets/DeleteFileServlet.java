@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Paths;
 import java.util.List;
 import java.io.File;
 
@@ -31,10 +32,13 @@ public class DeleteFileServlet extends HttpServlet {
             response.setContentType("text/html");
             PrintWriter out = response.getWriter();
             out.print("failed to delete");
+        } else {
+            FileUtilities.WriteToFile(Paths.get(engine.getActiveRepository().getLocationPath(), ".magit", "oldCommit.txt").toString(),
+                    engine.getActiveRepository().getHeadBranch().getPointedCommitSha1());
         }
     }
 
-    private boolean deleteFile(Engine i_Engine, Folder i_Parent, File i_File, Folder.Data i_Data) {
+    private boolean deleteFile(Engine i_Engine, File i_File, Folder.Data i_Data) {
         boolean isSuccess = false;
 
         if(i_File.exists()) {

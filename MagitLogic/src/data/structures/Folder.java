@@ -39,11 +39,10 @@ public class Folder implements IRepositoryFile {
 
         for(int data = 0; data < filesCount; data++) {
             sb.append(Paths.get(i_FolderPath.toString(), files.get(data).toStringForSha1()).toString().toLowerCase());
-
-            if(data < filesCount - 1) {
-                sb.append(System.lineSeparator());
-            }
+            sb.append(System.lineSeparator());
         }
+
+        sb.append(i_FolderPath.toString());
 
         return sb.toString();
     }

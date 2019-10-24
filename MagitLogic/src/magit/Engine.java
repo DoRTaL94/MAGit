@@ -560,26 +560,26 @@ public class Engine implements IEngine {
     @Override
     public boolean commit(String i_Description, Branch i_SecondPrecedingIfMerge) throws IOException, EmptyWcException, CommitAlreadyExistsException {
         boolean isCommitExecuted = false;
-
+        Repository repository = repositories.get(activeRepositoryName);
         AtomicReference<String> lastChangerRef = new AtomicReference<>();
-        Map<String, String> pathToSha1Map = factory.createPathToSha1Map(repositories.get(activeRepositoryName).getHeadBranch());
+        Map<String, String> pathToSha1Map = factory.createPathToSha1Map(repository.getHeadBranch());
         Folder folder = walkInFolder(activeRepositoryPath, pathToSha1Map, lastChangerRef, false);
 
         if(folder != null) {
             String folderPath = remoteRepositoryLocation.isEmpty() ? activeRepositoryPath : remoteRepositoryLocation;
             String folderSha1 = DigestUtils.sha1Hex(folder.toStringForSha1(Paths.get(folderPath)));
-            boolean isFolderAlreadyExists = repositories.get(activeRepositoryName).getFolders().containsKey(folderSha1);
+            boolean isFolderAlreadyExists = repository.getFolders().containsKey(folderSha1);
 
             if(!isFolderAlreadyExists || i_SecondPrecedingIfMerge != null) {
                 if (!isFolderAlreadyExists) {
-                    repositories.get(activeRepositoryName).getFolders().put(folderSha1, folder);
+                    repository.getFolders().put(folderSha1, folder);
                 }
 
                 isCommitExecuted = true;
                 Commit commit    = new Commit();
                 commit.setMessage(i_Description);
                 commit.setRootFolderSha1(folderSha1);
-                commit.setFirstPrecedingCommitSha1(repositories.get(activeRepositoryName).getHeadBranch().getPointedCommitSha1());
+                commit.setFirstPrecedingCommitSha1(repository.getHeadBranch().getPointedCommitSha1());
                 commit.setLastChanger(currentNameProperty.get());
                 commit.setLastUpdate(new SimpleDateFormat(DATE_FORMAT).format(new Date(System.currentTimeMillis())));
 
@@ -587,16 +587,16 @@ public class Engine implements IEngine {
                     commit.setSecondPrecedingCommitSha1(i_SecondPrecedingIfMerge.getPointedCommitSha1());
                     new File(Paths.get(activeRepositoryPath,
                             ".magit", "branches", i_SecondPrecedingIfMerge.getName() + ".txt").toString()).delete();
-                    repositories.get(activeRepositoryName).getBranches().remove(i_SecondPrecedingIfMerge.getName());
+                    repository.getBranches().remove(i_SecondPrecedingIfMerge.getName());
                 }
 
                 String commitSha1 = DigestUtils.sha1Hex(commit.toStringForSha1());
 
-                if (!repositories.get(activeRepositoryName).getCommits().containsKey(commitSha1)) {
+                if (!repository.getCommits().containsKey(commitSha1)) {
                     String pointedBranchInHeadPath = Paths.get(activeRepositoryPath,
-                            ".magit", "branches", repositories.get(activeRepositoryName).getHeadBranch().getName() + ".txt").toString();
-                    repositories.get(activeRepositoryName).getCommits().put(commitSha1, commit);
-                    repositories.get(activeRepositoryName).getHeadBranch().setPointedCommitSha1(commitSha1);
+                            ".magit", "branches", repository.getHeadBranch().getName() + ".txt").toString();
+                    repository.getCommits().put(commitSha1, commit);
+                    repository.getHeadBranch().setPointedCommitSha1(commitSha1);
 
 
                     FileUtilities.WriteToFile(pointedBranchInHeadPath, commitSha1);
@@ -619,7 +619,7 @@ public class Engine implements IEngine {
 
     private Folder walkInFolder(String i_ParentPath, Map<String, String> i_PathToSha1Map, AtomicReference<String> ref_LastChanger, boolean i_IsNewItems) throws IOException {
         Folder folder = null;
-
+        int filesCount = 0;
         // convert path to file and gets the content of the folder
         File parentFolderFile              = new File(i_ParentPath);
         File[] filesInParentFolder         = parentFolderFile.listFiles();
@@ -637,6 +637,7 @@ public class Engine implements IEngine {
             folder = new Folder();
 
             for (File file : filesInParentFolderList) {
+                filesCount++;
                 String returnedFileSha1FromPathToSha1Map = i_PathToSha1Map.get(file.getAbsolutePath());
                 boolean isNewItem = returnedFileSha1FromPathToSha1Map == null;
                 boolean isFolder = file.isDirectory();
@@ -674,12 +675,19 @@ public class Engine implements IEngine {
                     }
 
                     folder.addFile(itemDataToAdd);
+                } else {
+                    filesCount--;
                 }
             }
 
-            folder.setIsRoot(i_ParentPath.equals(activeRepositoryPath));
-            folder.getFiles().sort(Folder.Data::compare);
-            parentFolderFile.setLastModified(maxLastModified);
+            if(filesCount > 0 || i_ParentPath.equals(activeRepositoryPath) || new File(i_ParentPath).getParent().equals(activeRepositoryPath)) {
+                folder.setIsRoot(i_ParentPath.equals(activeRepositoryPath));
+                folder.getFiles().sort(Folder.Data::compare);
+                parentFolderFile.setLastModified(maxLastModified);
+            } else {
+                FileUtilities.removeFile(new File(i_ParentPath));
+                folder = null;
+            }
         }
 
         return folder;
@@ -691,7 +699,7 @@ public class Engine implements IEngine {
 
         if(!i_FileToCheckDelta.isDirectory()) {
             String blobContent = FileUtilities.ReadTextFromFile(filePath);
-            sha1 = DigestUtils.sha1Hex(Blob.getSha1FromContent(blobContent));
+            sha1 = DigestUtils.sha1Hex(Blob.getSha1FromContent(blobContent).replaceAll("\\s", "") + new File(filePath).getName());
 
             if(!repositories.get(activeRepositoryName).getBlobs().containsKey(sha1)) {
                 Blob blob = new Blob();
@@ -943,7 +951,6 @@ public class Engine implements IEngine {
                         sha1 = factory.createFolder(path, null, this.getCurrentUserName());
 
                         if (!repositories.get(activeRepositoryName).getFolders().containsKey(sha1)) {
-
                             Folder.Data folderData = Folder.Data.Parse(file, sha1, getCurrentUserName());
                             i_ChangedItems.add(itemDataToString(folderData, i_CurrentPath));
                             getChangedItems(i_PathToSha1Map, path, i_ChangedItems);

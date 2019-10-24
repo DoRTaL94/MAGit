@@ -48,7 +48,9 @@ public class Blob implements IRepositoryFile {
         return text;
     }
 
-    public String toStringForSha1() { return text.replaceAll("\\s", "") + name; }
+    public String toStringForSha1() {
+        return text.replaceAll("\\s", "") + name;
+    }
 
     public Blob clone() {
         Blob clone = null;

@@ -7,5 +7,5 @@ import java.io.File;
 
 @FunctionalInterface
 public interface IFileChanger {
-    boolean apply(Engine i_Engine, Folder i_Parent, File i_File, Folder.Data i_Data);
+    boolean apply(Engine i_Engine, File i_File, Folder.Data i_Data);
 }

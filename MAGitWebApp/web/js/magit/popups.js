@@ -1,5 +1,6 @@
 export { showCommitPopup, showWarningPopup, showOpenChangesPopup, showCreateFilePopup };
-import { setOpenChanges, getPrevFoldersStack, addBlob, addFolder } from './active-repo.js';
+import { setOpenChanges, addBlob, addFolder, repository } from './active-repo.js';
+import { getParentsFoldersNames } from './utils.js';
 
 function showPopup(headerText, content, buttonOk) {
     let background = $('<div>').addClass('Popup-background');
@@ -70,9 +71,15 @@ function onCommitError(e) {
 }
 
 // TO-DO
-function onCommitSuccess(e) {
-    setOpenChanges(false);
-    window.location.href = "active-repo.html";
+function onCommitSuccess(response) {
+    onCancelClick();
+
+    if(response === 'empty') {
+        showErrorMessage('Something went wrong...','Working directory cannot be empty', true)
+    } else {
+        setOpenChanges(false);
+        window.location.href = "active-repo.html";
+    }
 }
 
 function showWarningPopup(message, onOkClicked) {
@@ -90,8 +97,7 @@ function showCreateFilePopup() {
     `<div class="input-group">
         <div class="File-name input-group-prepend"><input type="text" placeholder="File name" id="input-file-name" name="filename" spellcheck="false"></div>
         <select class="custom-select" id="extension-select">
-            <option selected>Extension...</option>
-            <option value="1">Directory</option>
+            <option value="1" selected>Directory</option>
             <option value="2">.txt</option>
             <option value="3">.java</option>
             <option value="4">.js</option>
@@ -119,19 +125,21 @@ function showCreateFilePopup() {
 }
 
 function onCreateFileClick() {
-    let filename = $('#input-file-name').val();
-    let extension = $('#extension-select').find(':selected').text();
-    let data = 'data=' + getPrevFoldersStack() + '&filename=' + filename + '&extension=' + extension;
-    onCancelClick();
+    if(repository !== null) {
+        let filename = $('#input-file-name').val();
+        let extension = $('#extension-select').find(':selected').text();
+        let data = 'data=' + JSON.stringify(getParentsFoldersNames()) + '&filename=' + filename + '&extension=' + extension;
+        onCancelClick();
 
-    $.ajax({
-        method:'POST',
-        data: data,
-        url: 'create-file',
-        timeout: 4000,
-        error: onCreateFileError,
-        success: onCreateFileSuccess
-    });
+        $.ajax({
+            method: 'POST',
+            data: data,
+            url: 'create-file',
+            timeout: 4000,
+            error: onCreateFileError,
+            success: onCreateFileSuccess
+        });
+    }
 }
 
 function onCreateFileError(response) {
@@ -140,20 +148,18 @@ function onCreateFileError(response) {
 
 function onCreateFileSuccess(response) {
     if(typeof response === 'object') {
-        let prevFoldersStack = response.prevFolders;
-        let fileToAdd = response.file;
-        let type = response.type;
-        let sha1 = response.sha1;
+        let parentFolderSha1 = response.parentFolderSha1;
+        let fileData = response.fileData;
 
-        type === 'folder' ? addFolder(fileToAdd, sha1, prevFoldersStack) : addBlob(fileToAdd, sha1, prevFoldersStack);
+        fileData.type === 'FOLDER' ? addFolder(parentFolderSha1, fileData, response.folder) : addBlob(parentFolderSha1, fileData, response.blob);
     } else {
-        showErrorMessage('File creation error', response);
+        showErrorMessage('File creation error', response, false);
     }
 }
 
-function showErrorMessage(headerText, message) {
+function showErrorMessage(headerText, message, isRefresh) {
     let background = $('<div>').addClass('Popup-background');
-    let content = $('<div>').text(message);
+    let content = $('<div>').addClass('Popup-error-content').text(message);
     let popup = $('<div>').addClass('Popup');
     let header = $('<div>').addClass('Popup-header');
     let contentContainer = $('<div>').addClass('Popup-content');
@@ -162,7 +168,13 @@ function showErrorMessage(headerText, message) {
 
     header.text(headerText);
     btnOk.text('Cancel');
-    btnOk.on('click', onCancelClick);
+    btnOk.on('click', function() {
+        onCancelClick();
+
+        if(isRefresh) {
+            window.location.href = "active-repo.html";
+        }
+    });
     btnOk.addClass('Btn-error-ok');
 
     popup.append(header);

@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Paths;
 import java.util.List;
 import java.io.File;
 
@@ -29,17 +30,20 @@ public class UpdateBlobServlet extends HttpServlet {
             response.setContentType("text/html");
             PrintWriter out = response.getWriter();
             out.print("failed to update");
+        } else {
+            FileUtilities.WriteToFile(Paths.get(engine.getActiveRepository().getLocationPath(), ".magit", "oldCommit.txt").toString(),
+                    engine.getActiveRepository().getHeadBranch().getPointedCommitSha1());
         }
     }
 
-    private boolean changeBlobContent(Engine i_Engine, Folder i_Parent, File i_Blob, Folder.Data i_Data) {
+    private boolean changeBlobContent(Engine i_Engine, File i_Blob, Folder.Data i_Data) {
         boolean res =  false;
 
         if(i_Blob.exists()) {
             int reqDataSize = reqData.size();
 
             FileUtilities.WriteToFile(i_Blob.toPath().toString(), reqData.get(reqDataSize - 1));
-            Blob blob = i_Engine.getActiveRepository().getBlobs().get(reqData.get(reqDataSize - 2));
+            Blob blob = i_Engine.getActiveRepository().getBlobs().get(reqData.get(reqDataSize - 3));
             blob.setText(reqData.get(reqDataSize - 1));
             res = true;
         }

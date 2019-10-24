@@ -1,4 +1,5 @@
 import { getIsOpenChanges, HOME } from './active-repo.js';
+import { showOpenChangesPopup } from './popups.js';
 
 const HEADER_ITEM = "#header-drop-downs > nav > ul > li";
 
@@ -19,16 +20,7 @@ function setHeaderItemsOnClick() {
 
     $('#home-link').on('click', () => window.location.href = HOME);
 
-    $('#logout').on('click', function () {
-        $.ajax({
-            method: 'POST',
-            url: "logout",
-            timeout: 2000,
-            success: function () {
-                window.location.href = 'login.html';
-            }
-        });
-    });
+    $('#logout').on('click', onLogoutClick);
 
     $(HEADER_ITEM).on("click", function() {
         let notification = $(this).find("img.Notification-icon");
@@ -37,6 +29,25 @@ function setHeaderItemsOnClick() {
             handleDropdown($(this));
         } else {
             handleNotificationClicked();
+        }
+    });
+}
+
+function onLogoutClick() {
+    if(getIsOpenChanges()) {
+        showOpenChangesPopup(logout)
+    } else {
+        logout();
+    }
+}
+
+function logout() {
+    $.ajax({
+        method: 'POST',
+        url: "logout",
+        timeout: 2000,
+        success: function () {
+            window.location.href = 'login.html';
         }
     });
 }

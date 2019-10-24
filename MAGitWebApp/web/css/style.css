@@ -124,9 +124,16 @@ div > .tab-content {
 }
 
 #commit-list-header {
-    color: #2f2f2f;
-    background-color: rgb(192, 231, 255);
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.22);
+    font-size: 1.1em;
+    color: white;
+    background-color: rgba(75, 179, 255, 0.66);
     border-radius: 0;
+}
+
+#commit-list-header > .Table > .Table-row > .Table-cell > img {
+    box-shadow: 0 0 3px rgba(255, 255, 255, 0.57);
+    margin-right: 6px;
 }
 
 .Last-commit {
@@ -753,14 +760,14 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     outline: 0;
 }
 
-.Commit-list-item > a:first-child,
-a.Commit-list-item:first-child {
+#commit-list-items > .Commit-list-item > a:first-child,
+#commit-list-items > a.Commit-list-item:first-child {
     border-top-right-radius: 3px;
     border-top-left-radius: 3px;
 }
 
-.Commit-list-item > a:last-child,
-a.Commit-list-item:last-child {
+#commit-list-items > .Commit-list-item > a:last-child,
+#commit-list-items > a.Commit-list-item:last-child {
     border-bottom-right-radius: 3px;
     border-bottom-left-radius: 3px;
 }
@@ -872,7 +879,8 @@ div > .edit-mode-content {
     margin: 0;
 }
 
-.Popup-buttons > button {
+.Popup-buttons > .Btn-cancel,
+.Popup-buttons > .Btn-ok {
     font-size: 1.1em;
     width: 50%;
     height: 100%;
@@ -883,6 +891,15 @@ div > .edit-mode-content {
 
 .Popup-buttons > button:focus {
     outline: 0;
+}
+
+.Btn-error-ok {
+    width: 100%;
+    font-size: 1.1em;
+    height: 100%;
+    min-height: 50px;
+    border: none;
+    cursor: pointer;
 }
 
 .Popup-buttons > .Btn-error-ok {
@@ -1124,4 +1141,8 @@ div > .edit-mode-content {
 
 #extension-select {
     width: 40%;
+}
+
+.Popup-error-content {
+    padding: 20px;
 }

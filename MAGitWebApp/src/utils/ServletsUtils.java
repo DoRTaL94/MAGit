@@ -10,7 +10,9 @@ import users.UsersManager;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.io.File;
 import java.util.Map;
@@ -49,37 +51,46 @@ public class ServletsUtils {
         return gson.fromJson(prevFolders, new TypeToken<List<String>>(){}.getType());
     }
 
-    public static boolean applyOnDbFile(Engine engine, List<String> i_ReqData, IFileChanger i_ApplyOnFile) {
-        boolean res = false;
-        int reqDataSize = i_ReqData.size();
-
-        Repository repository = engine.getActiveRepository();
-        String username = repository.getOwner();
+    // data: length - 1, file name: length - 2 file sha1: length - 3, parent folder sha1: length - 4
+    public static boolean applyOnDbFile(Engine i_Engine, List<String> i_ReqData, IFileChanger i_ApplyOnFile) {
+        boolean res;
+        int reqDataSize             = i_ReqData.size();
+        String filename             = i_ReqData.get(reqDataSize - 2);
+        String filesha1             = i_ReqData.get(reqDataSize - 3);
+        String parentFolderSha1     = i_ReqData.get(reqDataSize - 4);
+        Repository repository       = i_Engine.getActiveRepository();
         Map<String, Folder> folders = repository.getFolders();
-        String path = Paths.get("c:/magit-ex3", username, "repositories", repository.getName()).toString();
-        String rootSha1 = repository.getCommits().get(repository.getHeadBranch().getPointedCommitSha1()).getRootFolderSha1();
-        Folder root = folders.get(rootSha1);
 
-        if (i_ReqData.get(0).equals(rootSha1)) {
-            for (int i = 1; i < reqDataSize - 1; i++) {
-                Folder.Data fileData = ServletsUtils.getFile(root, i_ReqData.get(i));
 
-                if (fileData != null) {
-                    path = Paths.get(path, fileData.getName()).toString();
+        String parentPath = getPathFromFolderNamesList(i_ReqData, i_Engine, reqDataSize - 4).toString();
+        Folder parent = folders.get(parentFolderSha1);
+        Folder.Data fileData;
 
-                    if (fileData.getFileType().equals(eFileType.FOLDER)) {
-                        if(i + 1  == reqDataSize - 1) {
-                            res = i_ApplyOnFile.apply(engine, root, new File(path), fileData);
-                        }
-
-                        root = folders.get(fileData.getSHA1());
-                    } else {
-                        res = i_ApplyOnFile.apply(engine, root, new File(path), fileData);
-                    }
-                }
-            }
+        if(parent == null) {
+            fileData = new Folder.Data();
+            fileData.setName(filename);
+            fileData.setLastChanger(i_Engine.getCurrentUserName());
+            fileData.setlastUpdate(new SimpleDateFormat(Engine.DATE_FORMAT).format(System.currentTimeMillis()));
+            fileData.setCreationTimeMillis(System.currentTimeMillis());
+            fileData.setSHA1(filesha1);
+            fileData.setFileType(new File(Paths.get(parentPath, filename).toString()).isDirectory() ? eFileType.FOLDER : eFileType.BLOB);
+        } else {
+            fileData = ServletsUtils.getFile(parent, filesha1);
         }
 
+        File child = new File(Paths.get(parentPath, fileData.getName()).toString());
+        res = i_ApplyOnFile.apply(i_Engine, child, fileData);
+
         return res;
+    }
+
+    public static Path getPathFromFolderNamesList(List<String> i_Names, Engine i_Engine, int i_CountOfNamesToIncludeInPath) {
+        Path path = Paths.get("c:/magit-ex3", i_Engine.getCurrentUserName(), "repositories");
+
+        for(int name = 0; name < i_CountOfNamesToIncludeInPath ; name++) {
+            path = Paths.get(path.toString(), i_Names.get(name));
+        }
+
+        return path;
     }
 }
