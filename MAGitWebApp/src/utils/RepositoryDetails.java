@@ -10,11 +10,15 @@ public class RepositoryDetails {
             commitMessage = "N/A",
             owner = "N/A";
     int branchesCount = 0;
+    boolean isForked = false;
+    String usernameForkedFrom = null;
 
     public RepositoryDetails(Repository i_Repository) {
         if(i_Repository != null) {
             name = i_Repository.getName();
             owner = i_Repository.getOwner();
+            isForked = i_Repository.isForked();
+            usernameForkedFrom = i_Repository.getUsernameForkedFrom();
 
             if(i_Repository.getHeadBranch() != null) {
                 activeBranchName = i_Repository.getHeadBranch().getName();

@@ -27,7 +27,8 @@ public class DiffServlet extends HttpServlet {
 
             if (repository != null) {
                 Gson gson = new Gson();
-                String diff = gson.toJson(engine.getCommitDifference(engine.getActiveRepository().getHeadBranch().getPointedCommitSha1()));
+                String commitSha1 = request.getParameter("commit");
+                String diff = gson.toJson(engine.getCommitDifference(engine.getActiveRepositoryName(), commitSha1));
                 response.setContentType("application/json;charset=UTF-8");
                 PrintWriter out = response.getWriter();
                 out.print(diff);

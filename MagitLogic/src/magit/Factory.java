@@ -18,9 +18,9 @@ import java.util.stream.Collectors;
 public class Factory {
     private final Map<String, Blob> tmpBlobs = new HashMap<>();
     private final Map<String, Folder> tmpFolders = new HashMap<>();
-    private final IEngine engine;
+    private final Engine engine;
 
-    public Factory(IEngine i_Engine) {
+    public Factory(Engine i_Engine) {
         engine = i_Engine;
     }
 
@@ -43,7 +43,7 @@ public class Factory {
 
             try {
                 String headBranchName = i_MagitRepository.getMagitBranches().getHead();
-                createFilesOnSystem(headBranchName);
+                createFilesOnSystem(repository.getName() ,headBranchName);
             } catch (IOException | ParseException e) {
                 e.printStackTrace();
             }
@@ -70,7 +70,7 @@ public class Factory {
         engine.setRepositoryPath(repositoryFolder.getAbsolutePath());
         engine.setActiveRepository(repository);
         FileUtilities.WriteToFile(Paths.get(repository.getLocationPath(),
-                ".magit", "details.txt").toString(), String.format("%s%s%s", i_RepositoryName, System.lineSeparator(), engine.getRemoteRepositoryLocation()));
+                ".magit", "details.txt").toString(), String.format("%s%s%s", i_RepositoryName, System.lineSeparator(), engine.getRemoteRepositoryLocation(i_RepositoryName)));
 
         if(i_IsEmptyRepo) {
             repository.setBlobs(new HashMap<>());
@@ -94,7 +94,7 @@ public class Factory {
         return repository;
     }
 
-    private void createFilesOnSystem(String i_HeadBranchName) throws IOException, ParseException {
+    private void createFilesOnSystem(String i_RepoName, String i_HeadBranchName) throws IOException, ParseException {
         Repository repository = engine.getActiveRepository();
         Map<String, Branch> branches = engine.getActiveRepository().getBranches();
         Map<String, Commit> commits  = engine.getActiveRepository().getCommits();
@@ -108,7 +108,7 @@ public class Factory {
             Commit commit = commits.get(pointedCommitSha1);
 
             if(!sha1Set.contains(pointedCommitSha1)) {
-                pointedCommitSha1 = spreadCommitAndSetNewSha1s(commit, sha1Set);
+                pointedCommitSha1 = spreadCommitAndSetNewSha1s(i_RepoName, commit, sha1Set);
             }
 
             if(branch.getValue().getName().contains("/") ||
@@ -138,10 +138,10 @@ public class Factory {
             branches.put(newBranch.getName(), newBranch);
         }
 
-        createWc(engine.getActiveRepository().getHeadBranch());
+        createWc(i_RepoName, engine.getActiveRepository().getHeadBranch());
     }
 
-    void createWc(Branch i_HeadBranch) throws IOException {
+    void createWc(String i_RepoName, Branch i_HeadBranch) throws IOException {
         String repoPath = engine.getActiveRepository().getLocationPath();
         String headBranchFilePath = Paths.get(repoPath,".magit", "branches", "head.txt").toString();
         FileUtilities.WriteToFile(headBranchFilePath, i_HeadBranch.getName());
@@ -149,7 +149,7 @@ public class Factory {
         String pointedCommitSha1 = i_HeadBranch.getPointedCommitSha1();
         Commit currentCommit     = engine.getActiveRepository().getCommits().get(pointedCommitSha1);
 
-        createFolderFromCommit(currentCommit, engine.getRepositoryPath());
+        createFolderFromCommit(currentCommit, engine.getRepositoryPath(i_RepoName));
     }
 
     void createFolderFromCommit(Commit i_Commit, String i_Location) {
@@ -185,25 +185,25 @@ public class Factory {
         }
     }
 
-    public String spreadCommitAndSetNewSha1s(Commit i_Commit, Set<String> i_Sha1Set) throws IOException, ParseException {
+    public String spreadCommitAndSetNewSha1s(String i_RepoName, Commit i_Commit, Set<String> i_Sha1Set) throws IOException, ParseException {
         String firstPrecedingCommitSha1 = i_Commit.getFirstPrecedingSha1();
         String secondPrecedingCommitSha1 = i_Commit.getSecondPrecedingSha1();
 
         // Setting first preceding commit
         if(!firstPrecedingCommitSha1.isEmpty()) {
-            Commit firstPrecedingCommit = engine.getActiveRepository().getCommits().get(firstPrecedingCommitSha1);
+            Commit firstPrecedingCommit = engine.getRepository(i_RepoName).getCommits().get(firstPrecedingCommitSha1);
 
             if(firstPrecedingCommit != null) {
-                firstPrecedingCommitSha1 = spreadCommitAndSetNewSha1s(firstPrecedingCommit, i_Sha1Set);
+                firstPrecedingCommitSha1 = spreadCommitAndSetNewSha1s(i_RepoName, firstPrecedingCommit, i_Sha1Set);
                 i_Commit.setFirstPrecedingCommitSha1(firstPrecedingCommitSha1);
             }
 
             // Setting Second preceding commit
             if(!secondPrecedingCommitSha1.isEmpty()) {
-                Commit secondPrecedingCommit = engine.getActiveRepository().getCommits().get(secondPrecedingCommitSha1);
+                Commit secondPrecedingCommit =  engine.getRepository(i_RepoName).getCommits().get(secondPrecedingCommitSha1);
 
                 if(secondPrecedingCommit != null) {
-                    secondPrecedingCommitSha1 = spreadCommitAndSetNewSha1s(secondPrecedingCommit, i_Sha1Set);
+                    secondPrecedingCommitSha1 = spreadCommitAndSetNewSha1s(i_RepoName, secondPrecedingCommit, i_Sha1Set);
                     i_Commit.setSecondPrecedingCommitSha1(secondPrecedingCommitSha1);
                 }
             }
@@ -213,7 +213,7 @@ public class Factory {
         String rootFolderSha1 = i_Commit.getRootFolderSha1();
         Folder rootFolder     = engine.getActiveRepository().getFolders().get(rootFolderSha1);
         String objectsPath    = Paths.get(engine.getActiveRepository().getLocationPath(), ".magit", "objects").toString();
-        rootFolderSha1        = spreadCommitAndSetNewSha1sRec(rootFolder, "", i_Commit.getLastUpdate(), engine.getRepositoryPath(), false);
+        rootFolderSha1        = spreadCommitAndSetNewSha1sRec(rootFolder, "", i_Commit.getLastUpdate(), engine.getRepositoryPath(i_RepoName), false);
 
         engine.getActiveRepository().getFolders().put(rootFolderSha1, rootFolder);
         i_Commit.setRootFolderSha1(rootFolderSha1);
@@ -319,47 +319,50 @@ public class Factory {
         return tmpFolders;
     }
 
-    Map<String, String> createPathToSha1Map(Branch i_Branch) {
+    Map<String, String> createPathToSha1Map(String i_RepoName, Branch i_Branch) {
         Map<String, String> map = new HashMap<>();
         String currentCommitSha1 = i_Branch.getPointedCommitSha1();
 
         if(!currentCommitSha1.isEmpty()) {
             Commit currentCommit = engine.getActiveRepository().getCommits().get(currentCommitSha1);
-            map = createPathToSha1MapFromCommit(currentCommit);
+            map = createPathToSha1MapFromCommit(i_RepoName, currentCommit);
         }
 
         return map;
     }
 
-    Map<String, String> createPathToSha1MapFromCommit(Commit i_Commit) {
+    Map<String, String> createPathToSha1MapFromCommit(String i_RepoName, Commit i_Commit) {
         HashMap<String, String> map = new HashMap<>();
-        Folder rootFolder = engine.getActiveRepository().getFolders().get(i_Commit.getRootFolderSha1());
+        Repository repository = engine.getRepository(i_RepoName);
+        Folder rootFolder = repository.getFolders().get(i_Commit.getRootFolderSha1());
+        String path = repository.getLocationPath();
 
-        createCurrentCommitPathToSha1MapRec(rootFolder, engine.getRepositoryPath(), map);
+        createCurrentCommitPathToSha1MapRec(i_RepoName, rootFolder, path, map);
 
         rootFolder.getFiles().sort(Folder.Data::compare);
-        String path = engine.getRepositoryPath();
+        String remoteRepositoryLocation = repository.getRemoteRepositoryLocation();
 
-        if(!engine.getRemoteRepositoryLocation().isEmpty()) {
-            path = engine.replaceRootPath(engine.getRepositoryPath(), engine.getRemoteRepositoryLocation(), 2);
+        if(!remoteRepositoryLocation.isEmpty()) {
+            path = remoteRepositoryLocation;
         }
 
         String rootFolderSha1 = DigestUtils.sha1Hex(rootFolder.toStringForSha1(Paths.get(path)));
-        map.put(engine.getRepositoryPath(), rootFolderSha1);
+        map.put(repository.getLocationPath(), rootFolderSha1);
 
         return map;
     }
 
-    private void createCurrentCommitPathToSha1MapRec(IRepositoryFile i_Item, String i_CurrentPath, Map<String, String> i_Map) {
+    private void createCurrentCommitPathToSha1MapRec(String i_RepoName, IRepositoryFile i_Item, String i_CurrentPath, Map<String, String> i_Map) {
         if(i_Item instanceof Folder) {
+            Repository repository = engine.getRepository(i_RepoName);
             List<Folder.Data> filesInFolder = ((Folder)i_Item).getFiles();
 
             for(Folder.Data file: filesInFolder) {
                 String newPath = Paths.get(i_CurrentPath, file.getName()).toString();
 
                 if(file.getFileType().equals(eFileType.FOLDER)) {
-                    Folder subFolder = engine.getActiveRepository().getFolders().get(file.getSHA1());
-                    createCurrentCommitPathToSha1MapRec(subFolder, newPath, i_Map);
+                    Folder subFolder = repository.getFolders().get(file.getSHA1());
+                    createCurrentCommitPathToSha1MapRec(i_RepoName, subFolder, newPath, i_Map);
                     i_Map.put(newPath, file.getSHA1());
                 }
                 else {
@@ -382,7 +385,7 @@ public class Factory {
         return sha1;
     }
 
-    String createFolder(String i_Path, String i_PutLastModifiedIfNew, String i_CurrentUserName) throws IOException {
+    String createFolder(String i_RepoName, String i_Path, String i_PutLastModifiedIfNew, String i_CurrentUserName) throws IOException {
         Path folderPath = Paths.get(i_Path);
         int filesCount = 0;
         Folder folder = new Folder();
@@ -397,7 +400,7 @@ public class Factory {
 
                 if(!isFolder || file.listFiles().length != 0) {
                     if (isFolder) {
-                        sha1 = createFolder(file.toPath().toString(), i_PutLastModifiedIfNew, i_CurrentUserName);
+                        sha1 = createFolder(i_RepoName, file.toPath().toString(), i_PutLastModifiedIfNew, i_CurrentUserName);
                     } else {
                         sha1 = createBlob(file.toPath().toString());
                     }
@@ -416,18 +419,18 @@ public class Factory {
                 }
             }
 
-            if(filesCount > 0 || i_Path.equals(engine.getRepositoryPath()) || new File(i_Path).getParent().equals(engine.getRepositoryPath())) {
-                if (i_Path.equals(engine.getRepositoryPath())) {
+            if(filesCount > 0 || i_Path.equals(engine.getRepositoryPath(i_RepoName)) || new File(i_Path).getParent().equals(engine.getRepositoryPath(i_RepoName))) {
+                if (i_Path.equals(engine.getRepositoryPath(i_RepoName))) {
                     folder.setIsRoot(true);
                 }
 
                 folder.getFiles().sort(Folder.Data::compare);
 
-                if (engine.getRemoteRepositoryLocation().isEmpty()) {
+                if (engine.getRemoteRepositoryLocation(i_RepoName).isEmpty()) {
                     sha1 = DigestUtils.sha1Hex(folder.toStringForSha1(folderPath));
                 } else {
                     sha1 = DigestUtils.sha1Hex(folder.toStringForSha1(Paths.get(engine.replaceRootPath(i_Path,
-                            engine.getRemoteRepositoryLocation(), 2))));
+                            engine.getRemoteRepositoryLocation(i_RepoName), 2))));
                 }
                 tmpFolders.put(sha1, folder);
             } else {

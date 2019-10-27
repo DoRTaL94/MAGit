@@ -28,7 +28,7 @@ public class CreateNewBranchServlet extends HttpServlet {
             String branchName = request.getParameter("branchname");
 
             try {
-                engine.createNewBranch(branchName);
+                engine.createNewBranch(engine.getActiveRepositoryName(), branchName);
                 response.setContentType("application/json;charset=UTF-8");
                 PrintWriter out = response.getWriter();
                 List<String> data = new ArrayList<>();

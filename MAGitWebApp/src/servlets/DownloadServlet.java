@@ -26,10 +26,11 @@ public class DownloadServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
             String username = SessionUtils.getUsername(request);
-            Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
+            String userToSendRepo = SessionUtils.getUserRepo(request);
+            Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(userToSendRepo == null ? username : userToSendRepo);
 
             String xmlPath = getXmlPath(request);
-            engine.exportRepositoryToXml(xmlPath);
+            engine.exportRepositoryToXml(engine.getActiveRepositoryName(), xmlPath);
             File downloadFile = new File(Paths.get(xmlPath).toString());
 
             try(InputStream in = new FileInputStream(xmlPath);

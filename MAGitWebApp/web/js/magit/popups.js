@@ -1,4 +1,4 @@
-export { showCommitPopup, showWarningPopup, showOpenChangesPopup, showCreateFilePopup, showCreateNewBranchPopup };
+export { showPullRequestPopup, showCommitPopup, showWarningPopup, showOpenChangesPopup, showCreateFilePopup, showCreateNewBranchPopup };
 import { setOpenChanges, addBlob, addFolder, repository } from './active-repo.js';
 import { getParentsFoldersNames } from './utils.js';
 
@@ -222,4 +222,78 @@ function showErrorMessage(headerText, message, isRefresh) {
     background.append(popup);
 
     $('.Container').append(background);
+}
+
+function showPullRequestPopup() {
+    let textarea =
+`<div class="input-group mb-3">
+    <div class="input-group-prepend">
+        <label class="input-group-text" for="target-branch">Target Branch</label>
+    </div>
+    <select class="custom-select" id="target-branch">
+        ${ buildOptions(branch => !branch.isRemote) }
+    </select>
+</div>
+<div class="input-group mb-3">
+    <div class="input-group-prepend">
+        <label class="input-group-text" for="base-branch">Base Branch</label>
+    </div>
+    <select class="custom-select" id="base-branch">
+        ${ buildOptions(branch => branch.isRemote) }
+    </select>
+</div>
+<textarea placeholder="Write your description here" class="Popup-textarea"></textarea>`;
+
+    let request = $('<button>')
+        .attr('type', 'button')
+        .text('Request')
+        .on('click', onPullRequestclick);
+
+    showPopup('Pull Request', textarea, request);
+}
+
+function buildOptions(test) {
+    let branches = repository.branches;
+    let res = '';
+    let counter = 1;
+    for(let name in branches) {
+        let branch = branches[name];
+
+        if(test(branch)) {
+            res += `<option value="${ counter }" ${ counter === 1 ? 'selected' : '' }>${ branch.name }</option>`;
+            counter++;
+        }
+    }
+
+    return res;
+}
+
+function onPullRequestclick() {
+    let target = $('#target-branch').find(':selected').text();
+    let base = $('#base-branch').find(':selected').text();
+    let message = $('.Popup-textarea').val();
+
+    let formData = new FormData();
+    formData.append("user", repository.usernameForkedFrom);
+    formData.append("target", target);
+    formData.append("base", base);
+    formData.append("message", message);
+
+    onCancelClick();
+
+    $.ajax({
+        method:'POST',
+        data: formData,
+        url: 'pull-request',
+        contentType: false, // Set content type to false as jQuery will tell the server its a query string request
+        timeout: 4000,
+        error: function (response) {
+            console.log(response);
+        },
+        success: onPullRequestSuccess
+    });
+}
+
+function onPullRequestSuccess(response) {
+
 }

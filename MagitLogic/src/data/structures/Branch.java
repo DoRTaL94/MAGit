@@ -15,6 +15,15 @@ public class Branch {
     private boolean isTracking = false;
     private String trackingAfter = "";
     private boolean isMerged = false;
+    private boolean isPullRequested = false;
+
+    public boolean isPullRequested() {
+        return isPullRequested;
+    }
+
+    public void setPullRequested(boolean i_PullRequested) {
+        isPullRequested = i_PullRequested;
+    }
 
     public void setIsRemote(boolean i_IsRemote) {
         isRemote = i_IsRemote;

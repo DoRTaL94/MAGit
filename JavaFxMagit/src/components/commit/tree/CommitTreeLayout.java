@@ -1,230 +1,90 @@
-package components.commit.tree;
-
-import com.fxgraph.graph.Graph;
-import com.fxgraph.layout.Layout;
-import data.structures.Branch;
-import javafx.beans.binding.Bindings;
-import magit.Engine;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-public class CommitTreeLayout implements Layout {
-    private static final int NODE_HEIGHT_FROM_TOP = 8;
-    private static final int SPACE_NODE_TO_TEXT = 25;
-    private static final int SPACE_LEFT_TO_NODE = 20;
-    private static final int SPACE_BETWEEN_BRANCHES = 40;
-    private CommitGraphNode m_Root;
-    private Graph m_Graph;
-    private double m_MaxXLocation;
-    private Set<CommitGraphNode> m_NodesOnTheHeadBranch;
-    private final Branch f_HeadBranch;
-
-    public CommitTreeLayout(CommitGraphNode i_Root) {
-        f_HeadBranch = Engine.Creator.getInstance().getActiveRepository().getHeadBranch();
-        m_Root = i_Root;
-        m_MaxXLocation = 0;
-        m_NodesOnTheHeadBranch = new HashSet<>();
-    }
-
-    @Override public void execute(Graph graph) {
-        m_Graph = graph;
-        initializeTreeGraphics();
-    }
-
-    private void initializeTreeGraphics() {
-        // Using BFS algoritm to initialize each level at a time.
-        List<CommitGraphNode> nodeList = new ArrayList<>();
-        nodeList.add(m_Root);
-        m_Root.setBranchNumber(0);
-
-        findHeadBranch(m_Root);
-        updateTreeNodeGraphics(nodeList);
-        updateCommitDetailsGraphics(m_Root);
-    }
-
-    private void updateCommitDetailsGraphics(CommitGraphNode i_Root) {
-        if(i_Root == null) {
-            return;
-        }
-
-        i_Root.CommitDetailsXProperty.set(m_MaxXLocation + SPACE_LEFT_TO_NODE);
-
-        for(CommitGraphNode child: i_Root.getGraphNodeChildren()) {
-            updateCommitDetailsGraphics(child);
-        }
-    }
-
-    private boolean findHeadBranch(CommitGraphNode i_Node) {
-        boolean isHeadFound = false;
-
-        if(i_Node != null) {
-            if (isPointingBranchIsHead(i_Node)) {
-                isHeadFound = true;
-                m_NodesOnTheHeadBranch.add(i_Node);
-            } else {
-                for (CommitGraphNode child : i_Node.getGraphNodeChildren()) {
-                    isHeadFound = findHeadBranch(child);
-
-                    if (isHeadFound) {
-                        m_NodesOnTheHeadBranch.add(i_Node);
-                        break;
-                    }
-                }
-            }
-        }
-
-        return isHeadFound;
-    }
-
-    public boolean isPointingBranchIsHead(CommitGraphNode i_Node) {
-        boolean result = false;
-
-        for (Branch branch : i_Node.getPointingBranches()) {
-            if (branch == f_HeadBranch) {
-                result = true;
-                break;
-            }
-        }
-
-        return result;
-    }
-
-    private void updateTreeNodeGraphics(List<CommitGraphNode> i_Nodes) {
-        if (i_Nodes.size() == 0) {
-            return;
-        }
-
-        List<CommitGraphNode> nodeList = new ArrayList<>();
-
-        // BFS algoritm adds all the children to the list and call the function recursively.
-        for (CommitGraphNode node : i_Nodes) {
-            List<CommitGraphNode> nodeChildren = node.getGraphNodeChildren();
-            nodeList.addAll(nodeChildren);
-            indetifyBranches(node, nodeChildren);
-            setNodeGraphics(node);
-        }
-
-        updateTreeNodeGraphics(nodeList);
-
-        if (i_Nodes.size() > 0) {
-            for (int node = 0; node < i_Nodes.size(); node++) {
-                CommitGraphNode currNode = i_Nodes.get(node);
-                int currNodeXLocation = SPACE_LEFT_TO_NODE + currNode.getBranchNumber() * SPACE_BETWEEN_BRANCHES;
-
-                if (currNodeXLocation > m_MaxXLocation) {
-                    m_MaxXLocation = currNodeXLocation;
-                }
-
-                updateLocationLayout(currNode, currNodeXLocation, i_Nodes);
-            }
-        }
-    }
-
-    public void indetifyBranches(CommitGraphNode i_Node, List<CommitGraphNode> i_NodeChildren) {
-        boolean isNodeInHeadBranchTookCare = false;
-
-        for (int nodeInd = 0; nodeInd < i_NodeChildren.size(); nodeInd++) {
-//            boolean isMergedBranch = false;
+//package components.commit.tree;
 //
-//            for(Branch branch: i_Node.getPointingBranches()) {
-//                if(branch.getIsMerged()) {
-//                    isMergedBranch = true;
-//                    break;
-//                }
-//            }
-            if(i_NodeChildren.get(nodeInd).getBranchNumber() == -1) {
-//                if (i_Node.getPointingBranches().size() != 0 && !isMergedBranch) {
-//                    if(m_NodesOnTheHeadBranch.contains(i_NodeChildren.get(nodeInd))) {
-//                        i_NodeChildren.get(nodeInd).setBranchNumber(1 + i_Node.getBranchNumber());
-//                    }
-//                    else {
-//                        i_NodeChildren.get(nodeInd).setBranchNumber(2 + branchNum + i_Node.getBranchNumber());
-//                    }
-//                } else {
-                    if(m_NodesOnTheHeadBranch.contains(i_NodeChildren.get(nodeInd))) {
-                        i_NodeChildren.get(nodeInd).setBranchNumber(i_Node.getBranchNumber());
-                        isNodeInHeadBranchTookCare = true;
-                    }
-                    else if(m_Root == i_Node) {
-                        i_NodeChildren.get(nodeInd).setBranchNumber((isNodeInHeadBranchTookCare ? nodeInd : 1 + nodeInd) + i_Node.getBranchNumber());
-                    }
-                    else {
-                        i_NodeChildren.get(nodeInd).setBranchNumber(nodeInd + i_Node.getBranchNumber());
-                    }
-//                }
-            }
-
-            i_NodeChildren.get(nodeInd).AddGraphNodeParent(i_Node); // used when two points are needed to create a line between parent and child.
-        }
-    }
-
-    private void setNodeGraphics(CommitGraphNode i_Node) {
-        boolean isHead = isPointingBranchIsHead(i_Node);
-        i_Node.setRectangleTreeNodeId(isHead ? "headBranchRectangleTreeNode" : "rectangleTreeNode");
-    }
-
-    private void updateLocationLayout(CommitGraphNode i_NodeToUpdate, final int i_NodeToUpdateXLocation, List<CommitGraphNode> i_NodesInTheSameLevel) {
-        i_NodeToUpdate.CommitDetailsXProperty.set(i_NodeToUpdateXLocation + SPACE_NODE_TO_TEXT);
-
-        m_Graph.getGraphic(i_NodeToUpdate).layoutXProperty().set(i_NodeToUpdateXLocation);
-        m_Graph.getGraphic(i_NodeToUpdate).layoutYProperty().bind(Bindings.add(NODE_HEIGHT_FROM_TOP, i_NodeToUpdate.TreeNodeYProperty));
-        m_Graph.getGraphic(i_NodeToUpdate).setPrefWidth(10);
-        m_Graph.getGraphic(i_NodeToUpdate).setPrefHeight(10);
-        //Platform.runLater(() -> updateLocationLayoutIfEdgeOnTop(i_NodesInTheSameLevel));
-    }
-
-//    private void updateLocationLayoutIfEdgeOnTop(List<CommitGraphNode> i_Nodes) {
-//        for(int node = 0; node < i_Nodes.size(); node++) {
-//            CommitGraphNode currNode = i_Nodes.get(node);
-//            int currNodeXLocation = SPACE_LEFT_TO_NODE + currNode.getBranchNumber() * SPACE_BETWEEN_BRANCHES;
+//import com.fxgraph.graph.Graph;
+//import com.fxgraph.layout.Layout;
+//import data.structures.Branch;
+//import javafx.beans.binding.Bindings;
+//import magit.Engine;
 //
-//            if(currNodeXLocation < m_MaxXLocation) {
-//                Line line = findNearestLine(i_Nodes, node);
+//import java.util.ArrayList;
+//import java.util.HashSet;
+//import java.util.List;
+//import java.util.Set;
 //
-//                if(line != null) {
-//                    int newX = (int) line.CalcLineDistanceFromLeft(currNode.TreeNodeYProperty.get() + NODE_HEIGHT_FROM_TOP);
-//                    currNodeXLocation = newX < currNodeXLocation ? currNodeXLocation : newX;
-//                    currNode.CommitDetailsXProperty.set(currNodeXLocation + SPACE_NODE_TO_TEXT);
-//                }
-//            }
+//public class CommitTreeLayout implements Layout {
+//    private static final int NODE_HEIGHT_FROM_TOP = 8;
+//    private static final int SPACE_NODE_TO_TEXT = 25;
+//    private static final int SPACE_LEFT_TO_NODE = 20;
+//    private static final int SPACE_BETWEEN_BRANCHES = 40;
+//    private CommitGraphNode m_Root;
+//    private Graph m_Graph;
+//    private double m_MaxXLocation;
+//    private Set<CommitGraphNode> m_NodesOnTheHeadBranch;
+//    private final Branch f_HeadBranch;
+//
+//    public CommitTreeLayout(CommitGraphNode i_Root) {
+//        f_HeadBranch = Engine.Creator.getInstance().getActiveRepository().getHeadBranch();
+//        m_Root = i_Root;
+//        m_MaxXLocation = 0;
+//        m_NodesOnTheHeadBranch = new HashSet<>();
+//    }
+//
+//    @Override public void execute(Graph graph) {
+//        m_Graph = graph;
+//        initializeTreeGraphics();
+//    }
+//
+//    private void initializeTreeGraphics() {
+//        // Using BFS algoritm to initialize each level at a time.
+//        List<CommitGraphNode> nodeList = new ArrayList<>();
+//        nodeList.add(m_Root);
+//        m_Root.setBranchNumber(0);
+//
+//        findHeadBranch(m_Root);
+//        updateTreeNodeGraphics(nodeList);
+//        updateCommitDetailsGraphics(m_Root);
+//    }
+//
+//    private void updateCommitDetailsGraphics(CommitGraphNode i_Root) {
+//        if(i_Root == null) {
+//            return;
+//        }
+//
+//        i_Root.CommitDetailsXProperty.set(m_MaxXLocation + SPACE_LEFT_TO_NODE);
+//
+//        for(CommitGraphNode child: i_Root.getGraphNodeChildren()) {
+//            updateCommitDetailsGraphics(child);
 //        }
 //    }
 //
-//    private Line findNearestLine(List<CommitGraphNode> i_NodesList, int i_NodeToFindNearestLine) {
-//        Line result = null;
+//    private boolean findHeadBranch(CommitGraphNode i_Node) {
+//        boolean isHeadFound = false;
 //
-//        for(int node = 0; node < i_NodesList.size(); node++) {
-//            if(node != i_NodeToFindNearestLine) {
-//                result = findNearestLineRec(i_NodesList.get(node), i_NodesList.get(i_NodeToFindNearestLine));
+//        if(i_Node != null) {
+//            if (isPointingBranchIsHead(i_Node)) {
+//                isHeadFound = true;
+//                m_NodesOnTheHeadBranch.add(i_Node);
+//            } else {
+//                for (CommitGraphNode child : i_Node.getGraphNodeChildren()) {
+//                    isHeadFound = findHeadBranch(child);
 //
-//                if (result != null) {
-//                    break;
+//                    if (isHeadFound) {
+//                        m_NodesOnTheHeadBranch.add(i_Node);
+//                        break;
+//                    }
 //                }
 //            }
 //        }
 //
-//        return result;
+//        return isHeadFound;
 //    }
 //
-//    private Line findNearestLineRec(CommitGraphNode i_NodeInOtherBranch, CommitGraphNode i_NodeToFindNearestLine) {
-//        Line result = null;
+//    public boolean isPointingBranchIsHead(CommitGraphNode i_Node) {
+//        boolean result = false;
 //
-//        if(i_NodeInOtherBranch.getIdInList() < i_NodeToFindNearestLine.getIdInList()) {
-//            List<CommitGraphNode> parents = i_NodeInOtherBranch.getGraphNodeParents();
-//            CommitGraphNode parent = parents.get(parents.size() - 1);
-//            Point parentPoint = parent.getLocation(m_Graph);
-//            Point NodeInOtherBranchPoint = i_NodeInOtherBranch.getLocation(m_Graph);
-//
-//            return new Line(parentPoint, NodeInOtherBranchPoint);
-//        }
-//
-//        for(int node = i_NodeInOtherBranch.getGraphNodeChildren().size() - 1; node >= 0; node--) {
-//            result = findNearestLineRec(i_NodeInOtherBranch.getGraphNodeChildren().get(node), i_NodeToFindNearestLine);
-//
-//            if(result != null) {
+//        for (Branch branch : i_Node.getPointingBranches()) {
+//            if (branch == f_HeadBranch) {
+//                result = true;
 //                break;
 //            }
 //        }
@@ -232,42 +92,182 @@ public class CommitTreeLayout implements Layout {
 //        return result;
 //    }
 //
-//
-//    public static class Line {
-//        private Point m_Point1;
-//        private Point m_Point2;
-//        private double m_Slope;
-//
-//        public Line(Point i_Point1, Point i_Point2) {
-//            m_Point1 = i_Point1;
-//            m_Point2 = i_Point2;
-//
-//            try {
-//                m_Slope = (i_Point1.y - i_Point2.y) / (i_Point1.x - i_Point2.x);
-//            } catch(ArithmeticException e) {
-//                m_Slope = 0;
-//            }
+//    private void updateTreeNodeGraphics(List<CommitGraphNode> i_Nodes) {
+//        if (i_Nodes.size() == 0) {
+//            return;
 //        }
 //
-//        public Point GetPoint1() { return m_Point1; }
+//        List<CommitGraphNode> nodeList = new ArrayList<>();
 //
-//        public Point GetPoint2() { return m_Point2; }
+//        // BFS algoritm adds all the children to the list and call the function recursively.
+//        for (CommitGraphNode node : i_Nodes) {
+//            List<CommitGraphNode> nodeChildren = node.getGraphNodeChildren();
+//            nodeList.addAll(nodeChildren);
+//            indetifyBranches(node, nodeChildren);
+//            setNodeGraphics(node);
+//        }
 //
-//        public double GetSlope() { return m_Slope; }
+//        updateTreeNodeGraphics(nodeList);
 //
-//        public double CalcLineDistanceFromLeft(double i_YCoord) {
-//            double res;
+//        if (i_Nodes.size() > 0) {
+//            for (int node = 0; node < i_Nodes.size(); node++) {
+//                CommitGraphNode currNode = i_Nodes.get(node);
+//                int currNodeXLocation = SPACE_LEFT_TO_NODE + currNode.getBranchNumber() * SPACE_BETWEEN_BRANCHES;
 //
-//            if(m_Slope != 0) {
-//                double firstFraction = i_YCoord / m_Slope;
-//                double secondFraction = m_Point1.y / m_Slope;
-//                res = firstFraction - secondFraction + m_Point1.x;
+//                if (currNodeXLocation > m_MaxXLocation) {
+//                    m_MaxXLocation = currNodeXLocation;
+//                }
+//
+//                updateLocationLayout(currNode, currNodeXLocation, i_Nodes);
 //            }
-//            else {
-//                res = m_Point1.x;
-//            }
-//
-//            return res;
 //        }
 //    }
-}
+//
+//    public void indetifyBranches(CommitGraphNode i_Node, List<CommitGraphNode> i_NodeChildren) {
+//        boolean isNodeInHeadBranchTookCare = false;
+//
+//        for (int nodeInd = 0; nodeInd < i_NodeChildren.size(); nodeInd++) {
+////            boolean isMergedBranch = false;
+////
+////            for(Branch branch: i_Node.getPointingBranches()) {
+////                if(branch.getIsMerged()) {
+////                    isMergedBranch = true;
+////                    break;
+////                }
+////            }
+//            if(i_NodeChildren.get(nodeInd).getBranchNumber() == -1) {
+////                if (i_Node.getPointingBranches().size() != 0 && !isMergedBranch) {
+////                    if(m_NodesOnTheHeadBranch.contains(i_NodeChildren.get(nodeInd))) {
+////                        i_NodeChildren.get(nodeInd).setBranchNumber(1 + i_Node.getBranchNumber());
+////                    }
+////                    else {
+////                        i_NodeChildren.get(nodeInd).setBranchNumber(2 + branchNum + i_Node.getBranchNumber());
+////                    }
+////                } else {
+//                    if(m_NodesOnTheHeadBranch.contains(i_NodeChildren.get(nodeInd))) {
+//                        i_NodeChildren.get(nodeInd).setBranchNumber(i_Node.getBranchNumber());
+//                        isNodeInHeadBranchTookCare = true;
+//                    }
+//                    else if(m_Root == i_Node) {
+//                        i_NodeChildren.get(nodeInd).setBranchNumber((isNodeInHeadBranchTookCare ? nodeInd : 1 + nodeInd) + i_Node.getBranchNumber());
+//                    }
+//                    else {
+//                        i_NodeChildren.get(nodeInd).setBranchNumber(nodeInd + i_Node.getBranchNumber());
+//                    }
+////                }
+//            }
+//
+//            i_NodeChildren.get(nodeInd).AddGraphNodeParent(i_Node); // used when two points are needed to create a line between parent and child.
+//        }
+//    }
+//
+//    private void setNodeGraphics(CommitGraphNode i_Node) {
+//        boolean isHead = isPointingBranchIsHead(i_Node);
+//        i_Node.setRectangleTreeNodeId(isHead ? "headBranchRectangleTreeNode" : "rectangleTreeNode");
+//    }
+//
+//    private void updateLocationLayout(CommitGraphNode i_NodeToUpdate, final int i_NodeToUpdateXLocation, List<CommitGraphNode> i_NodesInTheSameLevel) {
+//        i_NodeToUpdate.CommitDetailsXProperty.set(i_NodeToUpdateXLocation + SPACE_NODE_TO_TEXT);
+//
+//        m_Graph.getGraphic(i_NodeToUpdate).layoutXProperty().set(i_NodeToUpdateXLocation);
+//        m_Graph.getGraphic(i_NodeToUpdate).layoutYProperty().bind(Bindings.add(NODE_HEIGHT_FROM_TOP, i_NodeToUpdate.TreeNodeYProperty));
+//        m_Graph.getGraphic(i_NodeToUpdate).setPrefWidth(10);
+//        m_Graph.getGraphic(i_NodeToUpdate).setPrefHeight(10);
+//        //Platform.runLater(() -> updateLocationLayoutIfEdgeOnTop(i_NodesInTheSameLevel));
+//    }
+//
+////    private void updateLocationLayoutIfEdgeOnTop(List<CommitGraphNode> i_Nodes) {
+////        for(int node = 0; node < i_Nodes.size(); node++) {
+////            CommitGraphNode currNode = i_Nodes.get(node);
+////            int currNodeXLocation = SPACE_LEFT_TO_NODE + currNode.getBranchNumber() * SPACE_BETWEEN_BRANCHES;
+////
+////            if(currNodeXLocation < m_MaxXLocation) {
+////                Line line = findNearestLine(i_Nodes, node);
+////
+////                if(line != null) {
+////                    int newX = (int) line.CalcLineDistanceFromLeft(currNode.TreeNodeYProperty.get() + NODE_HEIGHT_FROM_TOP);
+////                    currNodeXLocation = newX < currNodeXLocation ? currNodeXLocation : newX;
+////                    currNode.CommitDetailsXProperty.set(currNodeXLocation + SPACE_NODE_TO_TEXT);
+////                }
+////            }
+////        }
+////    }
+////
+////    private Line findNearestLine(List<CommitGraphNode> i_NodesList, int i_NodeToFindNearestLine) {
+////        Line result = null;
+////
+////        for(int node = 0; node < i_NodesList.size(); node++) {
+////            if(node != i_NodeToFindNearestLine) {
+////                result = findNearestLineRec(i_NodesList.get(node), i_NodesList.get(i_NodeToFindNearestLine));
+////
+////                if (result != null) {
+////                    break;
+////                }
+////            }
+////        }
+////
+////        return result;
+////    }
+////
+////    private Line findNearestLineRec(CommitGraphNode i_NodeInOtherBranch, CommitGraphNode i_NodeToFindNearestLine) {
+////        Line result = null;
+////
+////        if(i_NodeInOtherBranch.getIdInList() < i_NodeToFindNearestLine.getIdInList()) {
+////            List<CommitGraphNode> parents = i_NodeInOtherBranch.getGraphNodeParents();
+////            CommitGraphNode parent = parents.get(parents.size() - 1);
+////            Point parentPoint = parent.getLocation(m_Graph);
+////            Point NodeInOtherBranchPoint = i_NodeInOtherBranch.getLocation(m_Graph);
+////
+////            return new Line(parentPoint, NodeInOtherBranchPoint);
+////        }
+////
+////        for(int node = i_NodeInOtherBranch.getGraphNodeChildren().size() - 1; node >= 0; node--) {
+////            result = findNearestLineRec(i_NodeInOtherBranch.getGraphNodeChildren().get(node), i_NodeToFindNearestLine);
+////
+////            if(result != null) {
+////                break;
+////            }
+////        }
+////
+////        return result;
+////    }
+////
+////
+////    public static class Line {
+////        private Point m_Point1;
+////        private Point m_Point2;
+////        private double m_Slope;
+////
+////        public Line(Point i_Point1, Point i_Point2) {
+////            m_Point1 = i_Point1;
+////            m_Point2 = i_Point2;
+////
+////            try {
+////                m_Slope = (i_Point1.y - i_Point2.y) / (i_Point1.x - i_Point2.x);
+////            } catch(ArithmeticException e) {
+////                m_Slope = 0;
+////            }
+////        }
+////
+////        public Point GetPoint1() { return m_Point1; }
+////
+////        public Point GetPoint2() { return m_Point2; }
+////
+////        public double GetSlope() { return m_Slope; }
+////
+////        public double CalcLineDistanceFromLeft(double i_YCoord) {
+////            double res;
+////
+////            if(m_Slope != 0) {
+////                double firstFraction = i_YCoord / m_Slope;
+////                double secondFraction = m_Point1.y / m_Slope;
+////                res = firstFraction - secondFraction + m_Point1.x;
+////            }
+////            else {
+////                res = m_Point1.x;
+////            }
+////
+////            return res;
+////        }
+////    }
+//}

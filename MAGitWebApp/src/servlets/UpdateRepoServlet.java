@@ -1,10 +1,8 @@
 package servlets;
 
-import IO.FileUtilities;
-import MagitExceptions.CommitAlreadyExistsException;
-import MagitExceptions.EmptyWcException;
 import com.google.gson.Gson;
 import magit.Engine;
+import users.UsersManager;
 import utils.RepositoryUpdates;
 import utils.ServletsUtils;
 import utils.SessionUtils;
@@ -28,7 +26,8 @@ public class UpdateRepoServlet extends HttpServlet {
             response.setContentType("application/json;charset=UTF-8");
             PrintWriter out = response.getWriter();
             Gson gson = new Gson();
-            RepositoryUpdates repositoryUpdates = new RepositoryUpdates(engine, username);
+            UsersManager usersManager = ServletsUtils.getUsersManager(getServletContext());
+            RepositoryUpdates repositoryUpdates = new RepositoryUpdates(engine, usersManager.getUser(username));
 
             if (repositoryUpdates.getRepository() == null) {
                 out.print("User has no repositories.");

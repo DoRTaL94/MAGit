@@ -25,6 +25,10 @@ public class Folder implements IRepositoryFile {
         files.sort(Folder.Data::compare);
     }
 
+    public void setFiles(LinkedList<Folder.Data> i_Files) {
+        files = i_Files;
+    }
+
     public boolean isRoot() {
         return isRoot;
     }

@@ -33,6 +33,10 @@ public class Commit implements IRepositoryFile, CommitRepresentative {
         return String.format("%s;%s;%s;%s", rootFolderSha1, firstPrecedingCommitsSHA1, secondPrecedingCommitsSHA1, message);
     }
 
+    public void setSha1(String i_Sha1) {
+        sha1 = i_Sha1;
+    }
+
     public List<String> getPrecedingCommits() {
         List<String> precedings = new ArrayList<>();
 

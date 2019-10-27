@@ -1,13 +1,13 @@
 package users;
 
-import data.structures.Repository;
 import notifications.NotificationManager;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 public class User {
     private final NotificationManager notificationManager = new NotificationManager();
+    private final List<PullRequest> pullRequests = new LinkedList<>();
     private String name = "";
     private String password = "";
 
@@ -19,6 +19,9 @@ public class User {
         name = i_Name;
     }
 
+    public List<PullRequest> getPullRequests() {
+        return pullRequests;
+    }
 
     public String getName() {
         return name;

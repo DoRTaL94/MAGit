@@ -1,9 +1,15 @@
 package users;
 
 import IO.FileUtilities;
+import data.structures.Branch;
+import data.structures.Repository;
 import magit.Engine;
+import notifications.INotification;
+import notifications.PullRequestNotification;
 import org.apache.commons.codec.digest.DigestUtils;
+import utils.SessionUtils;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -116,5 +122,51 @@ public class UsersManager {
         if (!name.isEmpty() && !i_User.getPassword().isEmpty()) {
             nameToUserMap.put(name, i_User);
         }
+    }
+
+    public PullRequest createPullRequest(HttpServletRequest i_Request, Engine i_Engine) {
+        String username = SessionUtils.getUsername(i_Request);
+        String otherUsername = i_Request.getParameter("user");
+        String target = i_Request.getParameter("target");
+        String base = i_Request.getParameter("base");
+        String message = i_Request.getParameter("message");
+
+        Repository userRepo = i_Engine.getActiveRepository();
+
+        PullRequest pullRequest = new PullRequest();
+        pullRequest.setBase(userRepo.getBranches().get(base));
+        pullRequest.setTarget(userRepo.getBranches().get(target));
+        pullRequest.setRelevantRepoName(userRepo.getName());
+        pullRequest.setPullRequestMessage(message);
+        pullRequest.setRequestByUserName(username);
+
+        return pullRequest;
+    }
+
+    public boolean addPullRequest(PullRequest i_PullRequest, Engine i_PushingUserEngine, Engine i_PullingUserEngine) {
+        boolean isAdded = false;
+        User user = nameToUserMap.get(i_PullingUserEngine.getCurrentUserName());
+
+        if(user != null) {
+            user.getPullRequests().add(i_PullRequest);
+            PullRequestNotification pullRequestNotification = new PullRequestNotification();
+            pullRequestNotification.setPullRequest(i_PullRequest);
+            user.getNotificationManager().addNotification(pullRequestNotification);
+
+            Repository pushingUserRepo = i_PushingUserEngine.getActiveRepository();
+            String pushedBranchName = pushingUserRepo.getHeadBranch().getName();
+            String pushedPointedCommitSha1 = pushingUserRepo.getHeadBranch().getPointedCommitSha1();
+
+            Branch pushedBranch = new Branch();
+            pushedBranch.setName(pushedBranchName);
+            pushedBranch.setPointedCommitSha1(pushedPointedCommitSha1);
+            pushedBranch.setPullRequested(true);
+
+            i_PullingUserEngine.putBranchFromOtherRepo(pushedBranch, pushedPointedCommitSha1, i_PushingUserEngine);
+
+            isAdded = true;
+        }
+
+        return isAdded;
     }
 }

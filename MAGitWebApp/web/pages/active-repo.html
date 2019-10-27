@@ -68,6 +68,9 @@
                 <li class="nav-item">
                     <a class="nav-link" id="diff-tab" data-toggle="tab" href="#diff" role="tab" aria-controls="diff-tab" aria-selected="false">Difference</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="pull-requests-tab" data-toggle="tab" href="#pull-requests" role="tab" aria-controls="pull-requests-tab" aria-selected="false">Pull Requests</a>
+                </li>
             </ul>
         </div>
         <div class="tab-content Magit-body">
@@ -109,6 +112,11 @@
                     <div class="diff-items-container">
                         <div class="diff-items">No deleted files to show.</div>
                     </div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="pull-requests" role="tabpanel" aria-labelledby="pull-requests-tab">
+                <div id="pull-requests-list">
+                    <div id="empty-pull-requests">You have no pull requests</div>
                 </div>
             </div>
         </div>

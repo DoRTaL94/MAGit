@@ -38,6 +38,7 @@ const lastCommitContent =
             </li>
         </ul>
     </div>
+    <button id="btn-pull-request" type="button">Make pull request</button>
     <button id="btn-create-new-branch" type="button">Create new branch</button>
     <button id="btn-checkout" type="button">Checkout</button>
 </nav>
@@ -104,6 +105,7 @@ function setOnTabsClick() {
     $('#diff-tab').on('click', function () {
         $.ajax({
             method:'POST',
+            data: 'commit=' + repository.headBranch.pointedCommitSha1,
             url: 'difference',
             timeout: 4000,
             error: function (response) {
@@ -267,6 +269,24 @@ function onLastCommitBackClick() {
     $('#commits-header-title > span').remove();
     updateRepo(repository.headBranch.name);
     $('#download').on('click', () => window.location.href = `download?repository=${ repository.repoName }`);
+    $('#fork').on('click', fork);
+}
+
+function fork() {
+    $.ajax({
+        method:'POST',
+        data: 'repository=' + repository.repoName,
+        url: 'fork',
+        timeout: 4000,
+        error: function (response) {
+            console.log(response);
+        },
+        success: function (response) {
+            if(response === 'success') {
+                window.location.href = 'profile.html';
+            }
+        }
+    });
 }
 
 function getIsOpenChanges() {
@@ -435,32 +455,102 @@ function onUpdateRepoSuccess(response) {
 
         updateRepo(repository.headBranch.name);
         $('#download').on('click', () => window.location.href = `download?repository=${ repository.repoName }`);
+        $('#fork').on('click', fork);
     }
 }
 
-function handleNotOwnRepo() {
-    $('#code-editor-tab').remove();
-    $('#diff-tab').remove();
-    $('#btn-commit').remove();
-    $('#btn-create-file').remove();
-    $('#btn-create-new-branch').remove();
-    $('#wc-files-list').remove();
-    $('#btn-checkout').remove();
-
-}
-
 function updateRepo(branchName) {
+    let currCommit = repository.commits[repository.branches[branchName].pointedCommitSha1];
     let lastCommitContentContainer = $('#last-commit-content');
     lastCommitContentContainer.empty();
     lastCommitContentContainer.append(lastCommitContent);
 
+    initButtons(branchName);
+    initHeaderOfLastCommitFilesList(branchName);
+    initPullRequests();
+    updateRootFolder(repository, currCommit.rootFolderSha1, '#root-folder-files', prevFoldersStack);
+    handleNotOwnRepo();
+}
+
+function initPullRequests() {
+    let prBranches = repository.prBranches;
+
+    if(prBranches != null) {
+        $('#pull-requests-list').empty();
+
+        for(let branch in prBranches) {
+            buildPullRequest(branch);
+        }
+    }
+}
+
+function buildPullRequest(branch) {
+    return `<div class="Commit-list-item">
+    <a href="#idofdiffexpand" data-toggle="collapse" aria-expanded="false" aria-controls="idofdiffexpand" id="" role="button" class="Link list-group-item list-group-item-action">
+        <div class="Table">
+            <div class="Table-row">
+                <div class="Table-cell"></div>
+                <div class="Table-cell"></div>
+                <div class="Table-cell"></div>
+                <div class="Table-cell"></div>  
+            </div>
+        </div>
+    </a>
+    // need to get from server the diff of this branch
+    ${ buildContentExpander(repository, branch, '#pull-requests-list') }
+</div>`
+}
+
+function initHeaderOfLastCommitFilesList(branchName) {
     let branch = repository.branches[branchName];
     let commitListHeader = $('#commit-list-header');
     let currCommit = repository.commits[branch.pointedCommitSha1];
     let branchesList = $('.Branches');
 
-    isActiveBranch = repository.headBranch.name === branchName;
     branchesList.empty();
+
+    commitListHeader.find('span#commiter-name').empty().text(currCommit.lastChanger);
+    commitListHeader.find('div.commit-description').empty().text(currCommit.message);
+    commitListHeader.find('div.commit-sha1').empty().text(currCommit.sha1);
+    commitListHeader.find('div.file-last-update').empty().text(currCommit.lastUpdate);
+
+    $('.Repo-name').empty().text(`${ repository.owner } / ${ repository.repoName + (repository.isForked === true ? ' (forked from user: ' + repository.usernameForkedFrom +')' : '') }`);
+    $('#branch-drop-down').empty().text(`Branch: ${ branch.name }`);
+    $('#branches-count').text(`${ getMapSize(repository.branches, key => true) } branches`);
+    $('#commits-count').text(`${ getMapSize(repository.commits, key => key.length === 40) } commits`);
+
+    let branches = repository.branches;
+
+    for(let name in branches) {
+        if(!branches[name].isPullRequested) {
+            let headBranchMark = name === repository.headBranch.name ? `<img id="head-branch-mark" src="../${ ASSETS_LOCATION }/head-branch.svg"/>` : '';
+            branchesList.append(`<a class="Link dropdown-item" id="${ name }" onclick="updateRepo(this.id)">${ headBranchMark } ${ name }</a>`)
+        }
+    }
+}
+
+function handleNotOwnRepo() {
+    if(isOwnRepo === false) {
+        $('#code-editor-tab').remove();
+        $('#diff-tab').remove();
+        $('#btn-commit').remove();
+        $('#btn-create-file').remove();
+        $('#btn-create-new-branch').remove();
+        $('#wc-files-list').remove();
+        $('#btn-checkout').remove();
+        $('#btn-pull-request').remove();
+    }
+
+    if(repository.isForked) {
+        $('#pull-requests-tab').remove();
+    }
+}
+
+function initButtons(branchName) {
+    let btnPullReq = $('#btn-pull-request');
+
+    isActiveBranch = repository.headBranch.name === branchName;
+    btnPullReq.prop('disabled', true);
 
     if(!isActiveBranch && isOwnRepo) {
         let btnCheckout = $('#btn-checkout');
@@ -479,33 +569,15 @@ function updateRepo(branchName) {
         $('#btn-checkout').prop('disabled', true);
         btnCommit.prop('disabled', !isOpenChanges);
         btnCommit.on('click', popups.showCommitPopup);
+
+        if(repository.isForked) {
+            btnPullReq.prop('disabled', false);
+            btnPullReq.on('click', popups.showPullRequestPopup);
+        }
     }
 
     if(isOwnRepo) {
         $('#btn-create-file').on('click', popups.showCreateFilePopup);
-    }
-
-    commitListHeader.find('span#commiter-name').empty().text(currCommit.lastChanger);
-    commitListHeader.find('div.commit-description').empty().text(currCommit.message);
-    commitListHeader.find('div.commit-sha1').empty().text(currCommit.sha1);
-    commitListHeader.find('div.file-last-update').empty().text(currCommit.lastUpdate);
-
-    $('.Repo-name').empty().text(`${ repository.owner } / ${ repository.repoName }`);
-    $('#branch-drop-down').empty().text(`Branch: ${ branch.name }`);
-    $('#branches-count').text(`${ getMapSize(repository.branches, key => true) } branches`);
-    $('#commits-count').text(`${ getMapSize(repository.commits, key => key.length === 40) } commits`);
-
-    for(let key in repository.branches) {
-        if(repository.branches.hasOwnProperty(key)) {
-            let headBranchMark = key === repository.headBranch.name ? `<img id="head-branch-mark" src="../${ ASSETS_LOCATION }/head-branch.svg"/>` : '';
-            branchesList.append(`<a class="Link dropdown-item" id="${ key }" onclick="updateRepo(this.id)">${ headBranchMark } ${ key }</a>`)
-        }
-    }
-
-    updateRootFolder(repository, currCommit.rootFolderSha1, '#root-folder-files', prevFoldersStack);
-
-    if(isOwnRepo === false) {
-        handleNotOwnRepo();
     }
 }
 

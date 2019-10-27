@@ -27,7 +27,7 @@ public class CommitServlet extends HttpServlet {
             if(username.equals(userToSendRepo)) {
                 Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(userToSendRepo == null ? username : userToSendRepo);
                 String description = request.getParameter("description");
-                engine.commit(description, null);
+                engine.commit(engine.getActiveRepositoryName(), description, null);
                 out.print("success");
             } else {
                 out.print("Not user's repository");

@@ -3,7 +3,10 @@ package utils;
 import IO.FileUtilities;
 import data.structures.*;
 import magit.Engine;
+import notifications.INotification;
 import org.apache.commons.codec.digest.DigestUtils;
+import users.PullRequest;
+import users.User;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,17 +20,29 @@ import java.util.stream.Collectors;
 public class RepositoryUpdates {
     private WorkingDirectory wc;
     private Repository repository;
+    private List<PullRequest> pullRequests;
+    private List<INotification> notifications;
     private boolean isOpenChanges;
     private boolean isOwnRepo;
 
-    public RepositoryUpdates(Engine i_Engine, String i_CurrentUsername) {
+    public RepositoryUpdates(Engine i_Engine, User i_CurrentUser) {
         repository = i_Engine.getActiveRepository();
 
         if(repository != null) {
-            isOpenChanges = !i_Engine.isWcClean();
-            isOwnRepo = i_CurrentUsername.equals(repository.getOwner());
+            isOpenChanges = !i_Engine.isWcClean(repository.getName());
+            isOwnRepo = i_CurrentUser.getName().equals(repository.getOwner());
+            pullRequests = i_CurrentUser.getPullRequests();
+            notifications = i_CurrentUser.getNotificationManager().getNotifications();
             createWc(i_Engine);
         }
+    }
+
+    public List<PullRequest> getPullRequests() {
+        return pullRequests;
+    }
+
+    public List<INotification> getNotifications() {
+        return notifications;
     }
 
     public boolean isOwnRepo() {

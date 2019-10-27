@@ -25,7 +25,9 @@ public class CheckoutServlet extends HttpServlet {
             if(username.equals(userToSendRepo)) {
                 String branchName = request.getParameter("branchname");
                 boolean isCheckWc = request.getParameter("checkwc").equals("false");
-                ServletsUtils.getUsersManager(getServletContext()).getEngine(userToSendRepo == null ? username : userToSendRepo).checkout(branchName, isCheckWc);
+                Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(userToSendRepo == null ? username : userToSendRepo);
+                String repoName = engine.getActiveRepositoryName();
+                engine.checkout(repoName, branchName, isCheckWc);
             } else {
                 response.setContentType("text/html");
                 PrintWriter out = response.getWriter();

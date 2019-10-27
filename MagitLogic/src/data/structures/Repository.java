@@ -2,6 +2,7 @@ package data.structures;
 import IO.FileUtilities;
 
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.Map;
 
 public class Repository {
@@ -13,6 +14,33 @@ public class Repository {
     private Branch headBranch = null;
     private String repoName = null;
     private String owner = null;
+    private boolean isForked = false;
+    private String usernameForkedFrom = null;
+    private String remoteRepositoryLocation = "";
+
+    public String getRemoteRepositoryLocation() {
+        return remoteRepositoryLocation;
+    }
+
+    public void setRemoteRepositoryLocation(String i_RemoteRepositoryLocation) {
+        remoteRepositoryLocation = i_RemoteRepositoryLocation;
+    }
+
+    public String getUsernameForkedFrom() {
+        return usernameForkedFrom;
+    }
+
+    public void setUsernameForkedFrom(String i_UsernameForkedFrom) {
+        usernameForkedFrom = i_UsernameForkedFrom;
+    }
+
+    public void setForked(boolean i_IsForked) {
+        isForked = i_IsForked;
+    }
+
+    public boolean isForked() {
+        return isForked;
+    }
 
     public void setOwner(String i_Owner) {
         owner = i_Owner;

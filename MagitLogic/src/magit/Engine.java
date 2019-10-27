@@ -32,25 +32,20 @@ import string.StringUtilities;
 
 import javax.xml.bind.JAXBException;
 
-public class Engine implements IEngine {
+public class Engine {
     public static final String DATE_FORMAT  = "dd.MM.yyyy-HH:mm:ss:SSS";
     public final StringProperty currentNameProperty;
-    public final BooleanProperty repositoryChangedProperty;
-    public final BooleanProperty remoteRepositoryClonedProperty;
     public final BooleanProperty loadedProperty;
 
     private final Factory factory;
     private Map<String, Repository> repositories = null;
     private String activeRepositoryName = null;
     private String activeRepositoryPath = null;
-    private String remoteRepositoryLocation = "";
 
     // Engine is a singleton class.
     public Engine() {
         currentNameProperty = new SimpleStringProperty("Administrator");
         loadedProperty = new SimpleBooleanProperty(false);
-        repositoryChangedProperty = new SimpleBooleanProperty(false);
-        remoteRepositoryClonedProperty = new SimpleBooleanProperty(false);
         factory = new Factory(this);
     }
 
@@ -58,12 +53,74 @@ public class Engine implements IEngine {
         return repositories;
     }
 
-    public ConflictsManager MergeBranches(Branch i_Ours, Branch i_Theirs,
+    public String getActiveRepositoryName() {
+        return activeRepositoryName;
+    }
+
+    public void putBranchFromOtherRepo(Branch i_Branch, String i_RepositoryName, Engine i_OtherEngine) {
+        Repository myRepo = getRepository(i_RepositoryName);
+        Repository otherRepo = i_OtherEngine.getRepository(i_RepositoryName);
+        String pointedCommitSha1 = i_Branch.getPointedCommitSha1();
+        Commit otherCommit = otherRepo.getCommits().get(pointedCommitSha1);
+        Commit myCommit = new Commit();
+        String rootSha1 = otherRepo.getCommits().get(pointedCommitSha1).getRootFolderSha1();
+        Folder root = otherRepo.getFolders().get(rootSha1);
+        List<Folder.Data> files = root.getFiles();
+
+        myCommit.setRootFolderSha1(rootSha1);
+        myCommit.setLastChanger(otherCommit.getLastChanger());
+        myCommit.setSha1(otherCommit.getSha1());
+        myCommit.setLastUpdate(otherCommit.getLastUpdate());
+        myCommit.setMessage(otherCommit.getMessage());
+        myCommit.setFirstPrecedingCommitSha1(findAncestorInRemote(pointedCommitSha1, myRepo, otherRepo));
+
+        myRepo.getBranches().put(i_Branch.getName(), i_Branch);
+        myRepo.getCommits().put(pointedCommitSha1, myCommit);
+        myRepo.getFolders().put(rootSha1, root);
+
+        putFilesFromOtherRepo(myRepo, otherRepo, files);
+    }
+
+    public String findAncestorInRemote(String i_CommitSha1, Repository i_MyRepo, Repository i_RemoteRepo) {
+        String ancestor;
+
+        if(!i_CommitSha1.isEmpty() && i_MyRepo.getCommits().containsKey(i_CommitSha1)) {
+            ancestor = i_CommitSha1;
+        } else {
+            Commit commit = i_RemoteRepo.getCommits().get(i_CommitSha1);
+            String first = commit.getFirstPrecedingSha1();
+
+            ancestor = findAncestorInRemote(first, i_MyRepo, i_RemoteRepo);
+
+            if(ancestor.isEmpty()) {
+                String second = commit.getSecondPrecedingSha1();
+                ancestor = findAncestorInRemote(second, i_MyRepo, i_RemoteRepo);
+            }
+        }
+
+        return ancestor;
+    }
+
+    public void putFilesFromOtherRepo(Repository i_MyRepo, Repository i_OtherRepo, List<Folder.Data> i_Files) {
+        for(Folder.Data file : i_Files) {
+            if(file.getFileType().equals(eFileType.FOLDER)) {
+                Folder subFolder = i_OtherRepo.getFolders().get(file.getSHA1());
+                i_MyRepo.getFolders().put(file.getSHA1(), subFolder);
+                putFilesFromOtherRepo(i_MyRepo, i_OtherRepo, subFolder.getFiles());
+            } else {
+                Blob subFolder = i_OtherRepo.getBlobs().get(file.getSHA1());
+                i_MyRepo.getBlobs().put(file.getSHA1(), subFolder);
+            }
+        }
+    }
+
+    public ConflictsManager MergeBranches(String i_RepoName, Branch i_Ours, Branch i_Theirs,
                                           Consumer<Consumer<String>> i_GetCommitDescriptionAction,
                                           Runnable i_FastForwardMergeMessageToUserAction,
                                           Consumer<String> i_MergeExceptionMessageAction) {
 
         ConflictsManager conflictsManager = null;
+        Repository repository = getRepository(i_RepoName);
 
         if(i_Ours == i_Theirs) {
             i_MergeExceptionMessageAction.accept("Branch can't merge with itself.");
@@ -71,24 +128,24 @@ public class Engine implements IEngine {
             boolean isFastForwardMerge;
 
             try {
-                isFastForwardMerge = checkIfFastForwardMerge(i_Ours, i_Theirs, i_FastForwardMergeMessageToUserAction);
+                isFastForwardMerge = checkIfFastForwardMerge(i_RepoName, i_Ours, i_Theirs, i_FastForwardMergeMessageToUserAction);
 
                 if (!isFastForwardMerge) {
-                    AncestorFinder ancestorFinder = new AncestorFinder(sha1 -> repositories.get(activeRepositoryName).getCommits().get(sha1));
+                    AncestorFinder ancestorFinder = new AncestorFinder(sha1 -> repository.getCommits().get(sha1));
                     String ancestorSha1 = ancestorFinder
                             .traceAncestor(i_Ours.getPointedCommitSha1(), i_Theirs.getPointedCommitSha1());
 
-                    Commit ancestor = repositories.get(activeRepositoryName).getCommits().get(ancestorSha1);
-                    Commit ours = repositories.get(activeRepositoryName).getCommits().get(i_Ours.getPointedCommitSha1());
-                    Commit theirs = repositories.get(activeRepositoryName).getCommits().get(i_Theirs.getPointedCommitSha1());
+                    Commit ancestor = repository.getCommits().get(ancestorSha1);
+                    Commit ours = repository.getCommits().get(i_Ours.getPointedCommitSha1());
+                    Commit theirs = repository.getCommits().get(i_Theirs.getPointedCommitSha1());
 
-                    Folder oursRootFolder = repositories.get(activeRepositoryName).getFolders().get(ours.getRootFolderSha1());
-                    Folder theirsRootFolder = repositories.get(activeRepositoryName).getFolders().get(theirs.getRootFolderSha1());
-                    Folder ancestorRootFolder = repositories.get(activeRepositoryName).getFolders().get(ancestor.getRootFolderSha1());
+                    Folder oursRootFolder = repository.getFolders().get(ours.getRootFolderSha1());
+                    Folder theirsRootFolder = repository.getFolders().get(theirs.getRootFolderSha1());
+                    Folder ancestorRootFolder = repository.getFolders().get(ancestor.getRootFolderSha1());
 
-                    Map<String, String> oursPathToSha1Map = factory.createPathToSha1Map(i_Ours);
-                    Map<String, String> theirsPathToSha1Map = factory.createPathToSha1Map(i_Theirs);
-                    Map<String, String> ancestorPathToSha1Map = factory.createPathToSha1MapFromCommit(ancestor);
+                    Map<String, String> oursPathToSha1Map = factory.createPathToSha1Map(i_RepoName, i_Ours);
+                    Map<String, String> theirsPathToSha1Map = factory.createPathToSha1Map(i_RepoName, i_Theirs);
+                    Map<String, String> ancestorPathToSha1Map = factory.createPathToSha1MapFromCommit(i_RepoName, ancestor);
 
                     List<Map<String, String>> pathToSha1Maps = new ArrayList<>();
                     pathToSha1Maps.add(oursPathToSha1Map);
@@ -97,14 +154,14 @@ public class Engine implements IEngine {
 
                     List<Conflict> conflicts = new ArrayList<>();
 
-                    conflicts.addAll(findNewFiles(activeRepositoryPath, oursRootFolder, theirsRootFolder, ancestorRootFolder, pathToSha1Maps));
-                    conflicts.addAll(findDeletedFiles(activeRepositoryPath, oursRootFolder, theirsRootFolder, ancestorRootFolder, pathToSha1Maps));
-                    conflicts.addAll(findChangedFiles(activeRepositoryPath, oursRootFolder, theirsRootFolder, ancestorRootFolder, pathToSha1Maps));
+                    conflicts.addAll(findNewFiles(i_RepoName, activeRepositoryPath, oursRootFolder, theirsRootFolder, ancestorRootFolder, pathToSha1Maps));
+                    conflicts.addAll(findDeletedFiles(i_RepoName, activeRepositoryPath, oursRootFolder, theirsRootFolder, ancestorRootFolder, pathToSha1Maps));
+                    conflicts.addAll(findChangedFiles(i_RepoName, activeRepositoryPath, oursRootFolder, theirsRootFolder, ancestorRootFolder, pathToSha1Maps));
 
                     if (conflicts.size() == 0) {
-                        i_GetCommitDescriptionAction.accept(s -> handleNoConflictsInMerge(s, i_Theirs, i_MergeExceptionMessageAction));
+                        i_GetCommitDescriptionAction.accept(s -> handleNoConflictsInMerge(i_RepoName, s, i_Theirs, i_MergeExceptionMessageAction));
                     } else {
-                        conflictsManager = new ConflictsManager(this, conflicts, i_Theirs);
+                        conflictsManager = new ConflictsManager(this, i_RepoName, conflicts, i_Theirs);
                         conflictsManager.SetActionToGetCommitDesctiprionFromUser(i_GetCommitDescriptionAction);
                         conflictsManager.SetErrorMessageAction(i_MergeExceptionMessageAction);
                     }
@@ -117,39 +174,41 @@ public class Engine implements IEngine {
         return conflictsManager;
     }
 
-    private boolean checkIfFastForwardMerge(Branch i_Ours, Branch i_Theirs, Runnable i_FastForwardMergeMessageToUserAction) throws MergeException {
-        Commit ours = repositories.get(activeRepositoryName).getCommits().get(i_Ours.getPointedCommitSha1());
-        Commit theirs = repositories.get(activeRepositoryName).getCommits().get(i_Theirs.getPointedCommitSha1());
+    private boolean checkIfFastForwardMerge(String i_RepoName, Branch i_Ours, Branch i_Theirs, Runnable i_FastForwardMergeMessageToUserAction) throws MergeException {
+        Repository repository = getRepository(i_RepoName);
 
-        boolean isTheirsAncestorOfOurs = checkIfOursAncestorOfTheirs(theirs, ours);
-        boolean isOursAncestorOfTheirs = checkIfOursAncestorOfTheirs(ours, theirs);
+        Commit ours = repository.getCommits().get(i_Ours.getPointedCommitSha1());
+        Commit theirs = repository.getCommits().get(i_Theirs.getPointedCommitSha1());
+
+        boolean isTheirsAncestorOfOurs = checkIfOursAncestorOfTheirs(i_RepoName, theirs, ours);
+        boolean isOursAncestorOfTheirs = checkIfOursAncestorOfTheirs(i_RepoName, ours, theirs);
 
         if(isTheirsAncestorOfOurs) {
             throw new MergeException("Active branch contains the selected branch for merge.");
         }
         else if(isOursAncestorOfTheirs){
             i_Ours.setPointedCommitSha1(i_Theirs.getPointedCommitSha1());
-            new File(Paths.get(activeRepositoryPath, ".magit", "branches", i_Theirs.getName() + ".txt").toString()).delete();
-            FileUtilities.WriteToFile(Paths.get(activeRepositoryPath, ".magit", "branches", i_Ours.getName() + ".txt").toString(),
+            new File(Paths.get(repository.getLocationPath(), ".magit", "branches", i_Theirs.getName() + ".txt").toString()).delete();
+            FileUtilities.WriteToFile(Paths.get(repository.getLocationPath(), ".magit", "branches", i_Ours.getName() + ".txt").toString(),
                     i_Theirs.getPointedCommitSha1());
-            repositories.get(activeRepositoryName).getBranches().remove(i_Theirs.getName());
-            repositoryChangedProperty.set(repositoryChangedProperty.not().get());
+            repository.getBranches().remove(i_Theirs.getName());
             i_FastForwardMergeMessageToUserAction.run();
         }
 
         return isOursAncestorOfTheirs;
     }
 
-    private void handleNoConflictsInMerge(String i_CommitDescription, Branch i_MergedBranch, Consumer<String> i_MergeExceptionMessageAction) {
+    private void handleNoConflictsInMerge(String i_RepoName, String i_CommitDescription, Branch i_MergedBranch, Consumer<String> i_MergeExceptionMessageAction) {
         try {
-            this.commit(i_CommitDescription, i_MergedBranch);
+            this.commit(i_RepoName, i_CommitDescription, i_MergedBranch);
         } catch (IOException | EmptyWcException | CommitAlreadyExistsException e) {
             i_MergeExceptionMessageAction.accept(e.getMessage());
         }
     }
 
-    private boolean checkIfOursAncestorOfTheirs(Commit i_Ours, Commit i_Theirs) {
+    private boolean checkIfOursAncestorOfTheirs(String i_RepoName, Commit i_Ours, Commit i_Theirs) {
         boolean result;
+        Repository repository = getRepository(i_RepoName);
 
         if(i_Theirs == null || i_Theirs.getFirstPrecedingSha1() == null) {
             result = false;
@@ -158,19 +217,19 @@ public class Engine implements IEngine {
             result = true;
         }
         else {
-            Commit firstPreceding = repositories.get(activeRepositoryName).getCommits().get(i_Theirs.getFirstPrecedingSha1());
-            Commit secondPreceding = repositories.get(activeRepositoryName).getCommits().get(i_Theirs.getSecondPrecedingSha1());
+            Commit firstPreceding = repository.getCommits().get(i_Theirs.getFirstPrecedingSha1());
+            Commit secondPreceding = repository.getCommits().get(i_Theirs.getSecondPrecedingSha1());
 
-            result = checkIfOursAncestorOfTheirs(i_Ours, firstPreceding) ||
-                    checkIfOursAncestorOfTheirs(i_Ours, secondPreceding);
+            result = checkIfOursAncestorOfTheirs(i_RepoName, i_Ours, firstPreceding) ||
+                    checkIfOursAncestorOfTheirs(i_RepoName, i_Ours, secondPreceding);
         }
 
         return result;
     }
 
-    private List<Conflict> findChangedFiles(String i_CurrentPath, IRepositoryFile i_Ours, IRepositoryFile i_Theirs, IRepositoryFile i_Ancestor, List<Map<String, String>> i_PathToSha1Maps) {
+    private List<Conflict> findChangedFiles(String i_RepoName, String i_CurrentPath, IRepositoryFile i_Ours, IRepositoryFile i_Theirs, IRepositoryFile i_Ancestor, List<Map<String, String>> i_PathToSha1Maps) {
         List<Conflict> conflicts = new ArrayList<>();
-        eMergeSituation mergeSituation = findMergeSituation(i_CurrentPath, i_Ours, i_Theirs, i_Ancestor, i_PathToSha1Maps);
+        eMergeSituation mergeSituation = findMergeSituation(i_RepoName, i_CurrentPath, i_Ours, i_Theirs, i_Ancestor, i_PathToSha1Maps);
 
         if(i_Ours instanceof Blob) {
             switch (mergeSituation) {
@@ -189,16 +248,16 @@ public class Engine implements IEngine {
             }
         }
         else {
-            conflicts.addAll(checkInsideFolder(i_CurrentPath, i_Ours, i_PathToSha1Maps, this::findChangedFiles));
+            conflicts.addAll(checkInsideFolder(i_RepoName, i_CurrentPath, i_Ours, i_PathToSha1Maps, this::findChangedFiles));
         }
 
 
         return conflicts;
     }
 
-    private List<Conflict> findDeletedFiles(String i_CurrentPath, IRepositoryFile i_Ours, IRepositoryFile i_Theirs, IRepositoryFile i_Ancestor, List<Map<String, String>> i_PathToSha1Maps) {
+    private List<Conflict> findDeletedFiles(String i_RepoName, String i_CurrentPath, IRepositoryFile i_Ours, IRepositoryFile i_Theirs, IRepositoryFile i_Ancestor, List<Map<String, String>> i_PathToSha1Maps) {
         List<Conflict> conflicts = new ArrayList<>();
-        eMergeSituation mergeSituation = findMergeSituation(i_CurrentPath, i_Ours, i_Theirs, i_Ancestor, i_PathToSha1Maps);
+        eMergeSituation mergeSituation = findMergeSituation(i_RepoName, i_CurrentPath, i_Ours, i_Theirs, i_Ancestor, i_PathToSha1Maps);
 
         switch (mergeSituation) {
             case OURS_CHANGED_THEIRS_DELETED:
@@ -212,26 +271,27 @@ public class Engine implements IEngine {
                 mergeSituation.Solve(this, i_CurrentPath, i_Ours);
                 break;
             default:
-                conflicts.addAll(checkInsideFolder(i_CurrentPath, i_Ours, i_PathToSha1Maps, this::findDeletedFiles));
-                conflicts.addAll(checkInsideFolder(i_CurrentPath, i_Theirs, i_PathToSha1Maps, this::findDeletedFiles));
+                conflicts.addAll(checkInsideFolder(i_RepoName, i_CurrentPath, i_Ours, i_PathToSha1Maps, this::findDeletedFiles));
+                conflicts.addAll(checkInsideFolder(i_RepoName, i_CurrentPath, i_Theirs, i_PathToSha1Maps, this::findDeletedFiles));
                 break;
         }
 
         return conflicts;
     }
 
-    private List<Conflict> findNewFiles(String i_CurrentPath, IRepositoryFile i_Ours, IRepositoryFile i_Theirs, IRepositoryFile i_Ancestor, List<Map<String, String>> i_PathToSha1Maps) {
-        eMergeSituation mergeSituation = findMergeSituation(i_CurrentPath, i_Ours, i_Theirs, i_Ancestor, i_PathToSha1Maps);
+    private List<Conflict> findNewFiles(String i_RepoName, String i_CurrentPath, IRepositoryFile i_Ours, IRepositoryFile i_Theirs, IRepositoryFile i_Ancestor, List<Map<String, String>> i_PathToSha1Maps) {
+        eMergeSituation mergeSituation = findMergeSituation(i_RepoName, i_CurrentPath, i_Ours, i_Theirs, i_Ancestor, i_PathToSha1Maps);
 
         if(mergeSituation.equals(eMergeSituation.NEW_FILE_IN_THEIRS)) {
             mergeSituation.Solve(this, i_CurrentPath, i_Theirs);
         }
 
-        return new ArrayList<>(checkInsideFolder(i_CurrentPath, i_Theirs, i_PathToSha1Maps, this::findNewFiles));
+        return new ArrayList<>(checkInsideFolder(i_RepoName, i_CurrentPath, i_Theirs, i_PathToSha1Maps, this::findNewFiles));
     }
 
-    private List<Conflict> checkInsideFolder(String i_CurrentPath, IRepositoryFile i_Folder, List<Map<String, String>> i_PathToSha1Maps, IMergeTask i_MergeTask) {
+    private List<Conflict> checkInsideFolder(String i_RepoName, String i_CurrentPath, IRepositoryFile i_Folder, List<Map<String, String>> i_PathToSha1Maps, IMergeTask i_MergeTask) {
         List<Conflict> conflicts = new ArrayList<>();
+        Repository repository = getRepository(i_RepoName);
 
         if (i_Folder instanceof Folder) {
             Map<String, String> oursPathToSha1 = i_PathToSha1Maps.get(0);
@@ -241,29 +301,30 @@ public class Engine implements IEngine {
             for (Folder.Data file : ((Folder) i_Folder).getFiles()) {
                 String filePath = Paths.get(i_CurrentPath, file.getName()).toString();
                 IRepositoryFile ours = file.getFileType().equals(eFileType.FOLDER) ?
-                        repositories.get(activeRepositoryName).getFolders().get(oursPathToSha1.get(filePath)) :
-                        repositories.get(activeRepositoryName).getBlobs().get(oursPathToSha1.get(filePath));
+                        repository.getFolders().get(oursPathToSha1.get(filePath)) :
+                        repository.getBlobs().get(oursPathToSha1.get(filePath));
                 IRepositoryFile theirs = file.getFileType().equals(eFileType.FOLDER) ?
-                        repositories.get(activeRepositoryName).getFolders().get(theirsPathToSha1.get(filePath)) :
-                        repositories.get(activeRepositoryName).getBlobs().get(theirsPathToSha1.get(filePath));
+                        repository.getFolders().get(theirsPathToSha1.get(filePath)) :
+                        repository.getBlobs().get(theirsPathToSha1.get(filePath));
                 IRepositoryFile ancestor = file.getFileType().equals(eFileType.FOLDER) ?
-                        repositories.get(activeRepositoryName).getFolders().get(ancestorPathToSha1.get(filePath)) :
-                        repositories.get(activeRepositoryName).getBlobs().get(ancestorPathToSha1.get(filePath));
+                        repository.getFolders().get(ancestorPathToSha1.get(filePath)) :
+                        repository.getBlobs().get(ancestorPathToSha1.get(filePath));
 
-                conflicts.addAll(i_MergeTask.ExecuteTask(filePath, ours, theirs, ancestor, i_PathToSha1Maps));
+                conflicts.addAll(i_MergeTask.ExecuteTask(i_RepoName, filePath, ours, theirs, ancestor, i_PathToSha1Maps));
             }
         }
 
         return conflicts;
     }
 
-    private eMergeSituation findMergeSituation(String i_CurrentPath, IRepositoryFile i_Ours, IRepositoryFile i_Theirs, IRepositoryFile i_Ancestor, List<Map<String, String>> i_PathToSha1Maps) {
+    private eMergeSituation findMergeSituation(String i_RepoName, String i_CurrentPath, IRepositoryFile i_Ours, IRepositoryFile i_Theirs, IRepositoryFile i_Ancestor, List<Map<String, String>> i_PathToSha1Maps) {
         eMergeSituation mergeSituation;
 
         String oursSha1 = "";
         String theirsSha1 = "";
         String ancestorSha1 = "";
 
+        String remoteRepositoryLocation = getRemoteRepositoryLocation(i_RepoName);
         String currentPath = remoteRepositoryLocation.isEmpty() ? i_CurrentPath : replaceRootPath(i_CurrentPath, remoteRepositoryLocation, 2);
 
         if(i_Ours != null) {
@@ -367,7 +428,6 @@ public class Engine implements IEngine {
         return file.exists();
     }
 
-    @Override
     public void loadRepositoryFromXml(String i_XmlPath, StringProperty i_ProgressProperty) throws FileNotFoundException, RepositoryAlreadyExistsException, xmlErrorsException, FolderInLocationAlreadyExistsException, JAXBException {
         Path xmlPath;
         i_ProgressProperty.set("Reading xml file...");
@@ -398,7 +458,6 @@ public class Engine implements IEngine {
     }
 
     private void loadRepositoryFromXml(XmlHelper i_XmlHelper, StringProperty i_ProgressProperty) throws FileNotFoundException, RepositoryAlreadyExistsException, FolderInLocationAlreadyExistsException, xmlErrorsException, JAXBException {
-        remoteRepositoryClonedProperty.set(false);
         List<String> errors = i_XmlHelper.RunCheckOnXmlFile();
 
         if(errors.size() == 0) {
@@ -448,13 +507,11 @@ public class Engine implements IEngine {
         } catch (InterruptedException ignored) {}
     }
 
-    @Override
     public void loadDataFromRepository(String i_RepositoryFullPath) throws IOException {
         this.Clear();
         String repoDetails = FileUtilities.ReadTextFromFile(Paths.get(i_RepositoryFullPath, ".magit", "details.txt").toString());
         List<String> repoDetailsList = StringUtilities.getLines(repoDetails);
 
-        remoteRepositoryLocation = repoDetailsList.size() == 2 ? repoDetailsList.get(1) : "";
         activeRepositoryName = repoDetailsList.get(0);
         repositories = repositories == null ? new HashMap<>() : repositories;
         repositories.put(activeRepositoryName, new Repository());
@@ -465,6 +522,7 @@ public class Engine implements IEngine {
         repository.setFolders(new HashMap<>());
         repository.setBlobs(new HashMap<>());
         repository.setLocationPath(Paths.get(i_RepositoryFullPath).toString());
+        repository.setRemoteRepositoryLocation(repoDetailsList.size() == 2 ? repoDetailsList.get(1) : "");
         activeRepositoryPath = repository.getLocationPath();
 
         File branchesDirectory = new File(Paths.get(i_RepositoryFullPath, ".magit", "branches").toString());
@@ -480,43 +538,42 @@ public class Engine implements IEngine {
             List<String> remoteBranches = getRemoteDirectoryContentPaths(branches, remoteRepoName);
 
             for (String branchPath : localBranches) {
-                loadBranch(branchPath);
+                loadBranch(repository.getName(), branchPath);
             }
 
             if(remoteBranches != null) {
                 for (String remoteBranchPath : remoteBranches) {
-                    loadRemoteBranch(remoteBranchPath, remoteRepoName.get());
+                    loadRemoteBranch(repository.getName(), remoteBranchPath, remoteRepoName.get());
                 }
-
-                remoteRepositoryClonedProperty.set(true);
             }
 
             File headFile = new File(Paths.get(i_RepositoryFullPath, ".magit", "branches", "head.txt").toString());
 
             try (Scanner scanner = new Scanner(headFile)) {
                 String headBranchName = scanner.nextLine();
-                Branch headBranch = repositories.get(activeRepositoryName).getBranches().get(headBranchName);
+                Branch headBranch = repository.getBranches().get(headBranchName);
                 headBranch.setIsHead(true);
-                repositories.get(activeRepositoryName).setHeadBranch(headBranch);
+                repository.setHeadBranch(headBranch);
             }
         }
     }
 
-    private void loadRemoteBranch(String i_RemoteBranchPath, String i_RemoteRepoName) throws IOException {
+    private void loadRemoteBranch(String i_RepoName, String i_RemoteBranchPath, String i_RemoteRepoName) throws IOException {
         File branchFile = new File(i_RemoteBranchPath);
         Branch branch = Branch.parse(branchFile);
+        Repository repository = getRepository(i_RepoName);
 
-        if(repositories.get(activeRepositoryName).getBranches().containsKey(branch.getName())) {
-            repositories.get(activeRepositoryName).getBranches().get(branch.getName()).setIsTracking(true);
-            repositories.get(activeRepositoryName).getBranches().get(branch.getName()).setTrakingAfter(i_RemoteRepoName + "/" + branch.getName());
+        if(repository.getBranches().containsKey(branch.getName())) {
+            repository.getBranches().get(branch.getName()).setIsTracking(true);
+            repository.getBranches().get(branch.getName()).setTrakingAfter(i_RemoteRepoName + "/" + branch.getName());
         }
 
         branch.setName(i_RemoteRepoName + "/" + branch.getName());
         branch.setIsRemote(true);
-        repositories.get(activeRepositoryName).getBranches().put(branch.getName(), branch);
+        repository.getBranches().put(branch.getName(), branch);
 
         if(branch.getPointedCommitSha1() != null && !branch.getPointedCommitSha1().isEmpty()) {
-            loadCommitFile(branch.getPointedCommitSha1());
+            loadCommitFile(i_RepoName, branch.getPointedCommitSha1());
         }
     }
 
@@ -542,13 +599,11 @@ public class Engine implements IEngine {
         return result;
     }
 
-    @Override
     public void changeActiveRepository(String i_RepositoryFullPath) throws NotRepositoryFolderException, InvalidPathException, IOException {
         File repo = new File(Paths.get(i_RepositoryFullPath, ".magit").toString());
 
         if(repo.exists()) {
             loadedProperty.set(false);
-            remoteRepositoryClonedProperty.set(false);
             loadDataFromRepository(i_RepositoryFullPath);
             loadedProperty.set(true);
         }
@@ -557,16 +612,16 @@ public class Engine implements IEngine {
         }
     }
 
-    @Override
-    public boolean commit(String i_Description, Branch i_SecondPrecedingIfMerge) throws IOException, EmptyWcException, CommitAlreadyExistsException {
+    public boolean commit(String i_RepoName, String i_Description, Branch i_SecondPrecedingIfMerge) throws IOException, EmptyWcException, CommitAlreadyExistsException {
         boolean isCommitExecuted = false;
-        Repository repository = repositories.get(activeRepositoryName);
+        Repository repository = getRepository(i_RepoName);
         AtomicReference<String> lastChangerRef = new AtomicReference<>();
-        Map<String, String> pathToSha1Map = factory.createPathToSha1Map(repository.getHeadBranch());
-        Folder folder = walkInFolder(activeRepositoryPath, pathToSha1Map, lastChangerRef, false);
+        Map<String, String> pathToSha1Map = factory.createPathToSha1Map(i_RepoName, repository.getHeadBranch());
+        Folder folder = walkInFolder(i_RepoName, repository.getLocationPath(), pathToSha1Map, lastChangerRef, false);
 
         if(folder != null) {
-            String folderPath = remoteRepositoryLocation.isEmpty() ? activeRepositoryPath : remoteRepositoryLocation;
+            String remoteRepositoryLocation = getRemoteRepositoryLocation(i_RepoName);
+            String folderPath = remoteRepositoryLocation.isEmpty() ? repository.getLocationPath() : remoteRepositoryLocation;
             String folderSha1 = DigestUtils.sha1Hex(folder.toStringForSha1(Paths.get(folderPath)));
             boolean isFolderAlreadyExists = repository.getFolders().containsKey(folderSha1);
 
@@ -585,7 +640,7 @@ public class Engine implements IEngine {
 
                 if(i_SecondPrecedingIfMerge != null) {
                     commit.setSecondPrecedingCommitSha1(i_SecondPrecedingIfMerge.getPointedCommitSha1());
-                    new File(Paths.get(activeRepositoryPath,
+                    new File(Paths.get(repository.getLocationPath(),
                             ".magit", "branches", i_SecondPrecedingIfMerge.getName() + ".txt").toString()).delete();
                     repository.getBranches().remove(i_SecondPrecedingIfMerge.getName());
                 }
@@ -593,19 +648,17 @@ public class Engine implements IEngine {
                 String commitSha1 = DigestUtils.sha1Hex(commit.toStringForSha1());
 
                 if (!repository.getCommits().containsKey(commitSha1)) {
-                    String pointedBranchInHeadPath = Paths.get(activeRepositoryPath,
+                    String pointedBranchInHeadPath = Paths.get(repository.getLocationPath(),
                             ".magit", "branches", repository.getHeadBranch().getName() + ".txt").toString();
                     repository.getCommits().put(commitSha1, commit);
                     repository.getHeadBranch().setPointedCommitSha1(commitSha1);
 
 
                     FileUtilities.WriteToFile(pointedBranchInHeadPath, commitSha1);
-                    FileUtilities.ZipFile(folderSha1, folder.toString(), Paths.get(activeRepositoryPath,
+                    FileUtilities.ZipFile(folderSha1, folder.toString(), Paths.get(repository.getLocationPath(),
                             ".magit", "objects", folderSha1).toString());
-                    FileUtilities.ZipFile(commitSha1, commit.toString(), Paths.get(activeRepositoryPath,
+                    FileUtilities.ZipFile(commitSha1, commit.toString(), Paths.get(repository.getLocationPath(),
                             ".magit", "objects", commitSha1).toString());
-
-                    repositoryChangedProperty.set(repositoryChangedProperty.not().get());
                 } else {
                     throw new CommitAlreadyExistsException(commitSha1);
                 }
@@ -617,7 +670,7 @@ public class Engine implements IEngine {
         return isCommitExecuted;
     }
 
-    private Folder walkInFolder(String i_ParentPath, Map<String, String> i_PathToSha1Map, AtomicReference<String> ref_LastChanger, boolean i_IsNewItems) throws IOException {
+    private Folder walkInFolder(String i_RepoName, String i_ParentPath, Map<String, String> i_PathToSha1Map, AtomicReference<String> ref_LastChanger, boolean i_IsNewItems) throws IOException {
         Folder folder;
         int filesCount = 0;
         // convert path to file and gets the content of the folder
@@ -644,9 +697,9 @@ public class Engine implements IEngine {
                 String sha1;
 
                 if(isFolder) {
-                    sha1 = checkDelta(file, i_PathToSha1Map, ref_LastChanger, isNewItem);
+                    sha1 = checkDelta(i_RepoName, file, i_PathToSha1Map, ref_LastChanger, isNewItem);
                 } else {
-                    sha1 = checkDelta(file, i_PathToSha1Map, ref_LastChanger, i_IsNewItems);
+                    sha1 = checkDelta(i_RepoName, file, i_PathToSha1Map, ref_LastChanger, i_IsNewItems);
 
                     if(isNewItem) {
                         ref_LastChanger.set(currentNameProperty.get());
@@ -693,7 +746,7 @@ public class Engine implements IEngine {
         return folder;
     }
 
-    private String checkDelta(File i_FileToCheckDelta, Map<String, String> i_PathToSha1Map, AtomicReference<String> ref_LastChanger, boolean i_IsNewItems) throws IOException {
+    private String checkDelta(String i_RepoName, File i_FileToCheckDelta, Map<String, String> i_PathToSha1Map, AtomicReference<String> ref_LastChanger, boolean i_IsNewItems) throws IOException {
         String sha1;
         String filePath = i_FileToCheckDelta.toPath().toString();
 
@@ -710,10 +763,11 @@ public class Engine implements IEngine {
             }
         }
         else {
-            Folder newFolder = walkInFolder(filePath, i_PathToSha1Map, ref_LastChanger, i_IsNewItems);
+            Folder newFolder = walkInFolder(i_RepoName, filePath, i_PathToSha1Map, ref_LastChanger, i_IsNewItems);
 
             if(newFolder != null) {
                 String currentPath = i_FileToCheckDelta.toPath().toString();
+                String remoteRepositoryLocation = getRemoteRepositoryLocation(i_RepoName);
 
                 if(!remoteRepositoryLocation.isEmpty()) {
                     currentPath = replaceRootPath(i_FileToCheckDelta.toPath().toString(), remoteRepositoryLocation, 2);
@@ -734,13 +788,23 @@ public class Engine implements IEngine {
         return sha1;
     }
 
-    public String replaceRootPath(String i_OriginalPath, String i_RootPath, int i_FromIndex) {
-        String[] pathParts = i_OriginalPath.split(Pattern.quote("\\"));
-        StringBuilder sb = new StringBuilder(i_RootPath);
+    public String replaceRootPath(String i_OriginalPath, String i_RemotePath, int i_FromIndex) {
+        String[] originalPathParts = i_OriginalPath.split(Pattern.quote("\\"));
+        String[] remotePathParts = i_RemotePath.split(Pattern.quote("\\"));
 
-        for(int i = i_FromIndex; i < pathParts.length; i++) {
+        StringBuilder sb = new StringBuilder();
+
+        for(int i = 0; i < i_FromIndex; i++) {
+            sb.append(originalPathParts[i]);
             sb.append("\\");
-            sb.append(pathParts[i]);
+        }
+
+        for(int i = i_FromIndex; i < remotePathParts.length; i++) {
+            sb.append(remotePathParts[i]);
+
+            if(i < remotePathParts.length - 1) {
+                sb.append("\\");
+            }
         }
 
         return sb.toString();
@@ -779,37 +843,37 @@ public class Engine implements IEngine {
         return toReturn;
     }
 
-    @Override
-    public List<String> showCurrentCommitFiles() {
+    public List<String> showCurrentCommitFiles(String i_RepoName) {
         List<String> commitFilesInfo = new ArrayList<>();
-
-        String pointedCommitSha1 = repositories.get(activeRepositoryName).getHeadBranch().getPointedCommitSha1();
+        Repository repository = getRepository(i_RepoName);
+        String pointedCommitSha1 = repository.getHeadBranch().getPointedCommitSha1();
 
         if(pointedCommitSha1 != null && !pointedCommitSha1.isEmpty()) {
-            Commit pointedCommit = repositories.get(activeRepositoryName).getCommits().get(pointedCommitSha1);
+            Commit pointedCommit = repository.getCommits().get(pointedCommitSha1);
             String rootFolderSha1 = pointedCommit.getRootFolderSha1();
-            Folder rootFolder = repositories.get(activeRepositoryName).getFolders().get(rootFolderSha1);
+            Folder rootFolder = repository.getFolders().get(rootFolderSha1);
 
             List<Folder.Data> folderItems = rootFolder.getFiles();
 
             for (Folder.Data item : folderItems) {
-                commitFilesInfo.addAll(folderDataToString(item, activeRepositoryPath));
+                commitFilesInfo.addAll(folderDataToString(item, repository.getLocationPath()));
             }
         }
 
         return commitFilesInfo;
     }
 
-    public List<Difference> getCommitDifference(String i_CommitSha1) {
+    public List<Difference> getCommitDifference(String i_RepoName, String i_CommitSha1) {
         List<Difference> differences = new LinkedList<>();
-        Commit commit = repositories.get(activeRepositoryName).getCommits().get(i_CommitSha1);
+        Repository repository = getRepository(i_RepoName);
+        Commit commit = repository.getCommits().get(i_CommitSha1);
 
         if(!commit.getFirstPrecedingSha1().isEmpty()) {
-            Difference firstDiff = findDiffBetweenCommits(i_CommitSha1, commit.getFirstPrecedingSha1());
+            Difference firstDiff = findDiffBetweenCommits(i_RepoName, i_CommitSha1, commit.getFirstPrecedingSha1());
             differences.add(firstDiff);
 
             if(!commit.getSecondPrecedingSha1().isEmpty()) {
-                Difference secondDiff = findDiffBetweenCommits(i_CommitSha1, commit.getSecondPrecedingSha1());
+                Difference secondDiff = findDiffBetweenCommits(i_RepoName, i_CommitSha1, commit.getSecondPrecedingSha1());
                 differences.add(secondDiff);
             }
         }
@@ -817,16 +881,18 @@ public class Engine implements IEngine {
         return differences;
     }
 
-    private Difference findDiffBetweenCommits(String i_CurrentCommitSha1, String i_PrecedingSha1) {
-        Commit currentCommit = repositories.get(activeRepositoryName).getCommits().get(i_CurrentCommitSha1);
-        Map<String, String> currentCommitPathToSha1 = factory.createPathToSha1MapFromCommit(currentCommit);
-        Commit firstPreceding = repositories.get(activeRepositoryName).getCommits().get(i_PrecedingSha1);
-        Map<String, String> precedingCommitPathToSha1 = factory.createPathToSha1MapFromCommit(firstPreceding);
+    private Difference findDiffBetweenCommits(String i_RepoName, String i_CurrentCommitSha1, String i_PrecedingSha1) {
+        Repository repository = getRepository(i_RepoName);
+
+        Commit currentCommit = repository.getCommits().get(i_CurrentCommitSha1);
+        Map<String, String> currentCommitPathToSha1 = factory.createPathToSha1MapFromCommit(i_RepoName, currentCommit);
+        Commit firstPreceding = repository.getCommits().get(i_PrecedingSha1);
+        Map<String, String> precedingCommitPathToSha1 = factory.createPathToSha1MapFromCommit(i_RepoName, firstPreceding);
         Difference difference = new Difference();
 
-        List<Folder.Data> newFiles = getNewDiff(difference, currentCommitPathToSha1, precedingCommitPathToSha1);
-        List<Folder.Data> changedFiles = getChangedDiff(difference, currentCommitPathToSha1, precedingCommitPathToSha1);
-        List<Folder.Data> deletedFiles = getDeletedDiff(difference, currentCommitPathToSha1, precedingCommitPathToSha1);
+        List<Folder.Data> newFiles = getNewDiff(i_RepoName, difference, currentCommitPathToSha1, precedingCommitPathToSha1);
+        List<Folder.Data> changedFiles = getChangedDiff(i_RepoName, difference, currentCommitPathToSha1, precedingCommitPathToSha1);
+        List<Folder.Data> deletedFiles = getDeletedDiff(i_RepoName, difference, currentCommitPathToSha1, precedingCommitPathToSha1);
 
         difference.setNewFiles(newFiles);
         difference.setChangedFiles(changedFiles);
@@ -835,18 +901,20 @@ public class Engine implements IEngine {
         return difference;
     }
 
-    private List<Folder.Data> getDeletedDiff(Difference i_Diff, Map<String, String> i_CurrentCommitPathToSha1, Map<String, String> i_PrecedingCommitPathToSha1) {
+    private List<Folder.Data> getDeletedDiff(String i_RepoName, Difference i_Diff, Map<String, String> i_CurrentCommitPathToSha1, Map<String, String> i_PrecedingCommitPathToSha1) {
         List<Folder.Data> diff = new LinkedList<>();
+        String repoLocation = getRepositoryPath(i_RepoName);
+        Repository repository = getRepository(i_RepoName);
 
         for(Map.Entry<String, String> mapEntry: i_PrecedingCommitPathToSha1.entrySet()) {
-            if(!i_CurrentCommitPathToSha1.containsKey(mapEntry.getKey()) && !mapEntry.getKey().equals(activeRepositoryPath)) {
+            if(!i_CurrentCommitPathToSha1.containsKey(mapEntry.getKey()) && !mapEntry.getKey().equals(repoLocation)) {
                 File thisFile = new File(mapEntry.getKey());
                 String parentSha1 = i_PrecedingCommitPathToSha1.get(thisFile.getParent());
-                Folder parent = getActiveRepository().getFolders().get(parentSha1);
+                Folder parent = repository.getFolders().get(parentSha1);
                 diff.add(getFile(parent, mapEntry.getValue()));
 
                 if(!thisFile.isDirectory()) {
-                    i_Diff.addBlob(mapEntry.getValue(), getActiveRepository().getBlobs().get(mapEntry.getValue()));
+                    i_Diff.addBlob(mapEntry.getValue(), repository.getBlobs().get(mapEntry.getValue()));
                 }
             }
         }
@@ -854,11 +922,13 @@ public class Engine implements IEngine {
         return diff;
     }
 
-    private List<Folder.Data> getChangedDiff(Difference i_Diff, Map<String, String> i_CurrentCommitPathToSha1, Map<String, String> i_PrecedingCommitPathToSha1) {
+    private List<Folder.Data> getChangedDiff(String i_RepoName, Difference i_Diff, Map<String, String> i_CurrentCommitPathToSha1, Map<String, String> i_PrecedingCommitPathToSha1) {
         List<Folder.Data> diff = new LinkedList<>();
+        String repoLocation = getRepositoryPath(i_RepoName);
+        Repository repository = getRepository(i_RepoName);
 
         for(Map.Entry<String, String> mapEntry: i_PrecedingCommitPathToSha1.entrySet()) {
-            if(i_CurrentCommitPathToSha1.containsKey(mapEntry.getKey()) && !mapEntry.getKey().equals(activeRepositoryPath)) {
+            if(i_CurrentCommitPathToSha1.containsKey(mapEntry.getKey()) && !mapEntry.getKey().equals(repoLocation)) {
                 String precedingItemSha1 = mapEntry.getValue();
                 String currentCommitItemSha1 = i_CurrentCommitPathToSha1.get(mapEntry.getKey());
                 boolean isItemsDiff = !precedingItemSha1.equals(currentCommitItemSha1);
@@ -866,11 +936,11 @@ public class Engine implements IEngine {
                 if(isItemsDiff) {
                     File thisFile = new File(mapEntry.getKey());
                     String parentSha1 = i_CurrentCommitPathToSha1.get(thisFile.getParent());
-                    Folder parent = getActiveRepository().getFolders().get(parentSha1);
+                    Folder parent = repository.getFolders().get(parentSha1);
                     diff.add(getFile(parent, currentCommitItemSha1));
 
                     if(!thisFile.isDirectory()) {
-                        i_Diff.addBlob(currentCommitItemSha1, getActiveRepository().getBlobs().get(currentCommitItemSha1));
+                        i_Diff.addBlob(currentCommitItemSha1, repository.getBlobs().get(currentCommitItemSha1));
                     }
                 }
             }
@@ -879,18 +949,20 @@ public class Engine implements IEngine {
         return diff;
     }
 
-    private List<Folder.Data> getNewDiff(Difference i_Diff, Map<String, String> i_CurrentCommitPathToSha1, Map<String, String> i_PrecedingCommitPathToSha1) {
+    private List<Folder.Data> getNewDiff(String i_RepoName, Difference i_Diff, Map<String, String> i_CurrentCommitPathToSha1, Map<String, String> i_PrecedingCommitPathToSha1) {
         List<Folder.Data> diff = new LinkedList<>();
+        String repoLocation = getRepositoryPath(i_RepoName);
+        Repository repository = getRepository(i_RepoName);
 
         for(Map.Entry<String, String> mapEntry: i_CurrentCommitPathToSha1.entrySet()) {
-            if(!i_PrecedingCommitPathToSha1.containsKey(mapEntry.getKey()) && !mapEntry.getKey().equals(activeRepositoryPath)) {
+            if(!i_PrecedingCommitPathToSha1.containsKey(mapEntry.getKey()) && !mapEntry.getKey().equals(repoLocation)) {
                 File thisFile = new File(mapEntry.getKey());
                 String parentSha1 = i_CurrentCommitPathToSha1.get(thisFile.getParent());
-                Folder parent = getActiveRepository().getFolders().get(parentSha1);
+                Folder parent = repository.getFolders().get(parentSha1);
                 diff.add(getFile(parent, mapEntry.getValue()));
 
                 if(!thisFile.isDirectory()) {
-                    i_Diff.addBlob(mapEntry.getValue(), getActiveRepository().getBlobs().get(mapEntry.getValue()));
+                    i_Diff.addBlob(mapEntry.getValue(), repository.getBlobs().get(mapEntry.getValue()));
                 }
             }
         }
@@ -911,7 +983,7 @@ public class Engine implements IEngine {
         return res;
     }
 
-    public List<List<List<String>>> getCommitDiff(String i_CommitSha1) {
+    public List<List<List<String>>> getCommitDiff(String i_RepoName, String i_CommitSha1) {
         List<List<List<String>>> wcStatus = null;
         Commit commit = repositories.get(activeRepositoryName).getCommits().get(i_CommitSha1);
 
@@ -920,24 +992,24 @@ public class Engine implements IEngine {
             List<List<String>> diffFirstPreceding = new ArrayList<>();
             wcStatus.add(diffFirstPreceding);
 
-            findDiffBetweenCommits(i_CommitSha1, commit.getFirstPrecedingSha1(), diffFirstPreceding);
+            findDiffBetweenCommits(i_RepoName, i_CommitSha1, commit.getFirstPrecedingSha1(), diffFirstPreceding);
 
             if(!commit.getSecondPrecedingSha1().isEmpty()) {
                 List<List<String>> diffSecondPreceding = new ArrayList<>();
                 wcStatus.add(diffSecondPreceding);
 
-                findDiffBetweenCommits(i_CommitSha1, commit.getSecondPrecedingSha1(), diffSecondPreceding);
+                findDiffBetweenCommits(i_RepoName, i_CommitSha1, commit.getSecondPrecedingSha1(), diffSecondPreceding);
             }
         }
 
         return wcStatus;
     }
 
-    private void findDiffBetweenCommits(String i_CurrentCommitSha1, String i_PrecedingSha1, List<List<String>> i_Diff) {
+    private void findDiffBetweenCommits(String i_RepoName, String i_CurrentCommitSha1, String i_PrecedingSha1, List<List<String>> i_Diff) {
         Commit currentCommit = repositories.get(activeRepositoryName).getCommits().get(i_CurrentCommitSha1);
-        Map<String, String> currentCommitPathToSha1 = factory.createPathToSha1MapFromCommit(currentCommit);
+        Map<String, String> currentCommitPathToSha1 = factory.createPathToSha1MapFromCommit(i_RepoName, currentCommit);
         Commit firstPreceding = repositories.get(activeRepositoryName).getCommits().get(i_PrecedingSha1);
-        Map<String, String> precedingCommitPathToSha1 = factory.createPathToSha1MapFromCommit(firstPreceding);
+        Map<String, String> precedingCommitPathToSha1 = factory.createPathToSha1MapFromCommit(i_RepoName, firstPreceding);
 
         List<String> deletedItems = new ArrayList<>();
         List<String> newItems = new ArrayList<>();
@@ -947,30 +1019,34 @@ public class Engine implements IEngine {
         i_Diff.add(newItems);
         i_Diff.add(changedItems);
 
-        getNewDiff(newItems, currentCommitPathToSha1, precedingCommitPathToSha1);
-        getChangedDiff(changedItems, currentCommitPathToSha1, precedingCommitPathToSha1);
-        getDeletedDiff(deletedItems, currentCommitPathToSha1, precedingCommitPathToSha1);
+        getNewDiff(i_RepoName, newItems, currentCommitPathToSha1, precedingCommitPathToSha1);
+        getChangedDiff(i_RepoName, changedItems, currentCommitPathToSha1, precedingCommitPathToSha1);
+        getDeletedDiff(i_RepoName, deletedItems, currentCommitPathToSha1, precedingCommitPathToSha1);
     }
 
-    private void getDeletedDiff(List<String> i_DeletedItems, Map<String, String> i_CurrentCommitPathToSha1, Map<String, String> i_PrecedingCommitPathToSha1) {
+    private void getDeletedDiff(String i_RepoName, List<String> i_DeletedItems, Map<String, String> i_CurrentCommitPathToSha1, Map<String, String> i_PrecedingCommitPathToSha1) {
+        String repoLocation = getRepositoryPath(i_RepoName);
+
         for(Map.Entry<String, String> mapEntry: i_PrecedingCommitPathToSha1.entrySet()) {
-            if(mapEntry.getKey().equals(activeRepositoryPath)) {
+            if(mapEntry.getKey().equals(repoLocation)) {
                 i_DeletedItems.add(String.format("%s;%s", mapEntry.getKey(), mapEntry.getValue()));
             }
 
-            if(!i_CurrentCommitPathToSha1.containsKey(mapEntry.getKey()) && !mapEntry.getKey().equals(activeRepositoryPath)) {
+            if(!i_CurrentCommitPathToSha1.containsKey(mapEntry.getKey()) && !mapEntry.getKey().equals(repoLocation)) {
                 i_DeletedItems.add(String.format("%s;%s", mapEntry.getKey(), mapEntry.getValue()));
             }
         }
     }
 
-    private void getChangedDiff(List<String> i_ChangedItems, Map<String, String> i_CurrentCommitPathToSha1, Map<String, String> i_PrecedingCommitPathToSha1) {
+    private void getChangedDiff(String i_RepoName, List<String> i_ChangedItems, Map<String, String> i_CurrentCommitPathToSha1, Map<String, String> i_PrecedingCommitPathToSha1) {
+        String repoLocation = getRepositoryPath(i_RepoName);
+
         for(Map.Entry<String, String> mapEntry: i_PrecedingCommitPathToSha1.entrySet()) {
-            if(mapEntry.getKey().equals(activeRepositoryPath)) {
+            if(mapEntry.getKey().equals(repoLocation)) {
                 i_ChangedItems.add(String.format("%s;%s", mapEntry.getKey(), mapEntry.getValue()));
             }
 
-            if(i_CurrentCommitPathToSha1.containsKey(mapEntry.getKey()) && !mapEntry.getKey().equals(activeRepositoryPath)) {
+            if(i_CurrentCommitPathToSha1.containsKey(mapEntry.getKey()) && !mapEntry.getKey().equals(repoLocation)) {
                 String precedingItemSha1 = mapEntry.getValue();
                 String currentCommitItemSha1 = i_CurrentCommitPathToSha1.get(mapEntry.getKey());
                 boolean isItemsDiff = !precedingItemSha1.equals(currentCommitItemSha1);
@@ -982,20 +1058,21 @@ public class Engine implements IEngine {
         }
     }
 
-    private void getNewDiff(List<String> i_NewItems, Map<String, String> i_CurrentCommitPathToSha1, Map<String, String> i_PrecedingCommitPathToSha1) {
+    private void getNewDiff(String i_RepoName, List<String> i_NewItems, Map<String, String> i_CurrentCommitPathToSha1, Map<String, String> i_PrecedingCommitPathToSha1) {
+        String repoLocation = getRepositoryPath(i_RepoName);
+
         for(Map.Entry<String, String> mapEntry: i_CurrentCommitPathToSha1.entrySet()) {
-            if(mapEntry.getKey().equals(activeRepositoryPath)) {
+            if(mapEntry.getKey().equals(repoLocation)) {
                 i_NewItems.add(String.format("%s;%s", mapEntry.getKey(), mapEntry.getValue()));
             }
 
-            if(!i_PrecedingCommitPathToSha1.containsKey(mapEntry.getKey()) && !mapEntry.getKey().equals(activeRepositoryPath)) {
+            if(!i_PrecedingCommitPathToSha1.containsKey(mapEntry.getKey()) && !mapEntry.getKey().equals(repoLocation)) {
                 i_NewItems.add(String.format("%s;%s", mapEntry.getKey(), mapEntry.getValue()));
             }
         }
     }
 
-    @Override
-    public List<List<String>> getWorkingCopyDelta() {
+    public List<List<String>> getWorkingCopyDelta(String i_RepoName) {
         List<List<String>> wcStatus = new ArrayList<>();
         List<String> deletedItems = new ArrayList<>();
         List<String> newItems = new ArrayList<>();
@@ -1005,22 +1082,24 @@ public class Engine implements IEngine {
         wcStatus.add(newItems);
         wcStatus.add(changedItems);
 
-        if(repositories != null && repositories.get(activeRepositoryName) != null && repositories.get(activeRepositoryName).getHeadBranch() != null) {
-            String pointedCommitSha1 = repositories.get(activeRepositoryName).getHeadBranch().getPointedCommitSha1();
-            Map<String, String> pathToSha1Map = factory.createPathToSha1Map(repositories.get(activeRepositoryName).getHeadBranch());
+        Repository repository = getRepository(i_RepoName);
+
+        if(repository != null && repository.getHeadBranch() != null) {
+            String pointedCommitSha1 = repository.getHeadBranch().getPointedCommitSha1();
+            Map<String, String> pathToSha1Map = factory.createPathToSha1Map(i_RepoName, repository.getHeadBranch());
 
             if (!pointedCommitSha1.isEmpty()) {
                 try {
-                    getNewItems(pathToSha1Map, activeRepositoryPath, newItems);
-                    Commit currentCommit = repositories.get(activeRepositoryName).getCommits().get(pointedCommitSha1);
+                    getNewItems(i_RepoName, pathToSha1Map, repository.getLocationPath(), newItems);
+                    Commit currentCommit = repository.getCommits().get(pointedCommitSha1);
                     String rootFolderSha1 = currentCommit.getRootFolderSha1();
 
                     if (rootFolderSha1 != null) {
-                        Folder currentRootFolder = repositories.get(activeRepositoryName).getFolders().get(rootFolderSha1);
-                        getDeletedItems(currentRootFolder, activeRepositoryPath, deletedItems);
+                        Folder currentRootFolder = repository.getFolders().get(rootFolderSha1);
+                        getDeletedItems(i_RepoName, currentRootFolder, repository.getLocationPath(), deletedItems);
                     }
 
-                    getChangedItems(pathToSha1Map, activeRepositoryPath, changedItems);
+                    getChangedItems(i_RepoName, pathToSha1Map, repository.getLocationPath(), changedItems);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -1030,19 +1109,20 @@ public class Engine implements IEngine {
         return wcStatus;
     }
 
-    private void getDeletedItems(IRepositoryFile i_CurrentFile, String i_CurrentPath, List<String> i_DeletedItems) {
+    private void getDeletedItems(String i_RepoName, IRepositoryFile i_CurrentFile, String i_CurrentPath, List<String> i_DeletedItems) {
         if(i_CurrentFile instanceof Folder) {
             List<Folder.Data> itemsInCurrentFolder = ((Folder)i_CurrentFile).getFiles();
+            Repository repository = getRepository(i_RepoName);
 
             for(Folder.Data item: itemsInCurrentFolder) {
                 String path = Paths.get(i_CurrentPath, item.getName()).toString();
                 File file = new File(path);
 
                 if(item.getFileType().equals(eFileType.FOLDER)){
-                    Folder subFolder = repositories.get(activeRepositoryName).getFolders().get(item.getSHA1());
+                    Folder subFolder = repository.getFolders().get(item.getSHA1());
 
                     if(file.exists()) {
-                        getDeletedItems(subFolder, path, i_DeletedItems);
+                        getDeletedItems(i_RepoName, subFolder, path, i_DeletedItems);
                     }
                     else {
                         i_DeletedItems.addAll(folderDataToStringList(subFolder.getFiles(), path));
@@ -1058,30 +1138,31 @@ public class Engine implements IEngine {
         }
     }
 
-    private void getChangedItems(Map<String, String> i_PathToSha1Map, String i_CurrentPath, List<String> i_ChangedItems) throws IOException {
+    private void getChangedItems(String i_RepoName, Map<String, String> i_PathToSha1Map, String i_CurrentPath, List<String> i_ChangedItems) throws IOException {
         File folder = new File(i_CurrentPath);
         File[] filesInFolder = folder.listFiles();
 
         if(filesInFolder != null) {
             List<File> filesInFolderList = Arrays.stream(filesInFolder).filter(f -> !f.getName().contains(".magit")).collect(Collectors.toList());
             String sha1;
+            Repository repository = getRepository(i_RepoName);
 
             for (File file : filesInFolderList) {
                 String path = file.toPath().toString();
 
                 if (i_PathToSha1Map.containsKey(path)) {
                     if (file.isDirectory()) {
-                        sha1 = factory.createFolder(path, null, this.getCurrentUserName());
+                        sha1 = factory.createFolder(i_RepoName, path, null, this.getCurrentUserName());
 
-                        if (!repositories.get(activeRepositoryName).getFolders().containsKey(sha1)) {
+                        if (!repository.getFolders().containsKey(sha1)) {
                             Folder.Data folderData = Folder.Data.Parse(file, sha1, getCurrentUserName());
                             i_ChangedItems.add(itemDataToString(folderData, i_CurrentPath));
-                            getChangedItems(i_PathToSha1Map, path, i_ChangedItems);
+                            getChangedItems(i_RepoName, i_PathToSha1Map, path, i_ChangedItems);
                         }
                     } else {
                         sha1 = factory.createBlob(path);
 
-                        if (!repositories.get(activeRepositoryName).getBlobs().containsKey(sha1)) {
+                        if (!repository.getBlobs().containsKey(sha1)) {
                             Folder.Data folderData = Folder.Data.Parse(file, sha1, getCurrentUserName());
                             i_ChangedItems.add(itemDataToString(folderData, i_CurrentPath));
                         }
@@ -1091,7 +1172,7 @@ public class Engine implements IEngine {
         }
     }
 
-    private void getNewItems(Map<String, String> i_PathToSha1Map, String i_CurrentPath, List<String> i_NewItems) throws IOException {
+    private void getNewItems(String i_RepoName, Map<String, String> i_PathToSha1Map, String i_CurrentPath, List<String> i_NewItems) throws IOException {
         File folder = new File(i_CurrentPath);
         File[] filesInFolder = folder.listFiles();
 
@@ -1105,7 +1186,7 @@ public class Engine implements IEngine {
                 String path = file.toPath().toString();
                 if (!i_PathToSha1Map.containsKey(path)) {
                     if (file.isDirectory()) {
-                        sha1 = factory.createFolder(path, new SimpleDateFormat(DATE_FORMAT).format(new Date(file.lastModified())), this.getCurrentUserName());
+                        sha1 = factory.createFolder(i_RepoName, path, new SimpleDateFormat(DATE_FORMAT).format(new Date(file.lastModified())), this.getCurrentUserName());
                         List<String> newItems = folderDataToStringList(factory.getTmpFolders().get(sha1).getFiles(), path);
                         i_NewItems.addAll(newItems);
 
@@ -1122,7 +1203,7 @@ public class Engine implements IEngine {
                     }
                 } else {
                     if (file.isDirectory()) {
-                        getNewItems(i_PathToSha1Map, path, i_NewItems);
+                        getNewItems(i_RepoName, i_PathToSha1Map, path, i_NewItems);
                     }
                 }
             }
@@ -1184,7 +1265,6 @@ public class Engine implements IEngine {
         return sb.toString();
     }
 
-    @Override
     public List<String> showAllBranches() {
         List<String> branchesInfo = new ArrayList<>();
         Map<String, Branch> branchesMap = repositories.get(activeRepositoryName).getBranches();
@@ -1213,15 +1293,15 @@ public class Engine implements IEngine {
         return branchesInfo;
     }
 
-    public boolean isBranchNameExists(String i_BranchName) {
-        return repositories.get(activeRepositoryName).getBranches().containsKey(i_BranchName);
+    public boolean isBranchNameExists(String i_RepoName, String i_BranchName) {
+        return getRepository(i_RepoName).getBranches().containsKey(i_BranchName);
     }
 
-    @Override
-    public void createNewBranch(String i_BranchName) throws PointedCommitEmptyException {
+    public void createNewBranch(String i_RepoName, String i_BranchName) throws PointedCommitEmptyException {
+        Repository repository = getRepository(i_RepoName);
         Branch newBranch = new Branch();
         newBranch.setName(i_BranchName);
-        String headBranchPointedCommitSha1 = repositories.get(activeRepositoryName).getHeadBranch().getPointedCommitSha1();
+        String headBranchPointedCommitSha1 = repository.getHeadBranch().getPointedCommitSha1();
 
         if(headBranchPointedCommitSha1 != null) {
             newBranch.setPointedCommitSha1(headBranchPointedCommitSha1);
@@ -1230,37 +1310,33 @@ public class Engine implements IEngine {
             throw new PointedCommitEmptyException();
         }
 
-        String branchPath = Paths.get(activeRepositoryPath, ".magit", "branches", newBranch.getName() + ".txt").toString();
+        String branchPath = Paths.get(repository.getLocationPath(), ".magit", "branches", newBranch.getName() + ".txt").toString();
         FileUtilities.WriteToFile(branchPath, headBranchPointedCommitSha1);
-        repositories.get(activeRepositoryName).getBranches().put(i_BranchName, newBranch);
-
-        repositoryChangedProperty.set(repositoryChangedProperty.not().get());
+        repository.getBranches().put(i_BranchName, newBranch);
     }
 
-    @Override
-    public void deleteBranch(String i_BranchName) throws IOException {
-        Files.delete(Paths.get(activeRepositoryPath, ".magit", "branches", i_BranchName + ".txt"));
-        repositories.get(activeRepositoryName).getBranches().remove(i_BranchName);
-        repositoryChangedProperty.set(repositoryChangedProperty.not().get());
+    public void deleteBranch(String i_RepoName, String i_BranchName) throws IOException {
+        Repository repository = getRepository(i_RepoName);
+        Files.delete(Paths.get(repository.getLocationPath(), ".magit", "branches", i_BranchName + ".txt"));
+        repository.getBranches().remove(i_BranchName);
     }
 
-    public void CreateRTB(String i_BranchName) {
+    public void CreateRTB(String i_RepoName, String i_BranchName) {
         String rtbName = i_BranchName.split("/")[1];
-        String pointedCommit = repositories.get(activeRepositoryName).getBranches().get(i_BranchName).getPointedCommitSha1();
+        Repository repository = getRepository(i_RepoName);
+        String pointedCommit = repository.getBranches().get(i_BranchName).getPointedCommitSha1();
 
-        String rtbLocation = Paths.get(activeRepositoryPath, ".magit", "branches", rtbName + ".txt").toString();
+        String rtbLocation = Paths.get(repository.getLocationPath(), ".magit", "branches", rtbName + ".txt").toString();
         FileUtilities.WriteToFile(rtbLocation, pointedCommit);
         Branch rtbBranch = new Branch();
         rtbBranch.setPointedCommitSha1(pointedCommit);
         rtbBranch.setTrakingAfter(i_BranchName);
         rtbBranch.setIsTracking(true);
         rtbBranch.setName(rtbName);
-        repositories.get(activeRepositoryName).getBranches().put(rtbName, rtbBranch);
-        repositoryChangedProperty.set(repositoryChangedProperty.not().get());
+        repository.getBranches().put(rtbName, rtbBranch);
     }
 
-    @Override
-    public void checkout(String i_BranchName, boolean i_IsSkipWcCheck) throws Exception {
+    public void checkout(String i_RepoName, String i_BranchName, boolean i_IsSkipWcCheck) throws Exception {
         if(!i_BranchName.contains("/")) {
             List<List<String>> wcStatus = null;
             List<String> deletedFiles = null;
@@ -1268,22 +1344,21 @@ public class Engine implements IEngine {
             List<String> changedFiles = null;
 
             if (!i_IsSkipWcCheck) {
-                wcStatus = getWorkingCopyDelta();
+                wcStatus = getWorkingCopyDelta(i_RepoName);
                 deletedFiles = wcStatus.get(0);
                 newFiles = wcStatus.get(1);
                 changedFiles = wcStatus.get(2);
             }
 
             if (i_IsSkipWcCheck || deletedFiles.size() == 0 && newFiles.size() == 0 && changedFiles.size() == 0) {
-                Branch branch = repositories.get(activeRepositoryName).getBranches().get(i_BranchName);
-                repositories.get(activeRepositoryName).getHeadBranch().setIsHead(false);
+                Repository repository = getRepository(i_RepoName);
+                Branch branch = repository.getBranches().get(i_BranchName);
+                repository.getHeadBranch().setIsHead(false);
                 branch.setIsHead(true);
-                repositories.get(activeRepositoryName).setHeadBranch(branch);
+                repository.setHeadBranch(branch);
 
                 cleanWc();
-                factory.createWc(branch);
-
-                repositoryChangedProperty.set(repositoryChangedProperty.not().get());
+                factory.createWc(i_RepoName, branch);
             } else {
                 throw new OpenChangesInWcException(wcStatus);
             }
@@ -1336,7 +1411,6 @@ public class Engine implements IEngine {
         }
     }
 
-    @Override
     public List<String> showActiveBranchHistory() {
         List<String> history = new ArrayList<>();
         Branch activeBranch = repositories.get(activeRepositoryName).getHeadBranch();
@@ -1368,22 +1442,28 @@ public class Engine implements IEngine {
         }
     }
 
-    @Override
     public Repository getActiveRepository() {
         return repositories == null ? null : repositories.get(activeRepositoryName);
     }
 
-    @Override
-    public String getRepositoryPath() {
-        return activeRepositoryPath;
+    public String getRepositoryPath(String i_RepoName) {
+        String location = null;
+
+        if(repositories != null && i_RepoName != null && !i_RepoName.isEmpty()) {
+            Repository repository = repositories.get(i_RepoName);
+
+            if(repository != null) {
+                location = repository.getLocationPath();
+            }
+        }
+
+        return location;
     }
 
-    @Override
     public void setRepositoryPath(String i_RepositoryPath) {
         activeRepositoryPath = i_RepositoryPath == null ? null : Paths.get(i_RepositoryPath).toString().toLowerCase();
     }
 
-    @Override
     public void setActiveRepository(Repository i_Repository) {
         activeRepositoryName = i_Repository.getName();
         activeRepositoryPath = i_Repository.getLocationPath();
@@ -1393,17 +1473,14 @@ public class Engine implements IEngine {
         }
     }
 
-    @Override
     public void setCurrentUserName(String i_CurrentUserName) {
         currentNameProperty.set(i_CurrentUserName);
     }
 
-    @Override
     public String getCurrentUserName() {
         return currentNameProperty.get();
     }
 
-    @Override
     public void createRepositoryAndFiles(String i_RepositoryName, String i_RepositoryLocation) throws RepositoryAlreadyExistsException, FolderInLocationAlreadyExistsException {
         this.Clear();
         File repositoryFolder = new File(i_RepositoryLocation);
@@ -1422,14 +1499,15 @@ public class Engine implements IEngine {
         }
     }
 
-    @Override
-    public void resetHeadBranch(String i_PointedCommitSha1) throws IOException, Sha1LengthException {
+    public void resetHeadBranch(String i_RepoName, String i_PointedCommitSha1) throws IOException, Sha1LengthException {
         if(i_PointedCommitSha1.length() != 40) {
             throw new Sha1LengthException();
         }
 
+        Repository repository = getRepository(i_RepoName);
+
         if(!repositories.get(activeRepositoryName).getCommits().containsKey(i_PointedCommitSha1)) {
-            loadCommitFile(i_PointedCommitSha1);
+            loadCommitFile(i_RepoName, i_PointedCommitSha1);
         }
 
         FileUtilities.WriteToFile(Paths.get(activeRepositoryPath,
@@ -1437,75 +1515,75 @@ public class Engine implements IEngine {
         repositories.get(activeRepositoryName).getHeadBranch().setPointedCommitSha1(i_PointedCommitSha1);
 
         cleanWc();
-        factory.createWc(repositories.get(activeRepositoryName).getHeadBranch());
-
-        repositoryChangedProperty.set(repositoryChangedProperty.not().get());
+        factory.createWc(i_RepoName, repositories.get(activeRepositoryName).getHeadBranch());
     }
 
-    private void loadBranch(String i_BranchPath) throws IOException {
+    private void loadBranch(String i_RepoName, String i_BranchPath) throws IOException {
         File branchFile = new File(i_BranchPath);
         Branch branch = Branch.parse(branchFile);
-        repositories.get(activeRepositoryName).getBranches().put(branch.getName(), branch);
+        getRepository(i_RepoName).getBranches().put(branch.getName(), branch);
 
         if(branch.getPointedCommitSha1() != null && !branch.getPointedCommitSha1().isEmpty()) {
-            loadCommitFile(branch.getPointedCommitSha1());
+            loadCommitFile(i_RepoName, branch.getPointedCommitSha1());
         }
     }
 
-    private void loadCommitFile(String i_CommitSha1) throws IOException {
-        String objectsFolderPath = Paths.get(this.getRepositoryPath(), ".magit", "objects").toString();
+    private void loadCommitFile(String i_RepoName, String i_CommitSha1) throws IOException {
+        String objectsFolderPath = Paths.get(this.getRepositoryPath(i_RepoName), ".magit", "objects").toString();
         Commit commit = Commit.parse(new File(Paths.get(objectsFolderPath, i_CommitSha1).toString()));
+        Repository repository = getRepository(i_RepoName);
 
-        if(!repositories.get(activeRepositoryName).getCommits().containsKey(i_CommitSha1)) {
-            repositories.get(activeRepositoryName).getCommits().put(i_CommitSha1, commit);
+        if(!repository.getCommits().containsKey(i_CommitSha1)) {
+            repository.getCommits().put(i_CommitSha1, commit);
 
             if (!commit.getFirstPrecedingSha1().isEmpty()) {
-                boolean isFirstPrecedingExists = repositories.get(activeRepositoryName).getCommits().containsKey(commit.getFirstPrecedingSha1());
+                boolean isFirstPrecedingExists = repository.getCommits().containsKey(commit.getFirstPrecedingSha1());
 
                 if(!isFirstPrecedingExists) {
-                    loadCommitFile(commit.getFirstPrecedingSha1());
+                    loadCommitFile(i_RepoName, commit.getFirstPrecedingSha1());
                 }
 
                 if (!commit.getSecondPrecedingSha1().isEmpty()) {
-                    boolean isSecondPrecedingExists = repositories.get(activeRepositoryName).getCommits().containsKey(commit.getSecondPrecedingSha1());
+                    boolean isSecondPrecedingExists = repository.getCommits().containsKey(commit.getSecondPrecedingSha1());
 
                     if(!isSecondPrecedingExists) {
-                        loadCommitFile(commit.getSecondPrecedingSha1());
+                        loadCommitFile(i_RepoName, commit.getSecondPrecedingSha1());
                     }
                 }
             }
         }
 
         if(commit.getRootFolderSha1() != null && !commit.getRootFolderSha1().isEmpty()) {
-            loadFolderFile(commit.getRootFolderSha1());
-            repositories.get(activeRepositoryName).getFolders().get(commit.getRootFolderSha1()).setIsRoot(true);
+            loadFolderFile(i_RepoName, commit.getRootFolderSha1());
+            repository.getFolders().get(commit.getRootFolderSha1()).setIsRoot(true);
         }
     }
 
-    private void loadFolderFile(String i_FolderSha1) throws IOException {
-        String objectsFolderPath = Paths.get(this.getRepositoryPath(), ".magit", "objects").toString();
+    private void loadFolderFile(String i_RepoName, String i_FolderSha1) throws IOException {
+        String objectsFolderPath = Paths.get(this.getRepositoryPath(i_RepoName), ".magit", "objects").toString();
         Folder folder = Folder.parse(new File(Paths.get(objectsFolderPath, i_FolderSha1).toString()));
-        repositories.get(activeRepositoryName).getFolders().put(i_FolderSha1, folder);
+        Repository repository = getRepository(i_RepoName);
+
+        repository.getFolders().put(i_FolderSha1, folder);
 
         for(Folder.Data item: folder.getFiles()) {
             if(item.getSHA1() != null && !item.getSHA1().isEmpty()) {
                 if (item.getFileType().equals(eFileType.FOLDER)) {
-                    loadFolderFile(item.getSHA1());
+                    loadFolderFile(i_RepoName, item.getSHA1());
                 } else {
-                    loadBlobFile(item.getSHA1());
+                    loadBlobFile(i_RepoName, item.getSHA1());
                 }
             }
         }
     }
 
-    private void loadBlobFile(String i_BlobSHA1) throws IOException {
-        String objectsFolderPath = Paths.get(this.getRepositoryPath(), ".magit", "objects").toString();
+    private void loadBlobFile(String i_RepoName, String i_BlobSHA1) throws IOException {
+        String objectsFolderPath = Paths.get(this.getRepositoryPath(i_RepoName), ".magit", "objects").toString();
         Blob blob = Blob.parse(new File(Paths.get(objectsFolderPath, i_BlobSHA1).toString()));
-        repositories.get(activeRepositoryName).getBlobs().put(i_BlobSHA1, blob);
+        getRepository(i_RepoName).getBlobs().put(i_BlobSHA1, blob);
     }
 
-    @Override
-    public void exportRepositoryToXml(String i_XmlPath) throws xmlErrorsException, RepositoryNotLoadedException {
+    public void exportRepositoryToXml(String i_RepoName, String i_XmlPath) throws xmlErrorsException, RepositoryNotLoadedException {
         Path xmlPath;
 
         try {
@@ -1517,16 +1595,18 @@ public class Engine implements IEngine {
         XmlHelper xmlHelper = new XmlHelper(this, xmlPath);
 
         if(xmlHelper.IsValidXmlPath()) {
-            if(repositories.get(activeRepositoryName) != null) {
-                MagitRepository magitRepository = new MagitRepository();
-                magitRepository.setLocation(activeRepositoryPath);
-                magitRepository.setName(repositories.get(activeRepositoryName).getName());
+            Repository repository = getRepository(i_RepoName);
 
-                if (repositories.get(activeRepositoryName).getBranches().size() != 0) {
+            if(repository != null) {
+                MagitRepository magitRepository = new MagitRepository();
+                magitRepository.setLocation(repository.getLocationPath());
+                magitRepository.setName(repository.getName());
+
+                if (repository.getBranches().size() != 0) {
                     createMagitBranches(magitRepository);
                 }
 
-                if (repositories.get(activeRepositoryName).getCommits().size() != 0) {
+                if (repository.getCommits().size() != 0) {
                     createMagitCommits(magitRepository);
                 }
 
@@ -1669,9 +1749,7 @@ public class Engine implements IEngine {
     public void Clear() {
         activeRepositoryName = null;
         activeRepositoryPath = null;
-        remoteRepositoryLocation = "";
         currentNameProperty.set("Administrator");
-        repositoryChangedProperty.set(repositoryChangedProperty.not().get());
         factory.clear();
     }
 
@@ -1755,9 +1833,9 @@ public class Engine implements IEngine {
 
     public void Clone(String i_LocalRepositoryName, String i_LocalRepositoryFullPath, String i_RemoteRepositoryFullPath) throws IOException, CollaborationException {
         if(!new File(i_LocalRepositoryFullPath).exists()) {
-            remoteRepositoryLocation = Paths.get(i_RemoteRepositoryFullPath).toString().toLowerCase();
-
+            String remoteRepositoryLocation = Paths.get(i_RemoteRepositoryFullPath).toString().toLowerCase();
             File remoteRepoFile = new File(i_RemoteRepositoryFullPath);
+
             if(remoteRepoFile.exists()) {
                 if (Arrays.stream(Objects.requireNonNull(remoteRepoFile.listFiles()))
                         .anyMatch(f -> f.getName().contains("magit"))) {
@@ -1789,6 +1867,7 @@ public class Engine implements IEngine {
 
                     loadedProperty.set(false);
                     loadDataFromRepository(i_LocalRepositoryFullPath);
+                    getRepository(i_LocalRepositoryName).setRemoteRepositoryLocation(remoteRepositoryLocation);
                     loadedProperty.set(true);
                 } else {
                     throw new CollaborationException("Remote directory is not a magit repository.");
@@ -1801,44 +1880,48 @@ public class Engine implements IEngine {
         }
     }
 
-    public void Fetch() {
+    public void Fetch(String i_RepoName) {
+        String repoPath = getRepositoryPath(i_RepoName);
+        String remoteRepositoryLocation = getRemoteRepositoryLocation(i_RepoName);
         String remoteBranchesDirPath = Paths.get(remoteRepositoryLocation, ".magit", "branches").toString();
         String remoteObjectsDirPath = Paths.get(remoteRepositoryLocation, ".magit", "objects").toString();
-        String localRemoteBranchesDirPath = Paths.get(activeRepositoryPath, ".magit", "branches", new File(remoteRepositoryLocation).getName()).toString();
-        String localObjectsDirPath = Paths.get(activeRepositoryPath, ".magit", "objects").toString();
+        String localRemoteBranchesDirPath = Paths.get(repoPath, ".magit", "branches", new File(remoteRepositoryLocation).getName()).toString();
+        String localObjectsDirPath = Paths.get(repoPath, ".magit", "objects").toString();
 
         try {
             FileUtils.copyDirectory(new File(remoteBranchesDirPath), new File(localRemoteBranchesDirPath));
             FileUtils.copyDirectory(new File(remoteObjectsDirPath), new File(localObjectsDirPath));
-            loadDataFromRepository(activeRepositoryPath);
-
-            repositoryChangedProperty.set(repositoryChangedProperty.not().get());
+            loadDataFromRepository(repoPath);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void Push() throws CollaborationException, IOException {
-        if(repositories.get(activeRepositoryName).getHeadBranch().isTracking()) {
-            if(isPushNeeded()) {
-                String localRepoPath = activeRepositoryPath;
-                String localHeadBranchName = repositories.get(activeRepositoryName).getHeadBranch().getName();
+    public void Push(String i_RepoName) throws CollaborationException, IOException {
+        Repository repository = getRepository(i_RepoName);
+
+        if(repository.getHeadBranch().isTracking()) {
+            String remoteRepositoryLocation = getRemoteRepositoryLocation(i_RepoName);
+
+            if(isPushNeeded(i_RepoName)) {
+                String localRepoPath = repository.getLocationPath();
+                String localHeadBranchName = repository.getHeadBranch().getName();
 
                 loadDataFromRepository(remoteRepositoryLocation);
-                boolean isRemoteWcClean = isWcClean();
+                boolean isRemoteWcClean = isWcClean(i_RepoName);
 
                 if (isRemoteWcClean) {
-                    String remotePointedCommitSha1 = repositories.get(activeRepositoryName).getBranches().get(localHeadBranchName).getPointedCommitSha1();
+                    String remotePointedCommitSha1 = repository.getBranches().get(localHeadBranchName).getPointedCommitSha1();
                     loadDataFromRepository(localRepoPath);
-                    Branch trackedBranch = repositories.get(activeRepositoryName).getBranches().get(repositories.get(activeRepositoryName).getHeadBranch().getTrakingAfter());
+                    Branch trackedBranch = repository.getBranches().get(repository.getHeadBranch().getTrakingAfter());
                     String trackedBranchPointedCommitSha1 = trackedBranch.getPointedCommitSha1();
 
                     if (remotePointedCommitSha1.equals(trackedBranchPointedCommitSha1)) {
-                        String headBranchPointedCommitSha1 = repositories.get(activeRepositoryName).getHeadBranch().getPointedCommitSha1();
+                        String headBranchPointedCommitSha1 = repository.getHeadBranch().getPointedCommitSha1();
 
                         String remoteBranchPath = Paths.get(remoteRepositoryLocation,
                                 ".magit", "branches", localHeadBranchName + ".txt").toString();
-                        String trackedBranchPath = Paths.get(activeRepositoryPath,
+                        String trackedBranchPath = Paths.get(repository.getLocationPath(),
                                 ".magit", "branches", new File(remoteRepositoryLocation).getName(),
                                 localHeadBranchName + ".txt").toString();
 
@@ -1846,10 +1929,8 @@ public class Engine implements IEngine {
                         FileUtilities.WriteToFile(trackedBranchPath, headBranchPointedCommitSha1);
                         trackedBranch.setPointedCommitSha1(headBranchPointedCommitSha1);
 
-                        copyCommitsFilesFromBranch(repositories.get(activeRepositoryName).getHeadBranch(), remoteRepositoryLocation, activeRepositoryPath);
-                        copyWcToRemote();
-
-                        repositoryChangedProperty.set(repositoryChangedProperty.not().get());
+                        copyCommitsFilesFromBranch(repository.getHeadBranch(), remoteRepositoryLocation, repository.getLocationPath());
+                        copyWcToRemote(i_RepoName);
 
                     } else {
                         throw new CollaborationException("Remote branch is not pointing to the same commit as local branch.");
@@ -1864,7 +1945,8 @@ public class Engine implements IEngine {
         }
     }
 
-    private void copyWcToRemote() throws IOException {
+    private void copyWcToRemote(String i_RepoName) throws IOException {
+        String remoteRepositoryLocation = getRemoteRepositoryLocation(i_RepoName);
         File remoteRepo = new File(remoteRepositoryLocation);
         File localRepo = new File(activeRepositoryPath);
 
@@ -1937,12 +2019,13 @@ public class Engine implements IEngine {
         return srcContent;
     }
 
-    public void Pull() throws OpenChangesInWcException, CollaborationException, Exception {
+    public void Pull(String i_RepoName) throws OpenChangesInWcException, CollaborationException, Exception {
         Branch localHeadBranch = repositories.get(activeRepositoryName).getHeadBranch();
 
         if(localHeadBranch.isTracking()) {
-            if(isWcClean()) {
-                if(!isPushNeeded()) {
+            if(isWcClean(i_RepoName)) {
+                String remoteRepositoryLocation = getRemoteRepositoryLocation(i_RepoName);
+                if(!isPushNeeded(i_RepoName)) {
                     String remoteHeadBranchPath = Paths.get(remoteRepositoryLocation, ".magit", "branches", localHeadBranch.getName() + ".txt").toString();
                     String localHeadBranchPath = Paths.get(activeRepositoryPath, ".magit", "branches", localHeadBranch.getName() + ".txt").toString();
                     String trackedBranchByHeadBranch = Paths.get(activeRepositoryPath, ".magit", "branches", new File(remoteRepositoryLocation).getName(), localHeadBranch.getName() + ".txt").toString();
@@ -1957,9 +2040,7 @@ public class Engine implements IEngine {
 
                         this.copyCommitsFilesFromBranch(temp, activeRepositoryPath, remoteRepositoryLocation);
                         this.loadDataFromRepository(activeRepositoryPath);
-                        this.checkout(repositories.get(activeRepositoryName).getHeadBranch().getName(), true);
-
-                        repositoryChangedProperty.set(repositoryChangedProperty.not().get());
+                        this.checkout(i_RepoName, repositories.get(activeRepositoryName).getHeadBranch().getName(), true);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -1977,16 +2058,16 @@ public class Engine implements IEngine {
         }
     }
 
-    private boolean isPushNeeded() {
+    private boolean isPushNeeded(String i_RepoName) {
         String currentCommitSha1 = repositories.get(activeRepositoryName).getHeadBranch().getPointedCommitSha1();
-        String commitFilePathInRemote = Paths.get(remoteRepositoryLocation, ".magit", "objects", currentCommitSha1).toString();
+        String commitFilePathInRemote = Paths.get(getRemoteRepositoryLocation(i_RepoName), ".magit", "objects", currentCommitSha1).toString();
         File commitFileInRemote = new File(commitFilePathInRemote);
 
         return !commitFileInRemote.exists();
     }
 
-    public boolean isWcClean() {
-        List<List<String>> wcStatus = getWorkingCopyDelta();
+    public boolean isWcClean(String i_RepoName) {
+        List<List<String>> wcStatus = getWorkingCopyDelta(i_RepoName);
 
         List<String> deletedFiles = wcStatus.get(0);
         List<String> newFiles = wcStatus.get(1);
@@ -1996,10 +2077,15 @@ public class Engine implements IEngine {
     }
 
     public Repository getRepository(String i_Name) {
-        return repositories.get(i_Name);
+        Repository repository = null;
+
+        if(repositories != null) {
+            repository = repositories.get(i_Name);
+        }
+        return repository;
     }
 
-    public String getRemoteRepositoryLocation() { return remoteRepositoryLocation; }
+    public String getRemoteRepositoryLocation(String i_RepoName) { return repositories.get(i_RepoName).getRemoteRepositoryLocation(); }
 
     public static class Creator {
         private static Engine m_Instance = null;

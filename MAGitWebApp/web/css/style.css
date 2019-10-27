@@ -648,11 +648,13 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     margin: 0;
 }
 
+#btn-pull-request,
 #btn-create-new-branch,
 #btn-create-file {
     margin-right: 10px;
 }
 
+#btn-pull-request,
 #btn-create-new-branch,
 #btn-create-file,
 #btn-commit,
@@ -665,6 +667,7 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     border: 2px solid #e0e0e0;
 }
 
+#btn-pull-request:hover,
 #btn-create-new-branch:hover,
 #btn-create-file:hover,
 #btn-commit:hover,
@@ -672,6 +675,7 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     background-color: #d7d7d7;
 }
 
+#btn-pull-request:active,
 #btn-create-new-branch:active,
 #btn-create-file:active,
 #btn-commit:active,
@@ -681,6 +685,7 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     border: 2px solid #7dcdff;
 }
 
+#btn-pull-request,
 #btn-create-new-branch,
 #btn-create-file,
 .Save,
@@ -708,6 +713,7 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     border: 1.5px solid #b46058;
 }
 
+#btn-pull-request:focus,
 #btn-create-new-branch:focus,
 #btn-create-file:focus,
 .Delete:focus,
@@ -737,6 +743,7 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     cursor: pointer;
 }
 
+#btn-pull-request:disabled,
 #btn-create-new-branch:disabled,
 #btn-checkout:disabled,
 #btn-commit:disabled,
@@ -1256,4 +1263,14 @@ html[xmlns] .clearfix {
 }
 * html .clearfix {
     height: 1%;
+}
+
+#empty-pull-requests {
+    font-size: 1.2em;
+    color: #545454;
+    text-align: center;
+    border: 1px solid rgba(0, 0, 0, .125);
+    border-radius: 5px;
+    padding: 30px 20px;
+    background-color: #f8f9fa;
 }

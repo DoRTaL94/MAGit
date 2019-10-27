@@ -18,7 +18,7 @@ public class CleanWCServlet extends HttpServlet {
         String headBranchName = engine.getActiveRepository().getHeadBranch().getName();
 
         try {
-            engine.checkout(headBranchName ,true);
+            engine.checkout(engine.getActiveRepositoryName(), headBranchName ,true);
         } catch (Exception e) {
             e.printStackTrace();
         }
