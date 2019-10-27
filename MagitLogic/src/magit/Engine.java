@@ -618,7 +618,7 @@ public class Engine implements IEngine {
     }
 
     private Folder walkInFolder(String i_ParentPath, Map<String, String> i_PathToSha1Map, AtomicReference<String> ref_LastChanger, boolean i_IsNewItems) throws IOException {
-        Folder folder = null;
+        Folder folder;
         int filesCount = 0;
         // convert path to file and gets the content of the folder
         File parentFolderFile              = new File(i_ParentPath);
@@ -631,7 +631,7 @@ public class Engine implements IEngine {
                     .collect(Collectors.toList());
         }
 
-        if (filesInParentFolderList != null && filesInParentFolderList.size() != 0) {
+//        if (filesInParentFolderList != null && filesInParentFolderList.size() != 0) {
             long maxLastModified = 0;
 
             folder = new Folder();
@@ -688,7 +688,7 @@ public class Engine implements IEngine {
                 FileUtilities.removeFile(new File(i_ParentPath));
                 folder = null;
             }
-        }
+//        }
 
         return folder;
     }
@@ -800,6 +800,117 @@ public class Engine implements IEngine {
         return commitFilesInfo;
     }
 
+    public List<Difference> getCommitDifference(String i_CommitSha1) {
+        List<Difference> differences = new LinkedList<>();
+        Commit commit = repositories.get(activeRepositoryName).getCommits().get(i_CommitSha1);
+
+        if(!commit.getFirstPrecedingSha1().isEmpty()) {
+            Difference firstDiff = findDiffBetweenCommits(i_CommitSha1, commit.getFirstPrecedingSha1());
+            differences.add(firstDiff);
+
+            if(!commit.getSecondPrecedingSha1().isEmpty()) {
+                Difference secondDiff = findDiffBetweenCommits(i_CommitSha1, commit.getSecondPrecedingSha1());
+                differences.add(secondDiff);
+            }
+        }
+
+        return differences;
+    }
+
+    private Difference findDiffBetweenCommits(String i_CurrentCommitSha1, String i_PrecedingSha1) {
+        Commit currentCommit = repositories.get(activeRepositoryName).getCommits().get(i_CurrentCommitSha1);
+        Map<String, String> currentCommitPathToSha1 = factory.createPathToSha1MapFromCommit(currentCommit);
+        Commit firstPreceding = repositories.get(activeRepositoryName).getCommits().get(i_PrecedingSha1);
+        Map<String, String> precedingCommitPathToSha1 = factory.createPathToSha1MapFromCommit(firstPreceding);
+        Difference difference = new Difference();
+
+        List<Folder.Data> newFiles = getNewDiff(difference, currentCommitPathToSha1, precedingCommitPathToSha1);
+        List<Folder.Data> changedFiles = getChangedDiff(difference, currentCommitPathToSha1, precedingCommitPathToSha1);
+        List<Folder.Data> deletedFiles = getDeletedDiff(difference, currentCommitPathToSha1, precedingCommitPathToSha1);
+
+        difference.setNewFiles(newFiles);
+        difference.setChangedFiles(changedFiles);
+        difference.setDeletedFiles(deletedFiles);
+
+        return difference;
+    }
+
+    private List<Folder.Data> getDeletedDiff(Difference i_Diff, Map<String, String> i_CurrentCommitPathToSha1, Map<String, String> i_PrecedingCommitPathToSha1) {
+        List<Folder.Data> diff = new LinkedList<>();
+
+        for(Map.Entry<String, String> mapEntry: i_PrecedingCommitPathToSha1.entrySet()) {
+            if(!i_CurrentCommitPathToSha1.containsKey(mapEntry.getKey()) && !mapEntry.getKey().equals(activeRepositoryPath)) {
+                File thisFile = new File(mapEntry.getKey());
+                String parentSha1 = i_PrecedingCommitPathToSha1.get(thisFile.getParent());
+                Folder parent = getActiveRepository().getFolders().get(parentSha1);
+                diff.add(getFile(parent, mapEntry.getValue()));
+
+                if(!thisFile.isDirectory()) {
+                    i_Diff.addBlob(mapEntry.getValue(), getActiveRepository().getBlobs().get(mapEntry.getValue()));
+                }
+            }
+        }
+
+        return diff;
+    }
+
+    private List<Folder.Data> getChangedDiff(Difference i_Diff, Map<String, String> i_CurrentCommitPathToSha1, Map<String, String> i_PrecedingCommitPathToSha1) {
+        List<Folder.Data> diff = new LinkedList<>();
+
+        for(Map.Entry<String, String> mapEntry: i_PrecedingCommitPathToSha1.entrySet()) {
+            if(i_CurrentCommitPathToSha1.containsKey(mapEntry.getKey()) && !mapEntry.getKey().equals(activeRepositoryPath)) {
+                String precedingItemSha1 = mapEntry.getValue();
+                String currentCommitItemSha1 = i_CurrentCommitPathToSha1.get(mapEntry.getKey());
+                boolean isItemsDiff = !precedingItemSha1.equals(currentCommitItemSha1);
+
+                if(isItemsDiff) {
+                    File thisFile = new File(mapEntry.getKey());
+                    String parentSha1 = i_CurrentCommitPathToSha1.get(thisFile.getParent());
+                    Folder parent = getActiveRepository().getFolders().get(parentSha1);
+                    diff.add(getFile(parent, currentCommitItemSha1));
+
+                    if(!thisFile.isDirectory()) {
+                        i_Diff.addBlob(currentCommitItemSha1, getActiveRepository().getBlobs().get(currentCommitItemSha1));
+                    }
+                }
+            }
+        }
+
+        return diff;
+    }
+
+    private List<Folder.Data> getNewDiff(Difference i_Diff, Map<String, String> i_CurrentCommitPathToSha1, Map<String, String> i_PrecedingCommitPathToSha1) {
+        List<Folder.Data> diff = new LinkedList<>();
+
+        for(Map.Entry<String, String> mapEntry: i_CurrentCommitPathToSha1.entrySet()) {
+            if(!i_PrecedingCommitPathToSha1.containsKey(mapEntry.getKey()) && !mapEntry.getKey().equals(activeRepositoryPath)) {
+                File thisFile = new File(mapEntry.getKey());
+                String parentSha1 = i_CurrentCommitPathToSha1.get(thisFile.getParent());
+                Folder parent = getActiveRepository().getFolders().get(parentSha1);
+                diff.add(getFile(parent, mapEntry.getValue()));
+
+                if(!thisFile.isDirectory()) {
+                    i_Diff.addBlob(mapEntry.getValue(), getActiveRepository().getBlobs().get(mapEntry.getValue()));
+                }
+            }
+        }
+
+        return diff;
+    }
+
+    private Folder.Data getFile(Folder i_Folder, String i_FileSha1) {
+        Folder.Data res = null;
+
+        for (Folder.Data file : i_Folder.getFiles()) {
+            if (file.getSHA1().equals(i_FileSha1)) {
+                res = file;
+                break;
+            }
+        }
+
+        return res;
+    }
+
     public List<List<List<String>>> getCommitDiff(String i_CommitSha1) {
         List<List<List<String>>> wcStatus = null;
         Commit commit = repositories.get(activeRepositoryName).getCommits().get(i_CommitSha1);
@@ -843,6 +954,10 @@ public class Engine implements IEngine {
 
     private void getDeletedDiff(List<String> i_DeletedItems, Map<String, String> i_CurrentCommitPathToSha1, Map<String, String> i_PrecedingCommitPathToSha1) {
         for(Map.Entry<String, String> mapEntry: i_PrecedingCommitPathToSha1.entrySet()) {
+            if(mapEntry.getKey().equals(activeRepositoryPath)) {
+                i_DeletedItems.add(String.format("%s;%s", mapEntry.getKey(), mapEntry.getValue()));
+            }
+
             if(!i_CurrentCommitPathToSha1.containsKey(mapEntry.getKey()) && !mapEntry.getKey().equals(activeRepositoryPath)) {
                 i_DeletedItems.add(String.format("%s;%s", mapEntry.getKey(), mapEntry.getValue()));
             }
@@ -851,6 +966,10 @@ public class Engine implements IEngine {
 
     private void getChangedDiff(List<String> i_ChangedItems, Map<String, String> i_CurrentCommitPathToSha1, Map<String, String> i_PrecedingCommitPathToSha1) {
         for(Map.Entry<String, String> mapEntry: i_PrecedingCommitPathToSha1.entrySet()) {
+            if(mapEntry.getKey().equals(activeRepositoryPath)) {
+                i_ChangedItems.add(String.format("%s;%s", mapEntry.getKey(), mapEntry.getValue()));
+            }
+
             if(i_CurrentCommitPathToSha1.containsKey(mapEntry.getKey()) && !mapEntry.getKey().equals(activeRepositoryPath)) {
                 String precedingItemSha1 = mapEntry.getValue();
                 String currentCommitItemSha1 = i_CurrentCommitPathToSha1.get(mapEntry.getKey());
@@ -865,6 +984,10 @@ public class Engine implements IEngine {
 
     private void getNewDiff(List<String> i_NewItems, Map<String, String> i_CurrentCommitPathToSha1, Map<String, String> i_PrecedingCommitPathToSha1) {
         for(Map.Entry<String, String> mapEntry: i_CurrentCommitPathToSha1.entrySet()) {
+            if(mapEntry.getKey().equals(activeRepositoryPath)) {
+                i_NewItems.add(String.format("%s;%s", mapEntry.getKey(), mapEntry.getValue()));
+            }
+
             if(!i_PrecedingCommitPathToSha1.containsKey(mapEntry.getKey()) && !mapEntry.getKey().equals(activeRepositoryPath)) {
                 i_NewItems.add(String.format("%s;%s", mapEntry.getKey(), mapEntry.getValue()));
             }

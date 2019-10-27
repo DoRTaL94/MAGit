@@ -3,6 +3,7 @@ package servlets;
 import IO.FileUtilities;
 import data.structures.Folder;
 import magit.Engine;
+import org.apache.commons.io.FileUtils;
 import utils.ServletsUtils;
 import utils.SessionUtils;
 
@@ -22,17 +23,27 @@ public class UpdateFileNameServlet extends HttpServlet {
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String username = SessionUtils.getUsername(request);
-        Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
-        reqData = ServletsUtils.getReqData(request);
-        boolean isSuccess = ServletsUtils.applyOnDbFile(engine, reqData, this::changeFileName);
+        String userToSendRepo = SessionUtils.getUserRepo(request);
+        boolean isSuccess = false;
+        Engine engine = null;
+
+        if(username.equals(userToSendRepo)) {
+            engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
+            reqData = ServletsUtils.getReqData(request);
+            isSuccess = ServletsUtils.applyOnDbFile(engine, reqData, this::changeFileName);
+        }
 
         if(!isSuccess) {
             response.setContentType("text/html");
             PrintWriter out = response.getWriter();
             out.print("failed to update");
-        } else {
+        } else if(engine != null) {
             FileUtilities.WriteToFile(Paths.get(engine.getActiveRepository().getLocationPath(), ".magit", "oldCommit.txt").toString(),
                     engine.getActiveRepository().getHeadBranch().getPointedCommitSha1());
+        } else {
+            response.setContentType("text/html");
+            PrintWriter out = response.getWriter();
+            out.print("Not user's repository");
         }
     }
 

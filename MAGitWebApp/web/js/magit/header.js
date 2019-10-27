@@ -1,25 +1,16 @@
-import { getIsOpenChanges, HOME } from './active-repo.js';
+import { getIsOpenChanges, HOME, ASSETS_LOCATION } from './active-repo.js';
 import { showOpenChangesPopup } from './popups.js';
+
+window.openUserRepos = openUserRepos;
 
 const HEADER_ITEM = "#header-drop-downs > nav > ul > li";
 
 $(setHeaderItemsOnClick);
 
 function setHeaderItemsOnClick() {
-    window.addEventListener("beforeunload", function(event) {
-        if(getIsOpenChanges()) {
-            event.returnValue = "Changes you made would not be saved.";
-
-            $.ajax({
-                method: 'POST',
-                url: "clean-open-changes",
-                timeout: 2000
-            });
-        }
-    });
-
-    $('#home-link').on('click', () => window.location.href = HOME);
-
+    $('#home-link').on('click', onHomeClick);
+    $('#explore-link').on('click', onExploreClick);
+    $('#my-repositories').on('click', onHomeClick);
     $('#logout').on('click', onLogoutClick);
 
     $(HEADER_ITEM).on("click", function() {
@@ -29,6 +20,87 @@ function setHeaderItemsOnClick() {
             handleDropdown($(this));
         } else {
             handleNotificationClicked();
+        }
+    });
+}
+
+function onHomeClick() {
+    $.ajax({
+        method: 'POST',
+        data: 'user=""&current=true',
+        url: "set-user-repo",
+        timeout: 2000,
+        error: function(response) {
+            console.log(response);
+        },
+        success: function () {
+            window.location.href = 'profile.html';
+        }
+    });
+}
+
+function onExploreClick() {
+    let content = $('.Content');
+    content.empty();
+
+    let usersContainer = $('<div>').addClass('users-container Magit-body');
+    let title = $('<div>').addClass('users-title').text('Magit Users');
+    let users = $('<div>').addClass('users');
+    let empty = $('<div>').addClass('empty-users').text('You are the only user in MAGit :( ...');
+
+    users.append(empty);
+    usersContainer.append(title);
+    usersContainer.append(users);
+    content.append(usersContainer);
+
+    $.ajax({
+        method: 'POST',
+        url: "update-users",
+        timeout: 3000,
+        error: function (response) {
+            console.log(response);
+        },
+        success: updateUsers
+    });
+}
+
+function updateUsers(response) {
+    let container = $('.users');
+    let count = response.length;
+
+    if(count > 0) {
+        container.empty();
+
+        for (let user = 0; user < count; user++) {
+            container.append(addUser(response[user]));
+        }
+    }
+}
+
+function addUser(user) {
+    return `<div class="users-list">
+    <a id="user-${ user }" onclick="openUserRepos('${ user }')" role="button" class="Link list-group-item list-group-item-action">
+        <div class="Table">
+            <div class="Table-row">
+                <div class="Table-cell user-icon"><img src="../${ASSETS_LOCATION}/user-icon.png"/></div>
+                <div class="Table-cell username">${ user }</div>
+            </div>
+        </div>
+    </a>
+</div>`
+}
+
+function openUserRepos(user) {
+    $.ajax({
+        method: 'POST',
+        data: 'user=' + user + '&current=false',
+        url: "set-user-repo",
+        timeout: 2000,
+        error: function(response) {
+            console.log(response);
+        },
+        success: function () {
+            window.location.href = 'profile.html';
         }
     });
 }

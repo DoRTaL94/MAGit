@@ -6,7 +6,9 @@ import org.apache.commons.codec.digest.DigestUtils;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.io.File;
 
@@ -23,6 +25,12 @@ public class UsersManager {
         nameToEngines.put(i_Name, new Engine());
         nameToLoggedInUsers.put(i_Name, true);
         saveToDB(user);
+    }
+
+    public List<String> getUsers(String i_CurrentUser) {
+        List<String> users = new ArrayList<>(nameToUserMap.keySet());
+        users.remove(i_CurrentUser);
+        return users;
     }
 
     public void logoutUser(String i_Name) {

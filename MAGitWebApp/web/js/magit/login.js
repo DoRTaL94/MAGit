@@ -1,4 +1,3 @@
-import { HOME } from './active-repo.js';
 const REGISTER_LINK_TXT = "Don't have an account yet? Register";
 
 $(setupLogin);
@@ -96,7 +95,7 @@ function onErrorAjaxResponse(response) {
 
 function onLoginSuccessAjaxResponse(response) {
     if(response === "success") {
-        window.location.href = HOME;
+        window.location.href = "profile.html";
     } else {
         updateMessages(response);
     }

@@ -17,7 +17,8 @@ public class OpenRepository extends HttpServlet {
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String username = SessionUtils.getUsername(request);
-        Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
+        String userToSendRepo = SessionUtils.getUserRepo(request);
+        Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(userToSendRepo == null ? username : userToSendRepo);
         String repositoryName = request.getParameter("repositoryname");
 
         Repository repository = engine.getRepository(repositoryName);

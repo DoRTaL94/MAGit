@@ -431,6 +431,12 @@ a:hover {
     font-size: 1.1em;
 }
 
+#explore-link {
+    margin-left: 30px;
+    text-decoration: none;
+    font-size: 1.1em;
+}
+
 .Notifications.Magit-body{
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.06), 0 6px 20px 0 rgba(0, 0, 0, 0.05);
 }
@@ -601,11 +607,12 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
 }
 
 #commits-count {
-    color: #595959;
+    text-decoration: underline;
+    color: #4faaec;
 }
 
 #commits-count:hover {
-    color: black;
+    color: #0f91ff;
 }
 
 .Separator {
@@ -641,10 +648,12 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     margin: 0;
 }
 
+#btn-create-new-branch,
 #btn-create-file {
     margin-right: 10px;
 }
 
+#btn-create-new-branch,
 #btn-create-file,
 #btn-commit,
 #btn-checkout {
@@ -656,12 +665,14 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     border: 2px solid #e0e0e0;
 }
 
+#btn-create-new-branch:hover,
 #btn-create-file:hover,
 #btn-commit:hover,
 #btn-checkout:hover {
     background-color: #d7d7d7;
 }
 
+#btn-create-new-branch:active,
 #btn-create-file:active,
 #btn-commit:active,
 #btn-checkout:active {
@@ -670,6 +681,7 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     border: 2px solid #7dcdff;
 }
 
+#btn-create-new-branch,
 #btn-create-file,
 .Save,
 .Edit,
@@ -696,7 +708,8 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     border: 1.5px solid #b46058;
 }
 
-#btn-create-file,
+#btn-create-new-branch:focus,
+#btn-create-file:focus,
 .Delete:focus,
 #btn-commit:focus,
 #btn-checkout:focus {
@@ -724,6 +737,7 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     cursor: pointer;
 }
 
+#btn-create-new-branch:disabled,
 #btn-checkout:disabled,
 #btn-commit:disabled,
 .Save:disabled {
@@ -770,6 +784,13 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
 #commit-list-items > a.Commit-list-item:last-child {
     border-bottom-right-radius: 3px;
     border-bottom-left-radius: 3px;
+}
+
+.empty-users {
+    text-align: center;
+    padding: 20px;
+    background-color: #f4f4f4;
+    border: 1px solid rgba(0, 0, 0, 0.12);
 }
 
 .Commit-list-item {
@@ -1098,10 +1119,20 @@ div > .edit-mode-content {
     color: white;
 }
 
+.users-container {
+    margin-top: 35px;
+}
+
+.users-title,
 #commits-header-title {
     margin-bottom: 2px;
 }
 
+.users-title {
+    font-size: 1.2em;
+}
+
+.users-title,
 #commits-header-title > span {
     color: white;
     text-shadow: 0 0 3px rgba(0, 0, 0, 0.43);
@@ -1145,4 +1176,84 @@ div > .edit-mode-content {
 
 .Popup-error-content {
     padding: 20px;
+}
+
+#wc-actions {
+    position: relative;
+    background-color: rgba(75, 179, 255, 0.66);
+    border: 1px solid rgba(0, 0, 0, .125);
+    width: 100%;
+    padding-top: 10px;
+    padding-bottom: 7px;
+    margin-bottom: 7px;
+    border-top-left-radius: 7px;
+    border-top-right-radius: 7px;
+    overflow-x: auto;
+}
+
+#diff {
+    margin-bottom: 70px;
+}
+
+#wc-actions > #btn-create-file,
+#wc-actions > #btn-commit {
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.diff-box {
+    padding: 0;
+    background-color: #f8f9fa;
+    float: left;
+    width: 32%;
+}
+
+.diff-box:first-child {
+    margin-right: 1%;
+    width: 33%;
+}
+
+.diff-box:last-child {
+    margin-left: 1%;
+    width: 33%;
+}
+
+.diff-box > .diff-title {
+    padding: 5px;
+    font-size: 1.1em;
+    text-align: center;
+    margin: 0;
+    color: white;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.22);
+    background-color: rgba(75, 179, 255, 0.66);
+    border: 1px solid rgba(0, 0, 0, .125);
+}
+
+.diff-box > .diff-items-container > .diff-items {
+    padding: 10px;
+    text-align: center;
+    border: 1px solid rgba(0, 0, 0, .125);
+    border-top: 0;
+}
+
+.clearfix:after {
+    content: ".";
+    display: block;
+    clear: both;
+    visibility: hidden;
+    line-height: 0;
+    height: 0;
+}
+
+.clearfix {
+    display: inline-block;
+}
+
+html[xmlns] .clearfix {
+    display: block;
+}
+* html .clearfix {
+    height: 1%;
 }

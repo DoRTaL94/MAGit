@@ -17,6 +17,7 @@
         <div class="Header-icon Header-item">
             <img src="../assets/MAGit.png" alt="magit-icon"/>
             <span class="Link" id="home-link">Home</span>
+            <span class="Link" id="explore-link">Explore</span>
         </div>
         <div id="header-drop-downs">
         <nav>
@@ -62,7 +63,10 @@
                     <a class="nav-link active" id="code-tab" data-toggle="tab" href="#code" role="tab" aria-controls="code" aria-selected="true"><> Code</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" id="pull-requests-tab" data-toggle="tab" href="#pullrequests" role="tab" aria-controls="pullrequests" aria-selected="false">Pull requests</a>
+                    <a class="nav-link" id="code-editor-tab" data-toggle="tab" href="#code-editor" role="tab" aria-controls="code-editor" aria-selected="false">Editor</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="diff-tab" data-toggle="tab" href="#diff" role="tab" aria-controls="diff-tab" aria-selected="false">Difference</a>
                 </li>
             </ul>
         </div>
@@ -78,7 +82,34 @@
 
                 </div>
             </div>
-            <div class="tab-pane fade" id="pullrequests" role="tabpanel" aria-labelledby="pull-requests-tab">
+            <div class="tab-pane fade" id="code-editor" role="tabpanel" aria-labelledby="code-editor-tab">
+                <div id="wc-actions">
+                    <button id="btn-create-file" type="button">Create File</button>
+                    <button id="btn-commit" type="button">Commit</button>
+                </div>
+                <div id="wc-files-list">
+
+                </div>
+            </div>
+            <div class="tab-pane fade clearfix" id="diff" role="tabpanel" aria-labelledby="diff-tab">
+                <div class="diff-box" id="new-files-diff">
+                    <div class="diff-title">New Files</div>
+                    <div class="diff-items-container">
+                        <div class="diff-items">No new files to show.</div>
+                    </div>
+                </div>
+                <div class="diff-box" id="changed-files-diff">
+                    <div class="diff-title">Changed Files</div>
+                    <div class="diff-items-container">
+                        <div class="diff-items">No changed files to show.</div>
+                    </div>
+                </div>
+                <div class="diff-box" id="deleted-files-diff">
+                    <div class="diff-title">Deleted Files</div>
+                    <div class="diff-items-container">
+                        <div class="diff-items">No deleted files to show.</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

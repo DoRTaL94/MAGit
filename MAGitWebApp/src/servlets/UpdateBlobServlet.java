@@ -22,17 +22,27 @@ public class UpdateBlobServlet extends HttpServlet {
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String username = SessionUtils.getUsername(request);
-        Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
-        reqData = ServletsUtils.getReqData(request);
-        boolean isSuccess = ServletsUtils.applyOnDbFile(engine, reqData, this::changeBlobContent);
+        String userToSendRepo = SessionUtils.getUserRepo(request);
+        Engine engine = null;
+        boolean isSuccess = false;
+
+        if(username.equals(userToSendRepo)) {
+            engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(userToSendRepo == null ? username : userToSendRepo);
+            reqData = ServletsUtils.getReqData(request);
+            isSuccess = ServletsUtils.applyOnDbFile(engine, reqData, this::changeBlobContent);
+        }
 
         if(!isSuccess) {
             response.setContentType("text/html");
             PrintWriter out = response.getWriter();
             out.print("failed to update");
-        } else {
+        } else if(engine != null) {
             FileUtilities.WriteToFile(Paths.get(engine.getActiveRepository().getLocationPath(), ".magit", "oldCommit.txt").toString(),
                     engine.getActiveRepository().getHeadBranch().getPointedCommitSha1());
+        } else {
+            response.setContentType("text/html");
+            PrintWriter out = response.getWriter();
+            out.print("Not user's repository");
         }
     }
 
@@ -43,8 +53,6 @@ public class UpdateBlobServlet extends HttpServlet {
             int reqDataSize = reqData.size();
 
             FileUtilities.WriteToFile(i_Blob.toPath().toString(), reqData.get(reqDataSize - 1));
-            Blob blob = i_Engine.getActiveRepository().getBlobs().get(reqData.get(reqDataSize - 3));
-            blob.setText(reqData.get(reqDataSize - 1));
             res = true;
         }
 

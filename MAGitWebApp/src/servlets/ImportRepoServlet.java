@@ -31,6 +31,7 @@ public class ImportRepoServlet extends HttpServlet {
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         String username             = SessionUtils.getUsername(request);
+        request.getSession(true).setAttribute("userRepo", username);
         Engine engine               = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
         Collection<Part> parts      = request.getParts(); // Uploading files sends them in parts to the server. Parts size could be configured in '@MultipartConfig' above.
         StringBuilder fileContent   = new StringBuilder(); // We will append each part and make one string out of them.

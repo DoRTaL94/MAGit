@@ -1,4 +1,4 @@
-export { showCommitPopup, showWarningPopup, showOpenChangesPopup, showCreateFilePopup };
+export { showCommitPopup, showWarningPopup, showOpenChangesPopup, showCreateFilePopup, showCreateNewBranchPopup };
 import { setOpenChanges, addBlob, addFolder, repository } from './active-repo.js';
 import { getParentsFoldersNames } from './utils.js';
 
@@ -92,6 +92,45 @@ function showWarningPopup(message, onOkClicked) {
     showPopup('Warning', popupMessage, buttonOk);
 }
 
+function showCreateNewBranchPopup() {
+    let createBranchForm = `<div class="Branch-name"><input type="text" placeholder="Branch name" id="input-branch-name" name="branchName" spellcheck="false"></div>`;
+    let btnCreate = $('<button>')
+        .attr('type', 'button')
+        .text('Create')
+        .on('click', onBranchClick);
+
+    showPopup('Create branch', createBranchForm, btnCreate);
+}
+
+function onBranchClick() {
+    if(repository !== null) {
+        let branchName = $('#input-branch-name').val();
+        onCancelClick();
+
+        $.ajax({
+            method: 'POST',
+            data: 'branchname=' + branchName,
+            url: 'create-new-branch',
+            timeout: 4000,
+            success: onCreateNewBranchSuccess
+        });
+    }
+}
+
+function onCreateNewBranchSuccess(response) {
+    let newBranch = {
+        name: response[0],
+        pointedCommitSha1: response[1],
+        isHead: true,
+        isRemote: false,
+        isTracking: false,
+        isMerged: false
+    };
+
+    repository.branches[newBranch.name] = newBranch;
+    window.location.href = 'active-repo.html';
+}
+
 function showCreateFilePopup() {
     let createFileForm =
     `<div class="input-group">
@@ -136,14 +175,12 @@ function onCreateFileClick() {
             data: data,
             url: 'create-file',
             timeout: 4000,
-            error: onCreateFileError,
+            error: function (response) {
+                console.log(response);
+            },
             success: onCreateFileSuccess
         });
     }
-}
-
-function onCreateFileError(response) {
-    console.log(response);
 }
 
 function onCreateFileSuccess(response) {

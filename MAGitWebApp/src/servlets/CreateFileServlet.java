@@ -31,48 +31,56 @@ public class CreateFileServlet extends HttpServlet {
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String username = SessionUtils.getUsername(request);
-        engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
-        folderNamesStack = ServletsUtils.getReqData(request);
-        String filename = request.getParameter("filename");
-        String extension = request.getParameter("extension");
+        String userToSendRepo = SessionUtils.getUserRepo(request);
 
-        if(!extension.equals("Extension...")) {
-            String fullname = filename + (extension.equals("Directory") ? "" : extension);
+        if(username.equals(userToSendRepo)) {
+            engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(userToSendRepo == null ? username : userToSendRepo);
+            folderNamesStack = ServletsUtils.getReqData(request);
+            String filename = request.getParameter("filename");
+            String extension = request.getParameter("extension");
 
-            try {
-                String parentFolderPath = ServletsUtils.getPathFromFolderNamesList(folderNamesStack, engine, folderNamesStack.size() - 1).toString();
-                File parentFolder = new File(parentFolderPath);
-                String filePath = Paths.get(parentFolderPath, fullname).toString();
+            if (!extension.equals("Extension...")) {
+                String fullname = filename + (extension.equals("Directory") ? "" : extension);
 
-                if (parentFolder.exists()) {
-                    File file = new File(filePath);
+                try {
+                    String parentFolderPath = ServletsUtils.getPathFromFolderNamesList(folderNamesStack, engine, folderNamesStack.size() - 1).toString();
+                    File parentFolder = new File(parentFolderPath);
+                    String filePath = Paths.get(parentFolderPath, fullname).toString();
 
-                    if(!file.exists()) {
-                        response.setContentType("application/json;charset=UTF-8");
-                        PrintWriter out = response.getWriter();
-                        Gson gson = new Gson();
-                        String toOut = gson.toJson(getDataForResponse(file, fullname, extension));
-                        out.print(toOut);
+                    if (parentFolder.exists()) {
+                        File file = new File(filePath);
 
-                        FileUtilities.WriteToFile(Paths.get(engine.getActiveRepository().getLocationPath(), ".magit", "oldCommit.txt").toString(),
-                                engine.getActiveRepository().getHeadBranch().getPointedCommitSha1());
+                        if (!file.exists()) {
+                            response.setContentType("application/json;charset=UTF-8");
+                            PrintWriter out = response.getWriter();
+                            Gson gson = new Gson();
+                            String toOut = gson.toJson(getDataForResponse(file, fullname, extension));
+                            out.print(toOut);
+
+                            FileUtilities.WriteToFile(Paths.get(engine.getActiveRepository().getLocationPath(), ".magit", "oldCommit.txt").toString(),
+                                    engine.getActiveRepository().getHeadBranch().getPointedCommitSha1());
+                        } else {
+                            response.setContentType("text/html");
+                            PrintWriter out = response.getWriter();
+                            out.print("File already exists.");
+                        }
                     } else {
                         response.setContentType("text/html");
                         PrintWriter out = response.getWriter();
-                        out.print("File already exists.");
+                        out.print("Parent folder doesn't exist.");
                     }
-                } else {
-                    response.setContentType("text/html");
-                    PrintWriter out = response.getWriter();
-                    out.print("Parent folder doesn't exist.");
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+            } else {
+                response.setContentType("text/html");
+                PrintWriter out = response.getWriter();
+                out.print("Please choose extension.");
             }
         } else {
             response.setContentType("text/html");
             PrintWriter out = response.getWriter();
-            out.print("Please choose extension.");
+            out.print("Not user's repository");
         }
     }
 

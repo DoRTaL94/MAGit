@@ -1,4 +1,5 @@
 const noAvailableRepository = '<div class="Empty-repo">No available repositories.</br> To import repository please click on the <span id="import-sign">+</span> above and choose xml file.</div>';
+export { initRepositoriesList };
 
 $(onLoad);
 
@@ -9,6 +10,7 @@ function onLoad() {
 function initRepositoriesList() {
     $.ajax({
         method: 'GET',
+        data: 'user=""&current=true',
         url: 'repositories',
         timeout: 2000,
         error: function(response) {

@@ -1,6 +1,5 @@
 package servlets;
 
-import utils.ServletsUtils;
 import utils.SessionUtils;
 
 import javax.servlet.annotation.WebServlet;
@@ -16,10 +15,7 @@ public class LogoutServlet extends HttpServlet {
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("text/html");
         PrintWriter out = response.getWriter();
-
-        ServletsUtils.getUsersManager(getServletContext()).logoutUser(SessionUtils.getUsername(request));
         SessionUtils.clearSession(request);
-
         out.print("logged out");
     }
 }

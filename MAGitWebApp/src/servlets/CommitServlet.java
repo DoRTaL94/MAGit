@@ -22,10 +22,16 @@ public class CommitServlet extends HttpServlet {
 
         try {
             String username = SessionUtils.getUsername(request);
-            Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
-            String description = request.getParameter("description");
-            engine.commit(description, null);
-            out.print("success");
+            String userToSendRepo = SessionUtils.getUserRepo(request);
+
+            if(username.equals(userToSendRepo)) {
+                Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(userToSendRepo == null ? username : userToSendRepo);
+                String description = request.getParameter("description");
+                engine.commit(description, null);
+                out.print("success");
+            } else {
+                out.print("Not user's repository");
+            }
         } catch (IOException | CommitAlreadyExistsException e) {
             e.printStackTrace();
         } catch (EmptyWcException e) {

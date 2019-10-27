@@ -20,10 +20,17 @@ public class CheckoutServlet extends HttpServlet {
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
             String username = SessionUtils.getUsername(request);
-            String branchName = request.getParameter("branchname");
-            boolean isCheckWc = request.getParameter("checkwc").equals("false");
+            String userToSendRepo = SessionUtils.getUserRepo(request);
 
-            ServletsUtils.getUsersManager(getServletContext()).getEngine(username).checkout(branchName, isCheckWc);
+            if(username.equals(userToSendRepo)) {
+                String branchName = request.getParameter("branchname");
+                boolean isCheckWc = request.getParameter("checkwc").equals("false");
+                ServletsUtils.getUsersManager(getServletContext()).getEngine(userToSendRepo == null ? username : userToSendRepo).checkout(branchName, isCheckWc);
+            } else {
+                response.setContentType("text/html");
+                PrintWriter out = response.getWriter();
+                out.print("Not user's repository");
+            }
         } catch (OpenChangesInWcException e) {
             response.setContentType("text/html");
             PrintWriter out = response.getWriter();

@@ -1,5 +1,5 @@
-import { getFileDataInCurrentDir, getPrevFoldersStack, getRecentFolderSha1, repository} from "./active-repo.js";
-export { getMapSize, isFunction, sortFiles, getSortedCommitsSha1s, getParentsFoldersNames, getRootFolderSha1 };
+import { getFileDataInCurrentDir, getPrevFoldersStack, getRecentFolderSha1, wc} from "./active-repo.js";
+export { getMapSize, isFunction, sortFiles, getSortedCommitsSha1s, getParentsFoldersNames };
 
 function getMapSize(object, filter) {
     let count = 0;
@@ -56,8 +56,8 @@ function getParentsFoldersNames() {
     prevFoldersStack.push(recentFolderSha1);
 
     let prevFoldersStackLength = prevFoldersStack.length;
-    let parentFoldersNames = [ repository.repoName ];
-    let parentFolderSha1 = getRootFolderSha1();
+    let parentFoldersNames = [ wc.repoName ];
+    let parentFolderSha1 = wc.rootSha1;
 
     for(let sha1 = 1; sha1 < prevFoldersStackLength; sha1++) {
         let childFolderSha1 = prevFoldersStack[sha1];
@@ -70,20 +70,4 @@ function getParentsFoldersNames() {
     parentFoldersNames.push(recentFolderSha1);
 
     return parentFoldersNames;
-}
-
-function getRootFolderSha1() {
-    let rootFolderSha1;
-
-    if(repository !== null) {
-        if(repository.headBranch !== null) {
-            let commitSha1 = repository.headBranch.pointedCommitSha1;
-
-            if(commitSha1 !== null && repository.commits !== null && commitSha1 in repository.commits) {
-                rootFolderSha1 = repository.commits[commitSha1].rootFolderSha1;
-            }
-        }
-    }
-
-    return rootFolderSha1;
 }

@@ -24,6 +24,7 @@ public class LoadRepositoryServlet extends HttpServlet {
 
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String username = SessionUtils.getUsername(request);
+        request.getSession(true).setAttribute("userRepo", username);
         String auth = request.getParameter("auth");
         String authFilePath = Paths.get("c:/magit-ex3", username, "auth.txt").toString();
         File authFile = new File(authFilePath);

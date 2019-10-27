@@ -22,9 +22,10 @@ public class RepositoriesServlet extends HttpServlet {
 
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String username = SessionUtils.getUsername(request);
-        Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
-        Map<String, Repository> repositories = engine.getRepositories();
+        String userToSendRepos = SessionUtils.getUserRepo(request);
+        Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(userToSendRepos == null ? username : userToSendRepos);
 
+        Map<String, Repository> repositories = engine.getRepositories();
         Gson gson = new Gson();
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -40,7 +41,7 @@ public class RepositoriesServlet extends HttpServlet {
             out.print(toOut);
         } else {
             Repository repository = new Repository();
-            repository.setOwner(username);
+            repository.setOwner(userToSendRepos == null ? username : userToSendRepos);
             String toOut = gson.toJson(new RepositoryDetails(repository));
             out.print(toOut);
         }
