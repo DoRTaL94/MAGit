@@ -33,6 +33,7 @@ public class RepositoryUpdates {
             isOwnRepo = i_CurrentUser.getName().equals(repository.getOwner());
             pullRequests = i_CurrentUser.getPullRequests();
             notifications = i_CurrentUser.getNotificationManager().getNotifications();
+
             createWc(i_Engine);
         }
     }

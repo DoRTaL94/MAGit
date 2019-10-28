@@ -73,12 +73,16 @@ public class Engine {
         myCommit.setLastUpdate(otherCommit.getLastUpdate());
         myCommit.setMessage(otherCommit.getMessage());
         myCommit.setFirstPrecedingCommitSha1(findAncestorInRemote(pointedCommitSha1, myRepo, otherRepo));
+        myCommit.setPullRequested(true);
 
         myRepo.getBranches().put(i_Branch.getName(), i_Branch);
         myRepo.getCommits().put(pointedCommitSha1, myCommit);
         myRepo.getFolders().put(rootSha1, root);
 
         putFilesFromOtherRepo(myRepo, otherRepo, files);
+
+        FileUtilities.WriteToFile(Paths.get(myRepo.getLocationPath(), ".magit", "branches", i_Branch.getName() + ".txt").toString(),
+                pointedCommitSha1);
     }
 
     public String findAncestorInRemote(String i_CommitSha1, Repository i_MyRepo, Repository i_RemoteRepo) {
@@ -114,7 +118,7 @@ public class Engine {
         }
     }
 
-    public ConflictsManager MergeBranches(String i_RepoName, Branch i_Ours, Branch i_Theirs,
+    public ConflictsManager MergeBranches(String i_RepoName, String i_RemoteRepoLocation, Branch i_Ours, Branch i_Theirs,
                                           Consumer<Consumer<String>> i_GetCommitDescriptionAction,
                                           Runnable i_FastForwardMergeMessageToUserAction,
                                           Consumer<String> i_MergeExceptionMessageAction) {
@@ -128,7 +132,7 @@ public class Engine {
             boolean isFastForwardMerge;
 
             try {
-                isFastForwardMerge = checkIfFastForwardMerge(i_RepoName, i_Ours, i_Theirs, i_FastForwardMergeMessageToUserAction);
+                isFastForwardMerge = checkIfFastForwardMerge(i_RepoName, i_RemoteRepoLocation, i_Ours, i_Theirs, i_FastForwardMergeMessageToUserAction);
 
                 if (!isFastForwardMerge) {
                     AncestorFinder ancestorFinder = new AncestorFinder(sha1 -> repository.getCommits().get(sha1));
@@ -168,13 +172,15 @@ public class Engine {
                 }
             } catch (MergeException e) {
                 i_MergeExceptionMessageAction.accept(e.getMessage());
+            } catch (IOException e) {
+                i_MergeExceptionMessageAction.accept("Couldn't copy files");
             }
         }
 
         return conflictsManager;
     }
 
-    private boolean checkIfFastForwardMerge(String i_RepoName, Branch i_Ours, Branch i_Theirs, Runnable i_FastForwardMergeMessageToUserAction) throws MergeException {
+    private boolean checkIfFastForwardMerge(String i_RepoName, String i_RemoteRepoLocation, Branch i_Ours, Branch i_Theirs, Runnable i_FastForwardMergeMessageToUserAction) throws MergeException, IOException {
         Repository repository = getRepository(i_RepoName);
 
         Commit ours = repository.getCommits().get(i_Ours.getPointedCommitSha1());
@@ -193,9 +199,70 @@ public class Engine {
                     i_Theirs.getPointedCommitSha1());
             repository.getBranches().remove(i_Theirs.getName());
             i_FastForwardMergeMessageToUserAction.run();
+            copyFilesInObjectsDir(i_RepoName, i_RemoteRepoLocation, i_Ours);
         }
 
         return isOursAncestorOfTheirs;
+    }
+
+    private void copyFilesInObjectsDir(String i_RepoName, String i_RemoteLocation, Branch i_BranchToCopyFrom) throws IOException {
+        Repository repository = getRepository(i_RepoName);
+        Commit commit = repository.getCommits().get(i_BranchToCopyFrom.getPointedCommitSha1());
+        String remotePath = Paths.get(i_RemoteLocation, ".magit", "objects", commit.getSha1()).toString();
+        String localPath = Paths.get(repository.getLocationPath(), ".magit", "objects", commit.getSha1()).toString();
+
+        if(!new File(localPath).exists()) {
+            FileUtils.copyFile(new File(remotePath), new File(localPath));
+        }
+
+        copyFilesInObjectsDirHelper(repository, i_RemoteLocation, commit.getRootFolderSha1());
+    }
+
+    private void copyFilesInObjectsDirHelper(Repository i_Repository, String i_RemoteLocation, String i_Sha1) throws IOException {
+        String remotePath = Paths.get(i_RemoteLocation, ".magit", "objects", i_Sha1).toString();
+        String localPath = Paths.get(i_Repository.getLocationPath(), ".magit", "objects", i_Sha1).toString();
+
+        if(!new File(localPath).exists()) {
+            FileUtils.copyFile(new File(remotePath), new File(localPath));
+        }
+
+        if(i_Repository.getFolders().containsKey(i_Sha1)) {
+            Folder root = i_Repository.getFolders().get(i_Sha1);
+            LinkedList<Folder.Data> files = root.getFiles();
+
+            for(Folder.Data file: files) {
+                copyFilesInObjectsDirHelper(i_Repository, i_RemoteLocation, file.getSHA1());
+            }
+        }
+    }
+
+    private void createFilesInWc(String i_RepoName, Branch i_Branch) {
+        Repository repository = getRepository(i_RepoName);
+        Commit commit = repository.getCommits().get(i_Branch.getPointedCommitSha1());
+
+        createFilesInWcHelper(repository, repository.getLocationPath(), commit.getRootFolderSha1());
+    }
+
+    private void createFilesInWcHelper(Repository i_Repository, String i_CurrentPath, String i_FolderSha1) {
+        Folder root = i_Repository.getFolders().get(i_FolderSha1);
+        LinkedList<Folder.Data> files = root.getFiles();
+
+        for(Folder.Data file: files) {
+            String thisFilePath = Paths.get(i_CurrentPath, file.getName()).toString();
+            File thisFile = new File(thisFilePath);
+
+            if(file.getFileType().equals(eFileType.FOLDER)) {
+                if(!thisFile.exists()) {
+                    thisFile.mkdirs();
+                }
+
+                createFilesInWcHelper(i_Repository, thisFilePath, i_FolderSha1);
+            } else {
+                if(!thisFile.exists()) {
+                    FileUtilities.WriteToFile(thisFilePath, i_Repository.getBlobs().get(file.getSHA1()).getText());
+                }
+            }
+        }
     }
 
     private void handleNoConflictsInMerge(String i_RepoName, String i_CommitDescription, Branch i_MergedBranch, Consumer<String> i_MergeExceptionMessageAction) {
@@ -325,7 +392,7 @@ public class Engine {
         String ancestorSha1 = "";
 
         String remoteRepositoryLocation = getRemoteRepositoryLocation(i_RepoName);
-        String currentPath = remoteRepositoryLocation.isEmpty() ? i_CurrentPath : replaceRootPath(i_CurrentPath, remoteRepositoryLocation, 2);
+        String currentPath = remoteRepositoryLocation.isEmpty() ? i_CurrentPath : replaceRootPath(i_CurrentPath, remoteRepositoryLocation);
 
         if(i_Ours != null) {
             oursSha1 = i_Ours instanceof Folder ? DigestUtils.sha1Hex(((Folder) i_Ours).toStringForSha1(Paths.get(currentPath))) :
@@ -770,7 +837,7 @@ public class Engine {
                 String remoteRepositoryLocation = getRemoteRepositoryLocation(i_RepoName);
 
                 if(!remoteRepositoryLocation.isEmpty()) {
-                    currentPath = replaceRootPath(i_FileToCheckDelta.toPath().toString(), remoteRepositoryLocation, 2);
+                    currentPath = replaceRootPath(i_FileToCheckDelta.toPath().toString(), remoteRepositoryLocation);
                 }
 
                 sha1 = DigestUtils.sha1Hex(newFolder.toStringForSha1(Paths.get(currentPath)));
@@ -788,26 +855,22 @@ public class Engine {
         return sha1;
     }
 
-    public String replaceRootPath(String i_OriginalPath, String i_RemotePath, int i_FromIndex) {
+    public String replaceRootPath(String i_OriginalPath, String i_RemotePath) {
         String[] originalPathParts = i_OriginalPath.split(Pattern.quote("\\"));
         String[] remotePathParts = i_RemotePath.split(Pattern.quote("\\"));
+        originalPathParts[2] = remotePathParts[2];
 
         StringBuilder sb = new StringBuilder();
 
-        for(int i = 0; i < i_FromIndex; i++) {
-            sb.append(originalPathParts[i]);
-            sb.append("\\");
-        }
-
-        for(int i = i_FromIndex; i < remotePathParts.length; i++) {
-            sb.append(remotePathParts[i]);
-
-            if(i < remotePathParts.length - 1) {
+        for(int i = 0; i < originalPathParts.length; i++) {
+            if(i > 0) {
                 sb.append("\\");
             }
+
+            sb.append(originalPathParts[i]);
         }
 
-        return sb.toString();
+            return sb.toString();
     }
 
     private Folder.Data getDataByName(Folder i_ParentFolder, eFileType i_FileType, String i_Name) {
@@ -911,7 +974,18 @@ public class Engine {
                 File thisFile = new File(mapEntry.getKey());
                 String parentSha1 = i_PrecedingCommitPathToSha1.get(thisFile.getParent());
                 Folder parent = repository.getFolders().get(parentSha1);
-                diff.add(getFile(parent, mapEntry.getValue()));
+                Folder.Data file = getFile(parent, mapEntry.getValue());
+                file.setName(removeServerPath(mapEntry.getKey()));
+
+                Folder.Data clonedFile = new Folder.Data();
+                clonedFile.setName(removeServerPath(mapEntry.getKey()));
+                clonedFile.setLastChanger(file.getLastChanger());
+                clonedFile.setSHA1(file.getSHA1());
+                clonedFile.setlastUpdate(file.getlastUpdate());
+                clonedFile.setFileType(file.getFileType());
+                clonedFile.setCreationTimeMillis(file.getCreationTimeMillis());
+
+                diff.add(clonedFile);
 
                 if(!thisFile.isDirectory()) {
                     i_Diff.addBlob(mapEntry.getValue(), repository.getBlobs().get(mapEntry.getValue()));
@@ -937,7 +1011,17 @@ public class Engine {
                     File thisFile = new File(mapEntry.getKey());
                     String parentSha1 = i_CurrentCommitPathToSha1.get(thisFile.getParent());
                     Folder parent = repository.getFolders().get(parentSha1);
-                    diff.add(getFile(parent, currentCommitItemSha1));
+                    Folder.Data file = getFile(parent, currentCommitItemSha1);
+
+                    Folder.Data clonedFile = new Folder.Data();
+                    clonedFile.setName(removeServerPath(mapEntry.getKey()));
+                    clonedFile.setLastChanger(file.getLastChanger());
+                    clonedFile.setSHA1(file.getSHA1());
+                    clonedFile.setlastUpdate(file.getlastUpdate());
+                    clonedFile.setFileType(file.getFileType());
+                    clonedFile.setCreationTimeMillis(file.getCreationTimeMillis());
+
+                    diff.add(clonedFile);
 
                     if(!thisFile.isDirectory()) {
                         i_Diff.addBlob(currentCommitItemSha1, repository.getBlobs().get(currentCommitItemSha1));
@@ -959,7 +1043,17 @@ public class Engine {
                 File thisFile = new File(mapEntry.getKey());
                 String parentSha1 = i_CurrentCommitPathToSha1.get(thisFile.getParent());
                 Folder parent = repository.getFolders().get(parentSha1);
-                diff.add(getFile(parent, mapEntry.getValue()));
+                Folder.Data file = getFile(parent, mapEntry.getValue());
+
+                Folder.Data clonedFile = new Folder.Data();
+                clonedFile.setName(removeServerPath(mapEntry.getKey()));
+                clonedFile.setLastChanger(file.getLastChanger());
+                clonedFile.setSHA1(file.getSHA1());
+                clonedFile.setlastUpdate(file.getlastUpdate());
+                clonedFile.setFileType(file.getFileType());
+                clonedFile.setCreationTimeMillis(file.getCreationTimeMillis());
+
+                diff.add(clonedFile);
 
                 if(!thisFile.isDirectory()) {
                     i_Diff.addBlob(mapEntry.getValue(), repository.getBlobs().get(mapEntry.getValue()));
@@ -968,6 +1062,18 @@ public class Engine {
         }
 
         return diff;
+    }
+
+    private String removeServerPath(String i_Path) {
+        String[] pathParts = i_Path.split(Pattern.quote("\\"));
+        StringBuilder sb = new StringBuilder();
+
+        for(int i = 4; i < pathParts.length; i++) {
+            sb.append("/");
+            sb.append(pathParts[i]);
+        }
+
+        return sb.toString();
     }
 
     private Folder.Data getFile(Folder i_Folder, String i_FileSha1) {
@@ -1897,13 +2003,13 @@ public class Engine {
         }
     }
 
-    public void Push(String i_RepoName) throws CollaborationException, IOException {
+    public void Push(String i_RepoName, String i_RemoteLocation) throws CollaborationException, IOException {
         Repository repository = getRepository(i_RepoName);
 
         if(repository.getHeadBranch().isTracking()) {
             String remoteRepositoryLocation = getRemoteRepositoryLocation(i_RepoName);
 
-            if(isPushNeeded(i_RepoName)) {
+            if(isPushNeeded(i_RepoName, i_RemoteLocation)) {
                 String localRepoPath = repository.getLocationPath();
                 String localHeadBranchName = repository.getHeadBranch().getName();
 
@@ -1969,7 +2075,7 @@ public class Engine {
                     FileUtils.copyDirectory(file, new File(Paths.get(remoteRepositoryLocation, file.getName()).toString()));
                 }
                 else {
-                    FileUtils.copyFile(file, new File(replaceRootPath(file.toPath().toString(), remoteRepositoryLocation, 2)));
+                    FileUtils.copyFile(file, new File(replaceRootPath(file.toPath().toString(), remoteRepositoryLocation)));
                 }
             }
         }
@@ -2019,16 +2125,16 @@ public class Engine {
         return srcContent;
     }
 
-    public void Pull(String i_RepoName) throws OpenChangesInWcException, CollaborationException, Exception {
-        Branch localHeadBranch = repositories.get(activeRepositoryName).getHeadBranch();
+    public void Pull(String i_RepoName, String i_RemoteLocation) throws OpenChangesInWcException, CollaborationException, Exception {
+        Repository repository = getRepository(i_RepoName);
+        Branch localHeadBranch = repository.getHeadBranch();
 
         if(localHeadBranch.isTracking()) {
             if(isWcClean(i_RepoName)) {
-                String remoteRepositoryLocation = getRemoteRepositoryLocation(i_RepoName);
-                if(!isPushNeeded(i_RepoName)) {
-                    String remoteHeadBranchPath = Paths.get(remoteRepositoryLocation, ".magit", "branches", localHeadBranch.getName() + ".txt").toString();
-                    String localHeadBranchPath = Paths.get(activeRepositoryPath, ".magit", "branches", localHeadBranch.getName() + ".txt").toString();
-                    String trackedBranchByHeadBranch = Paths.get(activeRepositoryPath, ".magit", "branches", new File(remoteRepositoryLocation).getName(), localHeadBranch.getName() + ".txt").toString();
+                if(!isPushNeeded(i_RepoName, i_RemoteLocation)) {
+                    String remoteHeadBranchPath = Paths.get(i_RemoteLocation, ".magit", "branches", localHeadBranch.getName() + ".txt").toString();
+                    String localHeadBranchPath = Paths.get(repository.getLocationPath(), ".magit", "branches", localHeadBranch.getName() + ".txt").toString();
+                    String trackedBranchByHeadBranch = Paths.get(repository.getLocationPath(), ".magit", "branches", new File(i_RemoteLocation).getName(), localHeadBranch.getName() + ".txt").toString();
 
                     try {
                         String remotePointedCommit = FileUtilities.ReadTextFromFile(remoteHeadBranchPath);
@@ -2038,9 +2144,14 @@ public class Engine {
                         Branch temp = new Branch();
                         temp.setPointedCommitSha1(FileUtilities.ReadTextFromFile(remoteHeadBranchPath));
 
-                        this.copyCommitsFilesFromBranch(temp, activeRepositoryPath, remoteRepositoryLocation);
-                        this.loadDataFromRepository(activeRepositoryPath);
-                        this.checkout(i_RepoName, repositories.get(activeRepositoryName).getHeadBranch().getName(), true);
+                        this.copyCommitsFilesFromBranch(temp, repository.getLocationPath(), i_RemoteLocation);
+                        this.loadDataFromRepository(repository.getLocationPath());
+                        getActiveRepository().setRemoteRepositoryLocation(repository.getRemoteRepositoryLocation());
+                        getActiveRepository().setForked(repository.isForked());
+                        getActiveRepository().setUsernameForkedFrom(repository.getUsernameForkedFrom());
+                        getActiveRepository().setOwner(repository.getOwner());
+                        setCurrentUserName(repository.getOwner());
+                        this.checkout(i_RepoName, repository.getHeadBranch().getName(), true);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -2058,9 +2169,9 @@ public class Engine {
         }
     }
 
-    private boolean isPushNeeded(String i_RepoName) {
+    private boolean isPushNeeded(String i_RepoName, String i_RemoteLocation) {
         String currentCommitSha1 = repositories.get(activeRepositoryName).getHeadBranch().getPointedCommitSha1();
-        String commitFilePathInRemote = Paths.get(getRemoteRepositoryLocation(i_RepoName), ".magit", "objects", currentCommitSha1).toString();
+        String commitFilePathInRemote = Paths.get(i_RemoteLocation, ".magit", "objects", currentCommitSha1).toString();
         File commitFileInRemote = new File(commitFilePathInRemote);
 
         return !commitFileInRemote.exists();

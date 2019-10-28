@@ -18,6 +18,9 @@ import java.io.PrintWriter;
 public class CheckoutServlet extends HttpServlet {
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.setContentType("text/html");
+        PrintWriter out = response.getWriter();
+
         try {
             String username = SessionUtils.getUsername(request);
             String userToSendRepo = SessionUtils.getUserRepo(request);
@@ -28,17 +31,16 @@ public class CheckoutServlet extends HttpServlet {
                 Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(userToSendRepo == null ? username : userToSendRepo);
                 String repoName = engine.getActiveRepositoryName();
                 engine.checkout(repoName, branchName, isCheckWc);
+                out.print("success");
             } else {
-                response.setContentType("text/html");
-                PrintWriter out = response.getWriter();
                 out.print("Not user's repository");
             }
         } catch (OpenChangesInWcException e) {
-            response.setContentType("text/html");
-            PrintWriter out = response.getWriter();
             out.print("There are open changes in working directory.");
         } catch (Exception e) {
-            e.printStackTrace();
+            out.print(e.getMessage());
         }
+
+        out.flush();
     }
 }

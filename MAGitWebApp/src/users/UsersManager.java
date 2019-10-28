@@ -2,6 +2,7 @@ package users;
 
 import IO.FileUtilities;
 import data.structures.Branch;
+import data.structures.Difference;
 import data.structures.Repository;
 import magit.Engine;
 import notifications.INotification;
@@ -124,31 +125,13 @@ public class UsersManager {
         }
     }
 
-    public PullRequest createPullRequest(HttpServletRequest i_Request, Engine i_Engine) {
-        String username = SessionUtils.getUsername(i_Request);
-        String otherUsername = i_Request.getParameter("user");
-        String target = i_Request.getParameter("target");
-        String base = i_Request.getParameter("base");
-        String message = i_Request.getParameter("message");
-
-        Repository userRepo = i_Engine.getActiveRepository();
-
-        PullRequest pullRequest = new PullRequest();
-        pullRequest.setBase(userRepo.getBranches().get(base));
-        pullRequest.setTarget(userRepo.getBranches().get(target));
-        pullRequest.setRelevantRepoName(userRepo.getName());
-        pullRequest.setPullRequestMessage(message);
-        pullRequest.setRequestByUserName(username);
-
-        return pullRequest;
-    }
-
     public boolean addPullRequest(PullRequest i_PullRequest, Engine i_PushingUserEngine, Engine i_PullingUserEngine) {
         boolean isAdded = false;
         User user = nameToUserMap.get(i_PullingUserEngine.getCurrentUserName());
 
         if(user != null) {
             user.getPullRequests().add(i_PullRequest);
+
             PullRequestNotification pullRequestNotification = new PullRequestNotification();
             pullRequestNotification.setPullRequest(i_PullRequest);
             user.getNotificationManager().addNotification(pullRequestNotification);
@@ -158,11 +141,14 @@ public class UsersManager {
             String pushedPointedCommitSha1 = pushingUserRepo.getHeadBranch().getPointedCommitSha1();
 
             Branch pushedBranch = new Branch();
-            pushedBranch.setName(pushedBranchName);
+            pushedBranch.setName(pushedBranchName + "-pr");
             pushedBranch.setPointedCommitSha1(pushedPointedCommitSha1);
             pushedBranch.setPullRequested(true);
 
-            i_PullingUserEngine.putBranchFromOtherRepo(pushedBranch, pushedPointedCommitSha1, i_PushingUserEngine);
+            i_PullingUserEngine.putBranchFromOtherRepo(pushedBranch, i_PullRequest.getRelevantRepoName(), i_PushingUserEngine);
+            List<Difference> commitDifference = i_PullingUserEngine.getCommitDifference(i_PullRequest.getRelevantRepoName(), pushedPointedCommitSha1);
+
+            i_PullRequest.setCommitDiff(commitDifference.get(0));
 
             isAdded = true;
         }

@@ -23,6 +23,15 @@ public class Commit implements IRepositoryFile, CommitRepresentative {
     private String lastUpdate = null;
     private String sha1 = null;
     private long creationTimeMillis;
+    private boolean isPullRequested = false;
+
+    public boolean isPullRequested() {
+        return isPullRequested;
+    }
+
+    public void setPullRequested(boolean i_PullRequested) {
+        isPullRequested = i_PullRequested;
+    }
 
     @Override
     public String toString() {

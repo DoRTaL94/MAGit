@@ -17,27 +17,28 @@ import java.io.PrintWriter;
 @WebServlet("/pages/update-repo")
 public class UpdateRepoServlet extends HttpServlet {
 
-    public void doPost(HttpServletRequest request, HttpServletResponse response) {
+    public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.setContentType("application/json;charset=UTF-8");
+        PrintWriter out = response.getWriter();
+
         String username = SessionUtils.getUsername(request);
         String userToSendRepo = SessionUtils.getUserRepo(request);
         Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(userToSendRepo == null ? username : userToSendRepo);
 
         try {
-            response.setContentType("application/json;charset=UTF-8");
-            PrintWriter out = response.getWriter();
-            Gson gson = new Gson();
-            UsersManager usersManager = ServletsUtils.getUsersManager(getServletContext());
-            RepositoryUpdates repositoryUpdates = new RepositoryUpdates(engine, usersManager.getUser(username));
-
-            if (repositoryUpdates.getRepository() == null) {
+            if (engine.getActiveRepository() == null) {
                 out.print("User has no repositories.");
             } else {
+                Gson gson = new Gson();
+                UsersManager usersManager = ServletsUtils.getUsersManager(getServletContext());
+                engine.checkout(engine.getActiveRepositoryName(), engine.getActiveRepository().getHeadBranch().getName(), true);
+                RepositoryUpdates repositoryUpdates = new RepositoryUpdates(engine, usersManager.getUser(username));
                 out.print(gson.toJson(repositoryUpdates));
             }
-
-            out.flush();
-        } catch (IOException e){
+        } catch (Exception e){
             e.printStackTrace();
         }
+
+        out.flush();
     }
 }

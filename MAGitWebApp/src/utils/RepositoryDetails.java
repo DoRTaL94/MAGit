@@ -23,7 +23,7 @@ public class RepositoryDetails {
             if(i_Repository.getHeadBranch() != null) {
                 activeBranchName = i_Repository.getHeadBranch().getName();
 
-                if(i_Repository.getCommits() != null) {
+                if(i_Repository.getCommits() != null && !i_Repository.getHeadBranch().getPointedCommitSha1().isEmpty()) {
                     Commit commit = i_Repository.getCommits().get(i_Repository.getHeadBranch().getPointedCommitSha1());
                     commitLastUpdate = commit.getLastUpdate();
                     commitMessage = commit.getMessage();

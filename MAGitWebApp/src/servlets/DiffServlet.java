@@ -22,20 +22,27 @@ public class DiffServlet extends HttpServlet {
         String userToSendRepo = SessionUtils.getUserRepo(request);
 
         if(username.equals(userToSendRepo)) {
-            Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(userToSendRepo);
-            Repository repository = engine.getActiveRepository();
+            String commitSha1 = request.getParameter("commit");
 
-            if (repository != null) {
-                Gson gson = new Gson();
-                String commitSha1 = request.getParameter("commit");
-                String diff = gson.toJson(engine.getCommitDifference(engine.getActiveRepositoryName(), commitSha1));
-                response.setContentType("application/json;charset=UTF-8");
-                PrintWriter out = response.getWriter();
-                out.print(diff);
+            if(commitSha1 != null && !commitSha1.isEmpty()) {
+                Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(userToSendRepo);
+                Repository repository = engine.getActiveRepository();
+
+                if (repository != null) {
+                    Gson gson = new Gson();
+                    String diff = gson.toJson(engine.getCommitDifference(engine.getActiveRepositoryName(), commitSha1));
+                    response.setContentType("application/json;charset=UTF-8");
+                    PrintWriter out = response.getWriter();
+                    out.print(diff);
+                } else {
+                    response.setContentType("text/html");
+                    PrintWriter out = response.getWriter();
+                    out.print("User has no repositories.");
+                }
             } else {
                 response.setContentType("text/html");
                 PrintWriter out = response.getWriter();
-                out.print("User has no repositories.");
+                out.print("Commit sha1 not valid");
             }
         } else {
             response.setContentType("text/html");

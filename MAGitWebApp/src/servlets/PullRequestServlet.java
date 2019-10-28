@@ -27,7 +27,7 @@ public class PullRequestServlet extends HttpServlet {
 
         Engine userEngine = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
         Engine otherEngine = ServletsUtils.getUsersManager(getServletContext()).getEngine(otherUsername);
-        PullRequest pullRequest = usersManager.createPullRequest(request, userEngine);
+        PullRequest pullRequest = ServletsUtils.getPrManager(getServletContext()).createPullRequest(request, userEngine, otherEngine);
 
         usersManager.addPullRequest(pullRequest, userEngine, otherEngine);
     }

@@ -85,7 +85,7 @@ function buildListItem(repoDetails) {
     return `<a id="${ repoDetails.name.replace(/\s+/g, '-') }" role="button" class="list-group-item list-group-item-action">
     <div class="Table">
         <div class="Table-row">
-            <div class="Table-cell Repository-name">${ repoDetails.name + (repoDetails.isForked === true ? '(forked from user:' + repoDetails.usernameForkedFrom +')' : '') }</div>
+            <div class="Table-cell Repository-name">${ repoDetails.name + (repoDetails.isForked === true ? ' (forked from user: ' + repoDetails.usernameForkedFrom +')' : '') }</div>
             <div class="Table-cell Active-branch-name">${ repoDetails.activeBranchName }</div>
             <div class="Table-cell Branches-count">${ repoDetails.branchesCount }</div>
             <div class="Table-cell commit-last-update">${ repoDetails.commitLastUpdate }</div>

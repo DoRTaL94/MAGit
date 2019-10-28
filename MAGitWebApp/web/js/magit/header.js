@@ -82,7 +82,7 @@ function addUser(user) {
     <a id="user-${ user }" onclick="openUserRepos('${ user }')" role="button" class="Link list-group-item list-group-item-action">
         <div class="Table">
             <div class="Table-row">
-                <div class="Table-cell user-icon"><img src="../${ASSETS_LOCATION}/user-icon.png"/></div>
+                <div class="Table-cell user-icon"><img  class="icon" src="../${ASSETS_LOCATION}/user-icon.png"/></div>
                 <div class="Table-cell username">${ user }</div>
             </div>
         </div>

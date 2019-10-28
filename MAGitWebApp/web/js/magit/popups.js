@@ -1,4 +1,4 @@
-export { showPullRequestPopup, showCommitPopup, showWarningPopup, showOpenChangesPopup, showCreateFilePopup, showCreateNewBranchPopup };
+export { showErrorMessage, showDeclinePrPopup, showSuccessPopup, showPushPopup, showPullPopup, showCommitPopup, showWarningPopup, showOpenChangesPopup, showCreateFilePopup, showCreateNewBranchPopup };
 import { setOpenChanges, addBlob, addFolder, repository } from './active-repo.js';
 import { getParentsFoldersNames } from './utils.js';
 
@@ -128,7 +128,7 @@ function onCreateNewBranchSuccess(response) {
     };
 
     repository.branches[newBranch.name] = newBranch;
-    window.location.href = 'active-repo.html';
+    showSuccessPopup('Create New Branch', 'Branch was created successfully. Click on the commits counter above to view all the branches pointing the current commit.', true);
 }
 
 function showCreateFilePopup() {
@@ -170,6 +170,11 @@ function onCreateFileClick() {
         let data = 'data=' + JSON.stringify(getParentsFoldersNames()) + '&filename=' + filename + '&extension=' + extension;
         onCancelClick();
 
+        let emptyRepoCheck = $('#wc-files-list').find('#empty-repository');
+        if(emptyRepoCheck.length === 1) {
+            emptyRepoCheck.remove();
+        }
+
         $.ajax({
             method: 'POST',
             data: data,
@@ -204,7 +209,7 @@ function showErrorMessage(headerText, message, isRefresh) {
     let btnOk = $('<button>').attr('type', 'button');
 
     header.text(headerText);
-    btnOk.text('Cancel');
+    btnOk.text('OK');
     btnOk.on('click', function() {
         onCancelClick();
 
@@ -224,7 +229,7 @@ function showErrorMessage(headerText, message, isRefresh) {
     $('.Container').append(background);
 }
 
-function showPullRequestPopup() {
+function showPushPopup() {
     let textarea =
 `<div class="input-group mb-3">
     <div class="input-group-prepend">
@@ -246,10 +251,10 @@ function showPullRequestPopup() {
 
     let request = $('<button>')
         .attr('type', 'button')
-        .text('Request')
-        .on('click', onPullRequestclick);
+        .text('Push')
+        .on('click', onPushClick);
 
-    showPopup('Pull Request', textarea, request);
+    showPopup('Make Pull Request', textarea, request);
 }
 
 function buildOptions(test) {
@@ -268,24 +273,17 @@ function buildOptions(test) {
     return res;
 }
 
-function onPullRequestclick() {
+function onPushClick() {
     let target = $('#target-branch').find(':selected').text();
     let base = $('#base-branch').find(':selected').text();
     let message = $('.Popup-textarea').val();
-
-    let formData = new FormData();
-    formData.append("user", repository.usernameForkedFrom);
-    formData.append("target", target);
-    formData.append("base", base);
-    formData.append("message", message);
 
     onCancelClick();
 
     $.ajax({
         method:'POST',
-        data: formData,
+        data: 'user=' + repository.usernameForkedFrom + '&target=' + target + '&base=' + base + '&message=' + message,
         url: 'pull-request',
-        contentType: false, // Set content type to false as jQuery will tell the server its a query string request
         timeout: 4000,
         error: function (response) {
             console.log(response);
@@ -294,6 +292,40 @@ function onPullRequestclick() {
     });
 }
 
-function onPullRequestSuccess(response) {
+function onPullRequestSuccess() {
+    showSuccessPopup('Pull Request', 'Request was sent successfully', false)
+}
 
+function showSuccessPopup(title, message, isRefresh) {
+    showErrorMessage(title, message, isRefresh);
+}
+
+function showDeclinePrPopup(pullRequest) {
+    let textarea = `<textarea placeholder="Write your reason of decline here" class="Popup-textarea"></textarea>`;
+
+    let request = $('<button>')
+        .attr('type', 'button')
+        .text('Decline')
+        .on('click', function () {
+            let reason = $('.Popup-textarea').val();
+
+            $.ajax({
+                method: 'POST',
+                data: 'id=' + pullRequest.id + '&reason=' + reason,
+                url: 'decline-pr',
+                timeout: 3000,
+                error: function(response) {
+                    console.log(response);
+                },
+                success: function () {
+                    window.location.href = 'active-repo.html';
+                }
+            });
+        });
+
+    showPopup('Decline Pull Request', textarea, request);
+}
+
+function showPullPopup(message) {
+    showSuccessPopup('Pull Message', message, true)
 }

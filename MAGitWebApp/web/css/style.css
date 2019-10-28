@@ -42,7 +42,7 @@ body, html {
     width: 100%;
 }
 
-img {
+.icon {
     height: 30px;
     width: 30px;
     margin-right: 5px;
@@ -648,13 +648,15 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     margin: 0;
 }
 
-#btn-pull-request,
+#btn-pull,
+#btn-push,
 #btn-create-new-branch,
 #btn-create-file {
     margin-right: 10px;
 }
 
-#btn-pull-request,
+#btn-pull,
+#btn-push,
 #btn-create-new-branch,
 #btn-create-file,
 #btn-commit,
@@ -667,7 +669,8 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     border: 2px solid #e0e0e0;
 }
 
-#btn-pull-request:hover,
+#btn-pull:hover,
+#btn-push:hover,
 #btn-create-new-branch:hover,
 #btn-create-file:hover,
 #btn-commit:hover,
@@ -675,7 +678,8 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     background-color: #d7d7d7;
 }
 
-#btn-pull-request:active,
+#btn-pull:active,
+#btn-push:active,
 #btn-create-new-branch:active,
 #btn-create-file:active,
 #btn-commit:active,
@@ -685,7 +689,8 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     border: 2px solid #7dcdff;
 }
 
-#btn-pull-request,
+#btn-pull,
+#btn-push,
 #btn-create-new-branch,
 #btn-create-file,
 .Save,
@@ -713,7 +718,8 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     border: 1.5px solid #b46058;
 }
 
-#btn-pull-request:focus,
+#btn-pull:focus,
+#btn-push:focus,
 #btn-create-new-branch:focus,
 #btn-create-file:focus,
 .Delete:focus,
@@ -743,7 +749,8 @@ div > .blob-content > .Editable::-webkit-scrollbar-thumb {
     cursor: pointer;
 }
 
-#btn-pull-request:disabled,
+#btn-pull:disabled,
+#btn-push:disabled,
 #btn-create-new-branch:disabled,
 #btn-checkout:disabled,
 #btn-commit:disabled,
@@ -1048,26 +1055,39 @@ div > .edit-mode-content {
     height: 10px;
 }
 
+#pull-requests-list-header,
 #repos-list-columns-headers {
+    text-align: center;
     position: relative;
     background-color: rgb(248, 248, 248);
     border: 1px solid rgba(174, 174, 174, 0.65);
-    border-top: 0;
     font-size: 1.05em;
     z-index: 2;
 }
 
+#repos-list-columns-headers {
+    border-top: 0;
+}
+
+
+#pull-requests-list-header > .Table > .Table-row > .Table-cell,
 #repos-list-columns-headers > .Table > .Table-row > .Table-cell {
     height: 100%;
     border-left: 1px solid #e1e1e1;
     border-right: 1px solid #f8f8f8;
 }
 
+#pull-requests-list-header > .Table > .Table-row > .Table-cell {
+    width: 16%;
+}
+
+#pull-requests-list-header > .Table > .Table-row > .Table-cell:first-child ,
 #repos-list-columns-headers > .Table > .Table-row > .Table-cell:first-child {
     border-left: none;
     border-right: 1px solid #f8f8f8;
 }
 
+#pull-requests-list-header > .Table > .Table-row > .Table-cell:last-child ,
 #repos-list-columns-headers > .Table > .Table-row > .Table-cell:last-child {
     border-left: 1px solid #e1e1e1;
     border-right: none;
@@ -1171,6 +1191,7 @@ div > .edit-mode-content {
     width: 60%;
 }
 
+#input-branch-name,
 #input-file-name {
     width: 100%;
     border: 1px solid #ced4da;
@@ -1273,4 +1294,97 @@ html[xmlns] .clearfix {
     border-radius: 5px;
     padding: 30px 20px;
     background-color: #f8f9fa;
+}
+
+.pr-content {
+    background-color: #fcfdfe;
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    padding: 10px;
+    width: 100%;
+}
+
+#pull-requests-list > .Commit-list-item > a {
+    margin-top: 5px;
+}
+
+#pull-requests-list > .Commit-list-item > a > .Table > .Table-row > .Table-cell {
+    width: 16%;
+    text-align: center;
+    border-left: 1px solid #e1e1e1;
+    border-right: 1px solid #f8f8f8;
+}
+
+#pull-requests-list > .Commit-list-item > a > .Table > .Table-row > .Table-cell:first-child {
+    border-left: none;
+    border-right: 1px solid #f8f8f8;
+}
+#pull-requests-list > .Commit-list-item > a > .Table > .Table-row > .Table-cell:last-child {
+    border-left: 1px solid #e1e1e1;
+    border-right: none;
+}
+
+#pull-requests-list > .Commit-list-item > a > .status {
+    position: absolute;
+    width: 100px;
+    right: 0;
+    top: 0;
+    height: 100%;
+    white-space: nowrap;
+    font-size: 0;
+    text-align: center;
+}
+
+#pull-requests-list > .Commit-list-item > a > .open {
+    background-color: #91ff95;
+}
+
+#pull-requests-list > .Commit-list-item > a > .Close {
+    background-color: #a2d5ff;
+}
+
+#pull-requests-list > .Commit-list-item > a > .denied {
+    background-color: #ffbcc4;
+}
+
+.dummy-child { height: 100%; }
+
+.dummy-child, .valign {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.valign {
+    font-size: 15px; /* re-set the font-size */
+}
+
+#empty-repository {
+    padding: 30px;
+    text-align: center;
+    font-size: 1.1em;
+    color: rgba(0, 0, 0, 0.71);
+    background-color: #fcfdfe;
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+
+.approve-pr,
+.decline-pr {
+    position: absolute;
+    right: 0;
+    top: 10%;
+    max-width: 35%;
+    max-height: 35%;
+    z-index: 3;
+    transform: translateX(130%);
+}
+
+.decline-pr {
+    max-width: 33%;
+    max-height: 33%;
+    top: 55%
+}
+
+.btn-pr {
+    cursor: pointer;
 }

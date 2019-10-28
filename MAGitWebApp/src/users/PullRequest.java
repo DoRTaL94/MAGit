@@ -1,8 +1,10 @@
 package users;
 
 import data.structures.Branch;
+import data.structures.Difference;
 
 public class PullRequest {
+    private int id                      = -1;
     private Branch target               = null;
     private Branch base                 = null;
     private String declineReason        = "";
@@ -11,6 +13,23 @@ public class PullRequest {
     private String relevantRepoName     = "";
     private boolean isReferred          = false;
     private boolean isApproved          = false;
+    private Difference commitDiff = null;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public Difference getCommitDiff() {
+        return commitDiff;
+    }
+
+    public void setCommitDiff(Difference commitDiff) {
+        this.commitDiff = commitDiff;
+    }
 
     public Branch getTarget() {
         return target;

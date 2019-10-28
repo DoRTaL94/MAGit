@@ -6,6 +6,7 @@ import data.structures.Folder;
 import data.structures.Repository;
 import data.structures.eFileType;
 import magit.Engine;
+import users.PullRequestsManagerServlet;
 import users.UsersManager;
 
 import javax.servlet.ServletContext;
@@ -18,6 +19,7 @@ import java.io.File;
 import java.util.Map;
 
 public class ServletsUtils {
+    private static final String PR_MANAGER_ATTRIBUTE_NAME = "prManager";
     private static final String USER_MANAGER_ATTRIBUTE_NAME = "usersManager";
     private static final Object userManagerLock = new Object();
 
@@ -30,6 +32,17 @@ public class ServletsUtils {
         }
 
         return (UsersManager) i_ServletContext.getAttribute(USER_MANAGER_ATTRIBUTE_NAME);
+    }
+
+    public static PullRequestsManagerServlet getPrManager(ServletContext i_ServletContext) {
+
+        synchronized (userManagerLock) {
+            if (i_ServletContext.getAttribute(PR_MANAGER_ATTRIBUTE_NAME) == null) {
+                i_ServletContext.setAttribute(PR_MANAGER_ATTRIBUTE_NAME, new PullRequestsManagerServlet());
+            }
+        }
+
+        return (PullRequestsManagerServlet) i_ServletContext.getAttribute(PR_MANAGER_ATTRIBUTE_NAME);
     }
 
     public static Folder.Data getFile(Folder i_Folder, String i_FileSha1) {

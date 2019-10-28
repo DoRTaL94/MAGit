@@ -430,7 +430,7 @@ public class Factory {
                     sha1 = DigestUtils.sha1Hex(folder.toStringForSha1(folderPath));
                 } else {
                     sha1 = DigestUtils.sha1Hex(folder.toStringForSha1(Paths.get(engine.replaceRootPath(i_Path,
-                            engine.getRemoteRepositoryLocation(i_RepoName), 2))));
+                            engine.getRemoteRepositoryLocation(i_RepoName)))));
                 }
                 tmpFolders.put(sha1, folder);
             } else {

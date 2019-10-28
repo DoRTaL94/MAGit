@@ -39,6 +39,7 @@ public class ForkServlet extends HttpServlet {
                 userEngine.getRepository(newName).setOwner(username);
                 userEngine.getRepository(newName).setForked(true);
                 userEngine.getRepository(newName).setUsernameForkedFrom(userToSendRepo);
+                userEngine.setCurrentUserName(username);
                 request.setAttribute("user", "");
                 request.setAttribute("current", true);
                 RequestDispatcher requestDispatcher = request.getRequestDispatcher("set-user-repo");
