@@ -3,6 +3,9 @@ package servlets;
 import MagitExceptions.CollaborationException;
 import data.structures.Repository;
 import magit.Engine;
+import notifications.ForkNotification;
+import users.User;
+import users.UsersManager;
 import utils.ServletsUtils;
 import utils.SessionUtils;
 
@@ -40,6 +43,9 @@ public class ForkServlet extends HttpServlet {
                 userEngine.getRepository(newName).setForked(true);
                 userEngine.getRepository(newName).setUsernameForkedFrom(userToSendRepo);
                 userEngine.setCurrentUserName(username);
+
+                addForkNotification(username, userToSendRepo, newName);
+
                 request.setAttribute("user", "");
                 request.setAttribute("current", true);
                 RequestDispatcher requestDispatcher = request.getRequestDispatcher("set-user-repo");
@@ -50,5 +56,13 @@ public class ForkServlet extends HttpServlet {
         } else {
             out.print("repository named " + repoName + " not exists");
         }
+    }
+
+    private void addForkNotification(String i_ForkingUserName, String i_ForkedFromUserName, String i_RepositoryName) {
+        UsersManager usersManager = ServletsUtils.getUsersManager(getServletContext());
+        User forkedFromUser = usersManager.getUser(i_ForkedFromUserName);
+
+        ForkNotification forkNotification = new ForkNotification(i_RepositoryName, i_ForkingUserName);
+        forkedFromUser.getNotificationManager().addNotification(forkNotification);
     }
 }

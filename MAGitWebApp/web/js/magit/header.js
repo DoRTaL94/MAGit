@@ -1,9 +1,12 @@
 import { getIsOpenChanges, HOME, ASSETS_LOCATION } from './active-repo.js';
 import { showOpenChangesPopup } from './popups.js';
+export { onNotificationsClick };
 
 window.openUserRepos = openUserRepos;
 
 const HEADER_ITEM = "#header-drop-downs > nav > ul > li";
+let isNotificationsClicked = false;
+let notReadByUser = 0;
 
 $(setHeaderItemsOnClick);
 
@@ -14,13 +17,11 @@ function setHeaderItemsOnClick() {
     $('#logout').on('click', onLogoutClick);
 
     $(HEADER_ITEM).on("click", function() {
-        let notification = $(this).find("img.Notification-icon");
-
-        if(notification.length === 0) {
-            handleDropdown($(this));
-        } else {
-            handleNotificationClicked();
+        if($(this).find('ul > li > div#notifications-container').length > 0) {
+            onNotificationsClick();
         }
+
+        handleDropdown($(this));
     });
 }
 
@@ -134,58 +135,98 @@ function handleDropdown(clicked) {
 
     if (!isOpen) {
         clicked.find("ul").toggle();
-        clicked.find("ul").css("z-index", 2);
+        clicked.find("ul").css("z-index", 4);
         clicked.find("span.Dropdown-caret").css("border-width", "2px 0 0 2px");
     }
 }
 
-function handleNotificationClicked() {
-    showNotifications();
-
+function onNotificationsClick() {
     $.ajax({
-        method: 'GET',
-        data: "",
-        url: "active-repo",
-        processData: false,
-        contentType: false, // Set content type to false as jQuery will tell the server its a query string request
+        method: 'POST',
+        url: 'notifications',
         timeout: 2000,
-        error: function (e) {
-            console.log("Failed to submit");
-            $("#result").text("Failed to get result from server " + e);
+        error: function(response) {
+            console.log(response);
         },
-        success: function (notifications) {
-            $.each(notifications || [], addNotification);
-        }
+        success: onNotificationsSuccess
     });
 }
 
-// TO-DO
-function addNotification(index, dataJson) {
+function onNotificationsSuccess(response) {
+    if($.isArray(response)) {
+        let container = $('#notifications-container');
+        container.empty();
+        notReadByUser = 0;
+        response.forEach(notification => addNotification(notification));
 
+        if(!isNotificationsClicked) {
+            if(notReadByUser > 0) {
+                $('#notifications-counter-container').append(`<div id="notifications-counter">${ notReadByUser }</div>`);
+            }
+
+            isNotificationsClicked = true;
+        } else {
+            $('#notifications-counter-container').empty();
+            onNotificationsRead();
+        }
+    }
 }
 
-function showNotifications() {
-    let container = $("div.Content");
-    container.empty();
-    container.addClass("Content-absolute");
+function onNotificationsRead() {
+    $.ajax({
+        method: 'POST',
+        url: 'notifications-read',
+        timeout: 2000
+    });
+}
 
-    let notificationsContainer = $("<div>").addClass("Notifications-container");
-    let notifications = $("<div>").addClass("Notifications Magit-body");
-    let NotificationsListContainer = $("<div>").addClass("Notifications-list-container");
-    let notificationsTitle = $("<div>").addClass("Notifications-list-title");
-    let notificationsList = $("<div>").addClass("Notifications-list");
-    let notificationsContentContainer = $("<div>").addClass("Notifications-content-container");
-    let notificationsContent = $("<div>").addClass("Notifications-content");
-    let notificationsContentTitle = $("<div>").addClass("Notifications-content-title");
+//שם ה repository, שם המשתמש, הודעת ה PR, שם branch המטרה ושם branch הבסיס.
+function addNotification(notification) {
+    if(!notification.isNotShow) {
+        let notificationContent;
 
-    notificationsTitle.text("Notifications");
-    notificationsContentTitle.text("Notification Details");
-    NotificationsListContainer.append(notificationsTitle);
-    NotificationsListContainer.append(notificationsList);
-    notificationsContentContainer.append(notificationsContentTitle);
-    notificationsContentContainer.append(notificationsContent);
-    notifications.append(NotificationsListContainer);
-    notifications.append(notificationsContentContainer);
-    notificationsContainer.append(notifications);
-    container.append(notificationsContainer);
+        switch (notification.type) {
+            case 'fork':
+                notificationContent =
+                    `<div class="notification">
+    <span class="time-stamp">${notification.timeStamp}</span>
+    <span class="notification-text">${notification.forkedRepoName} was forked by ${notification.forkingUser}</span>
+</div>`;
+                break;
+            case 'pullRequest':
+                notificationContent =
+                    `<div class="notification">
+    <span class="time-stamp">${notification.pullRequest.timeStamp}</span>
+    <span class="notification-text">Pull request was sent to you.</br>
+    Relevant repository: ${notification.pullRequest.relevantRepoName}</br>
+    Requesting user: ${notification.pullRequest.requestByUserName}</br>
+    Message: ${notification.pullRequest.pullRequestMessage}</br>
+    Target branch name: ${notification.pullRequest.target.name}</br>
+    Base branch name: ${notification.pullRequest.base.name}
+    </span>
+</div>`;
+                break;
+            case 'prAnswer':
+                let answerText = notification.pullRequest.isApproved ? 'A pull request you sent has been approved.' : 'A pull request you sent has been declined.';
+
+                notificationContent =
+                    `<div class="notification">
+    <span class="time-stamp">${notification.pullRequest.timeStamp}</span>
+    <span class="notification-text">${answerText}</br>
+    Relevant repository: ${notification.pullRequest.relevantRepoName}</br>
+    Requesting user: ${notification.pullRequest.requestByUserName}</br>
+    Message: ${notification.pullRequest.pullRequestMessage}</br>
+    Target branch name: ${notification.pullRequest.target.name}</br>
+    Base branch name: ${notification.pullRequest.base.name}
+    </span>
+</div>`;
+                break;
+        }
+
+        $('#notifications-container').append(notificationContent);
+
+        if(!notification.isReadByUser) {
+            notReadByUser++;
+        }
+    }
 }

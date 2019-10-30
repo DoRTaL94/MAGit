@@ -92,26 +92,26 @@ public class UsersManager {
         }
     }
 
-    public boolean loginFromDb(String i_Username, String i_Password) throws IOException {
-        String authFilePath = Paths.get("c:/magit-ex3", i_Username, "auth.txt").toString();
-        User user = new User();
-        user.setPassword(i_Password);
-        user.setName(i_Username);
-
-        File authFile = new File(authFilePath);
-        boolean success = false;
-
-        if(authFile.exists()) {
-            String authString = FileUtilities.ReadTextFromFile(authFilePath);
-            success = DigestUtils.sha1Hex(user.toString()).equals(authString);
-
-            if(success) {
-                addUser(user);
-            }
-        }
-
-        return success;
-    }
+//    public boolean loginFromDb(String i_Username, String i_Password) throws IOException {
+//        String authFilePath = Paths.get("c:/magit-ex3", i_Username, "auth.txt").toString();
+//        User user = new User();
+//        user.setPassword(i_Password);
+//        user.setName(i_Username);
+//
+//        File authFile = new File(authFilePath);
+//        boolean success = false;
+//
+//        if(authFile.exists()) {
+//            String authString = FileUtilities.ReadTextFromFile(authFilePath);
+//            success = DigestUtils.sha1Hex(user.toString()).equals(authString);
+//
+//            if(success) {
+//                addUser(user);
+//            }
+//        }
+//
+//        return success;
+//    }
 
     public String getAuthString(String i_Username, String i_Password) {
         return DigestUtils.sha1Hex(i_Username + ":" + i_Password);
@@ -120,12 +120,12 @@ public class UsersManager {
     private void addUser(User i_User) {
         String name = i_User.getName();
 
-        if (!name.isEmpty() && !i_User.getPassword().isEmpty()) {
+        if (!name.isEmpty() && !i_User.getPassword().isEmpty() && !nameToUserMap.containsKey(name)) {
             nameToUserMap.put(name, i_User);
         }
     }
 
-    public boolean addPullRequest(PullRequest i_PullRequest, Engine i_PushingUserEngine, Engine i_PullingUserEngine) {
+    public boolean addPullRequest(PullRequest i_PullRequest, Engine i_PushingUserEngine, Engine i_PullingUserEngine) throws IOException {
         boolean isAdded = false;
         User user = nameToUserMap.get(i_PullingUserEngine.getCurrentUserName());
 
@@ -149,7 +149,7 @@ public class UsersManager {
             List<Difference> commitDifference = i_PullingUserEngine.getCommitDifference(i_PullRequest.getRelevantRepoName(), pushedPointedCommitSha1);
 
             i_PullRequest.setCommitDiff(commitDifference.get(0));
-
+            i_PullingUserEngine.copyFilesInObjectsDir(i_PullRequest.getRelevantRepoName(), pushingUserRepo.getLocationPath(), pushingUserRepo.getHeadBranch());
             isAdded = true;
         }
 

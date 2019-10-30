@@ -1,8 +1,10 @@
 package servlets;
 
 import magit.Engine;
+import notifications.PrAnswerNotification;
 import users.PullRequest;
 import users.PullRequestsManagerServlet;
+import users.User;
 import utils.ServletsUtils;
 import utils.SessionUtils;
 
@@ -15,8 +17,6 @@ import javax.servlet.http.HttpServletResponse;
 public class DeclinePullRequestServlet extends HttpServlet {
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) {
-        String username = SessionUtils.getUsername(request);
-        Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
         String prId = request.getParameter("id");
 
         PullRequestsManagerServlet prManager = ServletsUtils.getPrManager(getServletContext());
@@ -25,5 +25,10 @@ public class DeclinePullRequestServlet extends HttpServlet {
         pullRequest.setReferred(true);
         pullRequest.setApproved(false);
         pullRequest.setDeclineReason(request.getParameter("reason"));
+
+        PrAnswerNotification prAnswerNotification = new PrAnswerNotification();
+        prAnswerNotification.setPullRequest(pullRequest);
+        User user = ServletsUtils.getUsersManager(getServletContext()).getUser(pullRequest.getRequestByUserName());
+        user.getNotificationManager().addNotification(prAnswerNotification);
     }
 }

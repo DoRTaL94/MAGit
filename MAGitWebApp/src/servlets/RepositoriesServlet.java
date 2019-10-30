@@ -34,7 +34,8 @@ public class RepositoriesServlet extends HttpServlet {
             List<RepositoryDetails> details = new ArrayList<>();
 
             for(Map.Entry<String, Repository> entry: repositories.entrySet()) {
-                details.add(new RepositoryDetails(entry.getValue()));
+                RepositoryDetails repositoryDetails = new RepositoryDetails(entry.getValue());
+                details.add(repositoryDetails);
             }
 
             String toOut = gson.toJson(details);

@@ -1,7 +1,9 @@
 package servlets;
 
 import IO.FileUtilities;
+import data.structures.Repository;
 import magit.Engine;
+import string.StringUtilities;
 import utils.ServletsUtils;
 import utils.SessionUtils;
 
@@ -42,8 +44,20 @@ public class LoadRepositoryServlet extends HttpServlet {
 
                     for(String path: repositories) {
                         engine.loadDataFromRepository(path);
-                        engine.getActiveRepository().setOwner(username);
+                        Repository activeRepository = engine.getActiveRepository();
+                        activeRepository.setOwner(username);
                         engine.setCurrentUserName(username);
+                        activeRepository.setForked(!engine.checkIfOwnRepo(engine.getActiveRepositoryName()));
+
+                        if(activeRepository.isForked()) {
+                            String detailsPath = Paths.get(activeRepository.getLocationPath(), ".magit", "details.txt").toString();
+                            String details = FileUtilities.ReadTextFromFile(detailsPath);
+                            String remotePath = StringUtilities.getLines(details).get(1);
+                            File repoFile = new File(remotePath);
+                            activeRepository.setRemoteRepositoryLocation(remotePath);
+                            String userForkedFromName = new File(new File(repoFile.getParent()).getParent()).getName();
+                            activeRepository.setUsernameForkedFrom(userForkedFromName);
+                        }
                     }
                 }
 

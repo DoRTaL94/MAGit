@@ -39,7 +39,7 @@ public class LoginServlet extends HttpServlet {
                 }
 
 
-                if (errors.size() == 0 && !(userManager.isUserExists(username) && userManager.loginFromDb(username, password))) {
+                if (errors.size() == 0 && !(userManager.isUserExists(username))) {
                     errors.add("User name or password is invalid.");
                 }
 

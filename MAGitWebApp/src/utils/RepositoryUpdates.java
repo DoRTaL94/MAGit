@@ -5,6 +5,7 @@ import data.structures.*;
 import magit.Engine;
 import notifications.INotification;
 import org.apache.commons.codec.digest.DigestUtils;
+import string.StringUtilities;
 import users.PullRequest;
 import users.User;
 

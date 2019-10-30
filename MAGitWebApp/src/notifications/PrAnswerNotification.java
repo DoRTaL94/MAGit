@@ -6,7 +6,12 @@ public class PrAnswerNotification implements INotification {
     private PullRequest pullRequest = null;
     private String declineReason    = "";
     private boolean isReadByUser    = false;
+    private final String type       = "prAnswer";
+    private boolean isNotShow       = false;
 
+    public void setNotShowNotification(boolean i_IsNotShow) {
+        isNotShow = true;
+    }
     public PullRequest getPullRequest() {
         return pullRequest;
     }

@@ -1,18 +1,35 @@
 package notifications;
 
-import data.structures.Repository;
-import users.User;
+import magit.Engine;
+
+import java.text.SimpleDateFormat;
 
 public class ForkNotification implements INotification {
-    private final String notificationType;
-    private final String notificationFactorUser;
+    private final String type;
+    private final String forkingUser;
     private final String forkedRepoName;
+    private final String timeStamp;
     private boolean isReadByUser;
+    private boolean isNotShow;
 
-    public ForkNotification(String i_NotificationFactor, String i_ForkedRepo) {
-        notificationFactorUser = i_NotificationFactor;
-        forkedRepoName = i_ForkedRepo;
-        notificationType = "Fork";
+    public ForkNotification(String i_ForkedRepoName, String i_ForkingUser) {
+        forkingUser = i_ForkingUser;
+        forkedRepoName = i_ForkedRepoName;
+        type = "fork";
+        timeStamp = new SimpleDateFormat(Engine.DATE_FORMAT).format(System.currentTimeMillis());
+        isNotShow = false;
+    }
+
+    public void setNotShowNotification(boolean i_IsNotShow) {
+        isNotShow = true;
+    }
+
+    public String getTimeStamp() {
+        return timeStamp;
+    }
+
+    public String getForkingUser() {
+        return forkingUser;
     }
 
     public boolean isReadByUser() {
@@ -23,15 +40,11 @@ public class ForkNotification implements INotification {
         isReadByUser = i_ReadByUser;
     }
 
-    public String getNotificationFactor() {
-        return notificationFactorUser;
-    }
-
     public String getForkedRepo() {
         return forkedRepoName;
     }
 
     public String getNotificationType() {
-        return notificationType;
+        return type;
     }
 }

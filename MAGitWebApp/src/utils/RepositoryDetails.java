@@ -35,4 +35,68 @@ public class RepositoryDetails {
             }
         }
     }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getActiveBranchName() {
+        return activeBranchName;
+    }
+
+    public void setActiveBranchName(String activeBranchName) {
+        this.activeBranchName = activeBranchName;
+    }
+
+    public String getCommitLastUpdate() {
+        return commitLastUpdate;
+    }
+
+    public void setCommitLastUpdate(String commitLastUpdate) {
+        this.commitLastUpdate = commitLastUpdate;
+    }
+
+    public String getCommitMessage() {
+        return commitMessage;
+    }
+
+    public void setCommitMessage(String commitMessage) {
+        this.commitMessage = commitMessage;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+
+    public int getBranchesCount() {
+        return branchesCount;
+    }
+
+    public void setBranchesCount(int branchesCount) {
+        this.branchesCount = branchesCount;
+    }
+
+    public boolean isForked() {
+        return isForked;
+    }
+
+    public void setForked(boolean forked) {
+        isForked = forked;
+    }
+
+    public String getUsernameForkedFrom() {
+        return usernameForkedFrom;
+    }
+
+    public void setUsernameForkedFrom(String usernameForkedFrom) {
+        this.usernameForkedFrom = usernameForkedFrom;
+    }
 }

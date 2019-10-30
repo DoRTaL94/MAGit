@@ -1,4 +1,5 @@
 import { getMapSize, sortFiles, getSortedCommitsSha1s, getParentsFoldersNames } from './utils.js';
+import { onNotificationsClick } from './header.js';
 import * as popups from "./popups.js";
 export { ASSETS_LOCATION, getIsOpenChanges, setOpenChanges, getPrevFoldersStack, addBlob, addFolder, getFileDataInCurrentDir, wc, repository, getRecentFolderSha1, HOME }
 
@@ -90,6 +91,7 @@ function onLoad() {
     setListsItemsOnClick();
     updateActiveRepo();
     setOnTabsClick();
+    onNotificationsClick();
 }
 
 function setOnTabsClick() {
@@ -239,7 +241,9 @@ function buildCommitsList() {
 
         if(sha1ToBranchMap.has(sha1)) {
             sha1ToBranchMap.get(sha1).forEach(function (branch) {
-                pointingBranches += `<div class="Table-cell"><span class="Pointing-branch">${ branch.name }</span></div>`;
+                if(!branch.name.includes("-pr") && !branch.isPullRequested) {
+                    pointingBranches += `<div class="Table-cell"><span class="Pointing-branch">${branch.name}</span></div>`;
+                }
             })
         }
 
@@ -642,7 +646,7 @@ function initHeaderOfLastCommitFilesList(branchName) {
     let branches = repository.branches;
 
     for (let name in branches) {
-        if (!branches[name].isPullRequested) {
+        if (!branches[name].isPullRequested && !name.includes("-pr")) {
             let headBranchMark = name === repository.headBranch.name ? `<img id="head-branch-mark" src="../${ASSETS_LOCATION}/head-branch.svg"/>` : '';
             branchesList.append(`<a class="Link dropdown-item" id="${name}" onclick="updateRepo(this.id)">${headBranchMark} ${name}</a>`)
         }

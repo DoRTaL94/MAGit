@@ -1,8 +1,10 @@
 package servlets;
 
 import magit.Engine;
+import notifications.PrAnswerNotification;
 import users.PullRequest;
 import users.PullRequestsManagerServlet;
+import users.User;
 import utils.ServletsUtils;
 import utils.SessionUtils;
 
@@ -35,10 +37,8 @@ public class ApprovePullRequest extends HttpServlet {
         message = pullRequest.getPullRequestMessage();
         String targetName = pullRequest.getTarget().getName();
         pullRequest.getTarget().setName(targetName + "-pr");
-        String forkedRepoPath = prManager.getForkedRepoPath(engine.getRepositoryPath(pullRequest.getRelevantRepoName()));
 
         engine.MergeBranches(pullRequest.getRelevantRepoName(),
-                forkedRepoPath,
                 pullRequest.getBase(),
                 pullRequest.getTarget(),
                 this::getCommitDescriptionAction,
@@ -46,6 +46,11 @@ public class ApprovePullRequest extends HttpServlet {
                 this::handleMergeException);
 
         pullRequest.getTarget().setName(targetName);
+
+        PrAnswerNotification prAnswerNotification = new PrAnswerNotification();
+        prAnswerNotification.setPullRequest(pullRequest);
+        User user = ServletsUtils.getUsersManager(getServletContext()).getUser(pullRequest.getRequestByUserName());
+        user.getNotificationManager().addNotification(prAnswerNotification);
     }
 
     private void getCommitDescriptionAction(Consumer<String> i_SetCommitDescriptionAction) {

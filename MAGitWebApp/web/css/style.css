@@ -330,7 +330,7 @@ a:hover {
     padding-top: 30px;
 }
 
-#header-drop-downs > nav>ul>li>ul>li>a {
+#header-drop-downs > nav>ul>li>ul>li>a:not(#notifications-container) {
     display: block;
     padding: 10px 20px;
     background-color: black;
@@ -1387,4 +1387,58 @@ html[xmlns] .clearfix {
 
 .btn-pr {
     cursor: pointer;
+}
+
+#notifications-container {
+    width: 350px;
+    height: 500px;
+    display: block;
+    padding: 0;
+    background-color: black;
+    color: white;
+    border-bottom: 1px solid darkgray;
+    position: relative;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-radius: 5px;
+}
+
+.notification {
+    position: relative;
+    display: block;
+    max-width: 350px;
+    width: 350px;
+    border-bottom: 2px solid #dbdbdb;
+    padding: 23px 10px 10px;
+}
+
+.time-stamp {
+    font-size: 0.9em;
+    position: absolute;
+    top: 5px;
+    right: 10px;
+}
+
+.notification-text {
+    text-align: left;
+    white-space: normal;
+}
+
+#notifications-counter-container {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    z-index: 3;
+    height: 50%;
+    width: 50%;
+    text-align: center;
+}
+
+#notifications-counter {
+    background-color: rgba(255, 0, 0, 0.85);
+    border-radius: 2px;
+    font-size: 0.8em;
+    color: white;
+    width: 100%;
+    height: 120%;
 }

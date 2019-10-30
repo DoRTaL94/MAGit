@@ -193,8 +193,14 @@ public class Folder implements IRepositoryFile {
 
             data.setFileType(isFolder ? eFileType.FOLDER : eFileType.BLOB);
             data.setName(i_File.getName());
-            data.setCreationTimeMillis(i_File.lastModified());
-            data.setlastUpdate(new SimpleDateFormat(Engine.DATE_FORMAT).format(new Date(i_File.lastModified())));
+
+            if(i_File.lastModified() == 0) {
+                data.setCreationTimeMillis(System.currentTimeMillis());
+            } else {
+                data.setCreationTimeMillis(i_File.lastModified());
+            }
+
+            data.setlastUpdate(new SimpleDateFormat(Engine.DATE_FORMAT).format(new Date(data.getCreationTimeMillis())));
             data.setLastChanger(i_LastChanger);
             data.setSHA1(i_Sha1);
 

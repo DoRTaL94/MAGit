@@ -57,6 +57,23 @@ public class Engine {
         return activeRepositoryName;
     }
 
+    public boolean checkIfOwnRepo(String i_RepoName) {
+        boolean isOwnRepo = false;
+
+        String repoPath = getRepository(i_RepoName).getLocationPath();
+        String detailsPath = Paths.get(repoPath, ".magit", "details.txt").toString();
+
+        try {
+            String details = FileUtilities.ReadTextFromFile(detailsPath);
+            List<String> lines = StringUtilities.getLines(details);
+            isOwnRepo = lines.size() < 2;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return isOwnRepo;
+    }
+
     public void putBranchFromOtherRepo(Branch i_Branch, String i_RepositoryName, Engine i_OtherEngine) {
         Repository myRepo = getRepository(i_RepositoryName);
         Repository otherRepo = i_OtherEngine.getRepository(i_RepositoryName);
@@ -69,11 +86,11 @@ public class Engine {
 
         myCommit.setRootFolderSha1(rootSha1);
         myCommit.setLastChanger(otherCommit.getLastChanger());
-        myCommit.setSha1(otherCommit.getSha1());
         myCommit.setLastUpdate(otherCommit.getLastUpdate());
         myCommit.setMessage(otherCommit.getMessage());
-        myCommit.setFirstPrecedingCommitSha1(findAncestorInRemote(pointedCommitSha1, myRepo, otherRepo));
+        myCommit.setFirstPrecedingCommitSha1(findAncestorInRemote(pointedCommitSha1, pointedCommitSha1, myRepo, otherRepo));
         myCommit.setPullRequested(true);
+        myCommit.setSha1(otherCommit.getSha1());
 
         myRepo.getBranches().put(i_Branch.getName(), i_Branch);
         myRepo.getCommits().put(pointedCommitSha1, myCommit);
@@ -85,20 +102,22 @@ public class Engine {
                 pointedCommitSha1);
     }
 
-    public String findAncestorInRemote(String i_CommitSha1, Repository i_MyRepo, Repository i_RemoteRepo) {
+    public String findAncestorInRemote(String i_InitialCommitSha1, String i_CommitSha1, Repository i_MyRepo, Repository i_RemoteRepo) {
         String ancestor;
 
-        if(!i_CommitSha1.isEmpty() && i_MyRepo.getCommits().containsKey(i_CommitSha1)) {
+        if (i_CommitSha1 == null || i_CommitSha1.isEmpty()) {
+            ancestor = "";
+        } else if(!i_InitialCommitSha1.equals(i_CommitSha1) && i_MyRepo.getCommits().containsKey(i_CommitSha1)) {
             ancestor = i_CommitSha1;
         } else {
             Commit commit = i_RemoteRepo.getCommits().get(i_CommitSha1);
             String first = commit.getFirstPrecedingSha1();
 
-            ancestor = findAncestorInRemote(first, i_MyRepo, i_RemoteRepo);
+            ancestor = findAncestorInRemote(i_InitialCommitSha1, first, i_MyRepo, i_RemoteRepo);
 
             if(ancestor.isEmpty()) {
                 String second = commit.getSecondPrecedingSha1();
-                ancestor = findAncestorInRemote(second, i_MyRepo, i_RemoteRepo);
+                ancestor = findAncestorInRemote(i_InitialCommitSha1, second, i_MyRepo, i_RemoteRepo);
             }
         }
 
@@ -118,7 +137,7 @@ public class Engine {
         }
     }
 
-    public ConflictsManager MergeBranches(String i_RepoName, String i_RemoteRepoLocation, Branch i_Ours, Branch i_Theirs,
+    public ConflictsManager MergeBranches(String i_RepoName, Branch i_Ours, Branch i_Theirs,
                                           Consumer<Consumer<String>> i_GetCommitDescriptionAction,
                                           Runnable i_FastForwardMergeMessageToUserAction,
                                           Consumer<String> i_MergeExceptionMessageAction) {
@@ -132,7 +151,7 @@ public class Engine {
             boolean isFastForwardMerge;
 
             try {
-                isFastForwardMerge = checkIfFastForwardMerge(i_RepoName, i_RemoteRepoLocation, i_Ours, i_Theirs, i_FastForwardMergeMessageToUserAction);
+                isFastForwardMerge = checkIfFastForwardMerge(i_RepoName, i_Ours, i_Theirs, i_FastForwardMergeMessageToUserAction);
 
                 if (!isFastForwardMerge) {
                     AncestorFinder ancestorFinder = new AncestorFinder(sha1 -> repository.getCommits().get(sha1));
@@ -180,7 +199,7 @@ public class Engine {
         return conflictsManager;
     }
 
-    private boolean checkIfFastForwardMerge(String i_RepoName, String i_RemoteRepoLocation, Branch i_Ours, Branch i_Theirs, Runnable i_FastForwardMergeMessageToUserAction) throws MergeException, IOException {
+    private boolean checkIfFastForwardMerge(String i_RepoName, Branch i_Ours, Branch i_Theirs, Runnable i_FastForwardMergeMessageToUserAction) throws MergeException, IOException {
         Repository repository = getRepository(i_RepoName);
 
         Commit ours = repository.getCommits().get(i_Ours.getPointedCommitSha1());
@@ -199,13 +218,12 @@ public class Engine {
                     i_Theirs.getPointedCommitSha1());
             repository.getBranches().remove(i_Theirs.getName());
             i_FastForwardMergeMessageToUserAction.run();
-            copyFilesInObjectsDir(i_RepoName, i_RemoteRepoLocation, i_Ours);
         }
 
         return isOursAncestorOfTheirs;
     }
 
-    private void copyFilesInObjectsDir(String i_RepoName, String i_RemoteLocation, Branch i_BranchToCopyFrom) throws IOException {
+    public void copyFilesInObjectsDir(String i_RepoName, String i_RemoteLocation, Branch i_BranchToCopyFrom) throws IOException {
         Repository repository = getRepository(i_RepoName);
         Commit commit = repository.getCommits().get(i_BranchToCopyFrom.getPointedCommitSha1());
         String remotePath = Paths.get(i_RemoteLocation, ".magit", "objects", commit.getSha1()).toString();

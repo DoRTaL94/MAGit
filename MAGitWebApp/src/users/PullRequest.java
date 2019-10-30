@@ -2,6 +2,9 @@ package users;
 
 import data.structures.Branch;
 import data.structures.Difference;
+import magit.Engine;
+
+import java.text.SimpleDateFormat;
 
 public class PullRequest {
     private int id                      = -1;
@@ -13,7 +16,16 @@ public class PullRequest {
     private String relevantRepoName     = "";
     private boolean isReferred          = false;
     private boolean isApproved          = false;
-    private Difference commitDiff = null;
+    private Difference commitDiff       = null;
+    private String timeStamp            = null;
+
+    public PullRequest() {
+        timeStamp = new SimpleDateFormat(Engine.DATE_FORMAT).format(System.currentTimeMillis());
+    }
+
+    public String getTimeStamp() {
+        return timeStamp;
+    }
 
     public int getId() {
         return id;
