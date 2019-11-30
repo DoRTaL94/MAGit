@@ -5,6 +5,7 @@ import users.UsersManager;
 import utils.ServletsUtils;
 import utils.SessionUtils;
 
+import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -14,10 +15,11 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-@WebServlet("/pages/login")
+@WebServlet("/login")
 public class LoginServlet extends HttpServlet {
 
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        response.setContentType("text/html;charset=UTF-8");
         String usernameFromSession = SessionUtils.getUsername(request);
         String authFromSession = SessionUtils.getAuth(request);
 
@@ -54,15 +56,11 @@ public class LoginServlet extends HttpServlet {
                     userManager.setLoggedInUser(username);
                     request.getSession(true).setAttribute("username", username);
                     request.getSession(true).setAttribute("auth", authString);
-                    response.sendRedirect("load-repository?username=" + username + "&auth=" + authString);
                 }
             } else {
-                response.setContentType("text/html");
                 PrintWriter out = response.getWriter();
                 out.print("User didn't log in.");
             }
-        } else if(authFromSession != null) {
-            response.sendRedirect("load-repository?username=" + usernameFromSession + "&auth=" + authFromSession);
         }
     }
 

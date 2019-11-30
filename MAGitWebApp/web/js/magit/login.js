@@ -47,7 +47,7 @@ function showForm(isLogin) {
 }
 
 function createLoginForm(isLogin) {
-    return `<form class="Login-or-signup-form" action="${isLogin ? 'login' : 'signup'}" method="POST">
+    return `<form class="Login-or-signup-form" action="${isLogin ? '/login' : '/signup'}" method="POST">
 `;
 }
 
@@ -94,10 +94,10 @@ function onErrorAjaxResponse(response) {
 }
 
 function onLoginSuccessAjaxResponse(response) {
-    if(response === "success") {
-        window.location.href = "profile.html";
-    } else {
+    if(typeof response === 'object') {
         updateMessages(response);
+    } else {
+        window.location.href = "pages/profile.html";
     }
 }
 

@@ -1435,7 +1435,7 @@ html[xmlns] .clearfix {
 }
 
 #notifications-counter {
-    background-color: rgba(255, 0, 0, 0.85);
+    background-color: #101010;
     border-radius: 2px;
     font-size: 0.8em;
     color: white;

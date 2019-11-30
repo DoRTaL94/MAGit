@@ -26,11 +26,13 @@ public class NotificationsServlet extends HttpServlet {
         String username = SessionUtils.getUsername(request);
         User user = ServletsUtils.getUsersManager(getServletContext()).getUser(username);
 
-        NotificationManager notificationManager = user.getNotificationManager();
-        List<INotification> notifications = notificationManager.getNotifications();
+        try {
+            NotificationManager notificationManager = user.getNotificationManager();
+            List<INotification> notifications = notificationManager.getNotifications();
 
-        Gson gson = new Gson();
-        String toOut = gson.toJson(notifications);
-        out.print(toOut);
+            Gson gson = new Gson();
+            String toOut = gson.toJson(notifications);
+            out.print(toOut);
+        } catch (NullPointerException ignored) {}
     }
 }

@@ -31,43 +31,46 @@ public class ImportRepoServlet extends HttpServlet {
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         String username             = SessionUtils.getUsername(request);
-        request.getSession(true).setAttribute("userRepo", username);
-        Engine engine               = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
-        Collection<Part> parts      = request.getParts(); // Uploading files sends them in parts to the server. Parts size could be configured in '@MultipartConfig' above.
-        StringBuilder fileContent   = new StringBuilder(); // We will append each part and make one string out of them.
-        List<String> errors         = new ArrayList<>();
 
-        for (Part part : parts) {
-            fileContent.append(readFromInputStream(part.getInputStream()));
-        }
+        if(username != null) {
+            request.getSession(true).setAttribute("userRepo", username);
+            Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
+            Collection<Part> parts = request.getParts(); // Uploading files sends them in parts to the server. Parts size could be configured in '@MultipartConfig' above.
+            StringBuilder fileContent = new StringBuilder(); // We will append each part and make one string out of them.
+            List<String> errors = new ArrayList<>();
 
-        try {
-            // In order to load the uploaded xml we will convert it into input stream so 'JAXB' could convert it to an object.
-            InputStream xmlStream = new ByteArrayInputStream(fileContent.toString().getBytes());
-            // This is a slighting different 'LoadRepositoryFromXml' function we will pass to it the input stream we've created and the username logged in to
-            // the server. We're passing the username because inside the xml file there is a username parameter that it might no be the current user whom logged in.
-            engine.LoadRepositoryFromXml(xmlStream, username, new SimpleStringProperty());
-            engine.setCurrentUserName(username);
-        } catch (RepositoryAlreadyExistsException e) {
-            errors.add(e.getMessage());
-        } catch (xmlErrorsException e) {
-            errors.addAll(e.getErrors());
-        } catch (FolderInLocationAlreadyExistsException ignored) {
-        } catch (JAXBException e) {
-            errors.add("File is not xml file");
-        }
+            for (Part part : parts) {
+                fileContent.append(readFromInputStream(part.getInputStream()));
+            }
 
-        if (errors.size() > 0) {
-            response.setContentType("application/json;charset=UTF-8");
-            Gson gson = new Gson();
-            String toOut = gson.toJson(errors);
-            PrintWriter out = response.getWriter();
-            out.print(toOut);
-            out.flush();
+            try {
+                // In order to load the uploaded xml we will convert it into input stream so 'JAXB' could convert it to an object.
+                InputStream xmlStream = new ByteArrayInputStream(fileContent.toString().getBytes());
+                // This is a slighting different 'LoadRepositoryFromXml' function we will pass to it the input stream we've created and the username logged in to
+                // the server. We're passing the username because inside the xml file there is a username parameter that it might no be the current user whom logged in.
+                engine.LoadRepositoryFromXml(xmlStream, username, new SimpleStringProperty());
+                engine.setCurrentUserName(username);
+            } catch (RepositoryAlreadyExistsException e) {
+                errors.add(e.getMessage());
+            } catch (xmlErrorsException e) {
+                errors.addAll(e.getErrors());
+            } catch (FolderInLocationAlreadyExistsException ignored) {
+            } catch (JAXBException e) {
+                errors.add("File is not xml file");
+            }
+
+            if (errors.size() > 0) {
+                response.setContentType("application/json;charset=UTF-8");
+                Gson gson = new Gson();
+                String toOut = gson.toJson(errors);
+                PrintWriter out = response.getWriter();
+                out.print(toOut);
+                out.flush();
+            } else {
+                engine.getActiveRepository().setOwner(username);
+            }
         } else {
-            engine.getActiveRepository().setOwner(username);
-            // לעדכן את הרפוזיטורי הנוכחי של המשתמש
-            // להוסיף לרשימת הרפוזיטוריס של המשתמש
+            request.getRequestDispatcher("/pages/login.html").forward(request, response);
         }
     }
 
