@@ -32,7 +32,7 @@ public class XmlHelper {
     public XmlHelper(Engine i_Engine, InputStream i_XmlInputStream, String i_CurrentUserName) {
         m_Engine = i_Engine;
         m_Engine.setCurrentUserName(i_CurrentUserName);
-        m_XmlPath = Paths.get("c:/magit-ex3", i_CurrentUserName, "repositories").toString();
+        m_XmlPath = Paths.get(Constants.DB_LOCATION, i_CurrentUserName, "repositories").toString();
         m_XmlInputStream = i_XmlInputStream;
     }
 
@@ -41,7 +41,7 @@ public class XmlHelper {
     }
 
     public boolean IsValidXmlPath() {
-        return m_XmlPath != null && m_XmlPath.endsWith(".xml") || m_XmlPath.contains("magit-ex3");
+        return m_XmlPath != null && m_XmlPath.endsWith(".xml") || m_XmlPath.contains("magit");
     }
 
     public List<String> RunCheckOnXmlFile() throws FileNotFoundException, JAXBException {
@@ -67,7 +67,7 @@ public class XmlHelper {
     private List<String> LoadRepositoryFromXml() throws FileNotFoundException, JAXBException {
         List<String> errors = new ArrayList<>();
 
-        if(m_XmlPath.contains("magit-ex3")) {
+        if(m_XmlPath.contains("magit")) {
             FileUtilities.createFoldersInPath(m_XmlPath);
             MagitRepository temp = m_MagitRepository;
 

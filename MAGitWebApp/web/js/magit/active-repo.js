@@ -341,11 +341,61 @@ function setOpenChanges(state) {
 
 function setListsItemsOnClick() {
     setListItemImportXmlOnClick();
+    setListItemCreateNewRepoOnClick();
 }
 
 function setListItemImportXmlOnClick() {
     let importXml = $(HEADER_LIST_ITEM).find("#import-repo-xml");
     importXml.on('click', importXmlOnClick);
+}
+
+function setListItemCreateNewRepoOnClick() {
+    let importXml = $(HEADER_LIST_ITEM).find("#create-new-repo");
+    importXml.on('click', createNewRepoOnClick);
+}
+
+function createNewRepoOnClick() {
+    showCreateNewRepo();
+
+    $("#uploadForm").submit(function () {
+        $.ajax({
+            method:'POST',
+            data: $(this).serialize(),
+            url: this.action,
+            timeout: 4000,
+            error: function (response) {
+                window.location.href = HOME;
+            },
+            success: function (response) {
+                window.location.href = HOME;
+            }
+        });
+
+        return false;
+    })
+}
+
+function showCreateNewRepo() {
+    let container = $("div.Content");
+    container.empty();
+    container.addClass("Content-relative");
+
+    let createNewRepoContainer = $("<div>").addClass("create-new-repo-container");
+    let messages = $(messagesForm);
+    let createNewRepoForm = $('<form>').addClass('create-new-repo-form');
+    createNewRepoForm.attr("action", "create-empty-repo");
+    createNewRepoForm.attr("method", "POST");
+
+    createNewRepoForm.append(
+`<label>
+    Repository Name
+    <input type="text" class="repo-name-input" name="reponame" spellcheck="false">
+</label>
+<input type="submit" id="btn-create-repo" value="Create">`);
+
+    createNewRepoContainer.append(createNewRepoForm);
+    createNewRepoContainer.append(messages);
+    container.append(createNewRepoContainer);
 }
 
 // Sends ajax request to the server with the xml file.
@@ -436,14 +486,16 @@ function uploadFile() {
 // Function that called when an error response sent from the server.
 // When it called we would print to 'form-messages' ul an error message.
 function importXmlErrorFunc() {
-    let messages = $('#form-messages');
-    messages.css('display', 'block');
-    messages.empty();
-    messages.append(SERVER_ERROR_MESSAGE);
-    $("#import-btn-text").text("Import repository");
-    $(".lds-ring div").css("display", "none");
-    $("#btn-upload-file").prop('disabled',false);
-    $(".Btn-choose-file").prop('disabled',false);
+    // let messages = $('#form-messages');
+    // messages.css('display', 'block');
+    // messages.empty();
+    // messages.append(SERVER_ERROR_MESSAGE);
+    // $("#import-btn-text").text("Import repository");
+    // $(".lds-ring div").css("display", "none");
+    // $("#btn-upload-file").prop('disabled',false);
+    // $(".Btn-choose-file").prop('disabled',false);
+
+    window.location.href = HOME;
 }
 
 // Function that called when a success response is sent from the server.

@@ -4,11 +4,11 @@ import data.structures.Commit;
 import data.structures.Repository;
 
 public class RepositoryDetails {
-    private String name = "N/A",
+    private String name = "-",
             activeBranchName = "master",
-            commitLastUpdate = "N/A",
-            commitMessage = "N/A",
-            owner = "N/A";
+            commitLastUpdate = "-",
+            commitMessage = "-",
+            owner = "-";
     int branchesCount = 0;
     boolean isForked = false;
     String usernameForkedFrom = null;

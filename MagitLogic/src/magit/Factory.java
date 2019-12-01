@@ -149,7 +149,9 @@ public class Factory {
         String pointedCommitSha1 = i_HeadBranch.getPointedCommitSha1();
         Commit currentCommit     = engine.getActiveRepository().getCommits().get(pointedCommitSha1);
 
-        createFolderFromCommit(currentCommit, engine.getRepositoryPath(i_RepoName));
+        if(currentCommit != null) {
+            createFolderFromCommit(currentCommit, engine.getRepositoryPath(i_RepoName));
+        }
     }
 
     void createFolderFromCommit(Commit i_Commit, String i_Location) {

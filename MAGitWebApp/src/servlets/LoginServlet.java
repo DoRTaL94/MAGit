@@ -5,6 +5,7 @@ import users.UsersManager;
 import utils.ServletsUtils;
 import utils.SessionUtils;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -21,8 +22,6 @@ public class LoginServlet extends HttpServlet {
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         response.setContentType("text/html;charset=UTF-8");
         String usernameFromSession = SessionUtils.getUsername(request);
-        String authFromSession = SessionUtils.getAuth(request);
-
         List<String> errors = new ArrayList<>();
         UsersManager userManager = ServletsUtils.getUsersManager(getServletContext());
 
@@ -41,7 +40,7 @@ public class LoginServlet extends HttpServlet {
                 }
 
 
-                if (errors.size() == 0 && !(userManager.isUserExists(username))) {
+                if (errors.size() == 0 && !userManager.isUserExists(username)) {
                     errors.add("User name or password is invalid.");
                 }
 
@@ -52,10 +51,12 @@ public class LoginServlet extends HttpServlet {
                     out.print(gson.toJson(errors));
                     out.flush();
                 } else {
+                    userManager.login(username, password);
                     String authString = userManager.getAuthString(username, password);
-                    userManager.setLoggedInUser(username);
                     request.getSession(true).setAttribute("username", username);
                     request.getSession(true).setAttribute("auth", authString);
+                    RequestDispatcher requestDispatcher = request.getRequestDispatcher("/pages/load-repository");
+                    requestDispatcher.forward(request, response);
                 }
             } else {
                 PrintWriter out = response.getWriter();

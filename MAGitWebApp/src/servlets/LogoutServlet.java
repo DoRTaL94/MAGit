@@ -2,6 +2,7 @@ package servlets;
 
 import notifications.INotification;
 import users.User;
+import users.UsersManager;
 import utils.ServletsUtils;
 import utils.SessionUtils;
 
@@ -29,6 +30,7 @@ public class LogoutServlet extends HttpServlet {
         }
 
         SessionUtils.clearSession(request);
+        ServletsUtils.getUsersManager(getServletContext()).logout(username);
         out.print("logged out");
     }
 }

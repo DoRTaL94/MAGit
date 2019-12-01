@@ -2,6 +2,7 @@ package servlets;
 
 import IO.FileUtilities;
 import data.structures.Repository;
+import magit.Constants;
 import magit.Engine;
 import string.StringUtilities;
 import utils.ServletsUtils;
@@ -13,7 +14,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Array;
 import java.nio.file.Paths;
 import java.io.File;
 import java.util.Arrays;
@@ -27,15 +27,15 @@ public class LoadRepositoryServlet extends HttpServlet {
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String username = SessionUtils.getUsername(request);
         request.getSession(true).setAttribute("userRepo", username);
-        String auth = request.getParameter("auth");
-        String authFilePath = Paths.get("c:/magit-ex3", username, "auth.txt").toString();
+        String auth = SessionUtils.getAuth(request);
+        String authFilePath = Paths.get(Constants.DB_LOCATION, username, "auth.txt").toString();
         File authFile = new File(authFilePath);
 
         if(authFile.exists()) {
             String savedAuth = FileUtilities.ReadTextFromFile(authFilePath);
 
             if(savedAuth.equals(auth)) {
-                String repositoriesPath = Paths.get("c:/magit-ex3", username, "repositories").toString();
+                String repositoriesPath = Paths.get(Constants.DB_LOCATION, username, "repositories").toString();
                 File repositoriesDir = new File(repositoriesPath);
 
                 if(repositoriesDir.exists()) {

@@ -30,7 +30,7 @@ public class RepositoriesServlet extends HttpServlet {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
 
-        if(repositories != null) {
+        if(repositories != null && repositories.size() > 0) {
             List<RepositoryDetails> details = new ArrayList<>();
 
             for(Map.Entry<String, Repository> entry: repositories.entrySet()) {

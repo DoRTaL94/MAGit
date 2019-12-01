@@ -3,10 +3,6 @@ package magit;
 import IO.FileUtilities;
 import MagitExceptions.*;
 import data.structures.*;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
 import magit.merge.Conflict;
 import magit.merge.ConflictsManager;
 import magit.merge.IMergeTask;
@@ -34,22 +30,40 @@ import javax.xml.bind.JAXBException;
 
 public class Engine {
     public static final String DATE_FORMAT  = "dd.MM.yyyy-HH:mm:ss:SSS";
-    public final StringProperty currentNameProperty;
-    public final BooleanProperty loadedProperty;
-
     private final Factory factory;
+
+    private String currentName;
     private Map<String, Repository> repositories = null;
     private String activeRepositoryName = null;
     private String activeRepositoryPath = null;
 
     // Engine is a singleton class.
     public Engine() {
-        currentNameProperty = new SimpleStringProperty("Administrator");
-        loadedProperty = new SimpleBooleanProperty(false);
+        currentName = "Administrator";
         factory = new Factory(this);
     }
 
-    public Map<String, Repository> getRepositories() {
+    public synchronized Map<String, Repository> getRepositories() {
+        if(repositories == null) {
+            repositories = new HashMap<>();
+        }
+
+        File repositoriesDir = new File(Paths.get(Constants.DB_LOCATION, currentName, "repositories").toString());
+        File[] repositoriesArr = repositoriesDir.listFiles();
+
+        if(repositoriesArr != null) {
+            for(File repository: repositoriesArr) {
+                if(!repositories.containsKey(repository.getName())) {
+                    try {
+                        loadDataFromRepository(repository.getPath());
+                        repositories.get(repository.getName()).setOwner(currentName);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+
         return repositories;
     }
 
@@ -513,87 +527,57 @@ public class Engine {
         return file.exists();
     }
 
-    public void loadRepositoryFromXml(String i_XmlPath, StringProperty i_ProgressProperty) throws FileNotFoundException, RepositoryAlreadyExistsException, xmlErrorsException, FolderInLocationAlreadyExistsException, JAXBException {
+    public void loadRepositoryFromXml(String i_XmlPath) throws FileNotFoundException, RepositoryAlreadyExistsException, xmlErrorsException, FolderInLocationAlreadyExistsException, JAXBException {
         Path xmlPath;
-        i_ProgressProperty.set("Reading xml file...");
-        sleep();
 
         try {
             xmlPath = Paths.get(i_XmlPath);
         } catch (InvalidPathException ipe) {
-            i_ProgressProperty.set("Input is not a path.");
-            sleep();
             throw new xmlErrorsException("Input is not a path.");
         }
 
-        i_ProgressProperty.set("Checking xml for errors...");
-
         XmlHelper xmlChecker = new XmlHelper(this, xmlPath);
-        loadRepositoryFromXml(xmlChecker, i_ProgressProperty);
+        loadRepositoryFromXml(xmlChecker);
     }
 
-    public void LoadRepositoryFromXml(InputStream i_XmlStream, String i_CurrentUserName, StringProperty i_ProgressProperty) throws FileNotFoundException, RepositoryAlreadyExistsException, xmlErrorsException, FolderInLocationAlreadyExistsException, JAXBException {
+    public void LoadRepositoryFromXml(InputStream i_XmlStream, String i_CurrentUserName) throws FileNotFoundException, RepositoryAlreadyExistsException, xmlErrorsException, FolderInLocationAlreadyExistsException, JAXBException {
         Path xmlPath;
-        i_ProgressProperty.set("Reading xml file...");
-        sleep();
-        i_ProgressProperty.set("Checking xml for errors...");
-        sleep();
         XmlHelper xmlChecker = new XmlHelper(this, i_XmlStream, i_CurrentUserName);
-        loadRepositoryFromXml(xmlChecker, i_ProgressProperty);
+        loadRepositoryFromXml(xmlChecker);
     }
 
-    private void loadRepositoryFromXml(XmlHelper i_XmlHelper, StringProperty i_ProgressProperty) throws FileNotFoundException, RepositoryAlreadyExistsException, FolderInLocationAlreadyExistsException, xmlErrorsException, JAXBException {
+    private void loadRepositoryFromXml(XmlHelper i_XmlHelper) throws FileNotFoundException, RepositoryAlreadyExistsException, FolderInLocationAlreadyExistsException, xmlErrorsException, JAXBException {
         List<String> errors = i_XmlHelper.RunCheckOnXmlFile();
 
         if(errors.size() == 0) {
             this.Clear();
-            i_ProgressProperty.set("Xml is valid.");
-            sleep();
             MagitRepository magitRepository = i_XmlHelper.getMagitRepository();
 
-            i_ProgressProperty.set("Checking if repository already exists...");
-            sleep();
             boolean isRepoAlreadyExits = (repositories != null && activeRepositoryName != null && repositories.containsKey(activeRepositoryName) &&
                     repositories.get(activeRepositoryName).getLocationPath().equals(magitRepository.getLocation())) ||
                     IsRepoAlreadyExists(magitRepository.getLocation());
 
             if (isRepoAlreadyExits) {
-                i_ProgressProperty.set("Repository is already exists.");
-                sleep();
                 activeRepositoryPath = Paths.get(magitRepository.getLocation()).toString().toLowerCase();
                 throw new RepositoryAlreadyExistsException();
             }
             else if(IsRepoFolderAlreadyExists(magitRepository.getLocation())) {
-                i_ProgressProperty.set("Folder in the given location is already exists.");
-                sleep();
                 throw new FolderInLocationAlreadyExistsException();
             }
             else {
-                loadedProperty.set(false);
-                i_ProgressProperty.set("Loading xml file...");
-                sleep();
                 activeRepositoryName = magitRepository.getName();
                 repositories = repositories == null ? new HashMap<>() : repositories;
-                repositories.put(activeRepositoryName, factory.createRepository(magitRepository));
-                i_ProgressProperty.set("Load was executed successfully.");
-                sleep();
-                loadedProperty.set(true);
+                Repository repository = factory.createRepository(magitRepository);
+                repository.setOwner(getCurrentUserName());
+                repositories.put(activeRepositoryName, repository);
             }
         }
         else {
-            i_ProgressProperty.set("Errors found.");
             throw new xmlErrorsException(errors);
         }
     }
 
-    private void sleep() {
-        try {
-            Thread.sleep(300);
-        } catch (InterruptedException ignored) {}
-    }
-
     public void loadDataFromRepository(String i_RepositoryFullPath) throws IOException {
-        this.Clear();
         String repoDetails = FileUtilities.ReadTextFromFile(Paths.get(i_RepositoryFullPath, ".magit", "details.txt").toString());
         List<String> repoDetailsList = StringUtilities.getLines(repoDetails);
 
@@ -688,9 +672,7 @@ public class Engine {
         File repo = new File(Paths.get(i_RepositoryFullPath, ".magit").toString());
 
         if(repo.exists()) {
-            loadedProperty.set(false);
             loadDataFromRepository(i_RepositoryFullPath);
-            loadedProperty.set(true);
         }
         else {
             throw new NotRepositoryFolderException(String.format("The folder named \"%s\" is not a magit repository.", i_RepositoryFullPath));
@@ -720,7 +702,7 @@ public class Engine {
                 commit.setMessage(i_Description);
                 commit.setRootFolderSha1(folderSha1);
                 commit.setFirstPrecedingCommitSha1(repository.getHeadBranch().getPointedCommitSha1());
-                commit.setLastChanger(currentNameProperty.get());
+                commit.setLastChanger(currentName);
                 commit.setLastUpdate(new SimpleDateFormat(DATE_FORMAT).format(new Date(System.currentTimeMillis())));
 
                 if(i_SecondPrecedingIfMerge != null) {
@@ -787,7 +769,7 @@ public class Engine {
                     sha1 = checkDelta(i_RepoName, file, i_PathToSha1Map, ref_LastChanger, i_IsNewItems);
 
                     if(isNewItem) {
-                        ref_LastChanger.set(currentNameProperty.get());
+                        ref_LastChanger.set(currentName);
                         file.setLastModified(System.currentTimeMillis());
                     } else {
                         String parentFolderSha1 = i_PathToSha1Map.get(i_ParentPath);
@@ -796,7 +778,7 @@ public class Engine {
                         boolean isChanged = !sha1.equals(oldItemData.getSHA1());
 
                         if(isChanged) {
-                            ref_LastChanger.set(currentNameProperty.get());
+                            ref_LastChanger.set(currentName);
                             file.setLastModified(System.currentTimeMillis());
                         } else {
                             ref_LastChanger.set(oldItemData.getLastChanger());
@@ -949,14 +931,12 @@ public class Engine {
         Repository repository = getRepository(i_RepoName);
         Commit commit = repository.getCommits().get(i_CommitSha1);
 
-        if(!commit.getFirstPrecedingSha1().isEmpty()) {
-            Difference firstDiff = findDiffBetweenCommits(i_RepoName, i_CommitSha1, commit.getFirstPrecedingSha1());
-            differences.add(firstDiff);
+        Difference firstDiff = findDiffBetweenCommits(i_RepoName, i_CommitSha1, commit.getFirstPrecedingSha1());
+        differences.add(firstDiff);
 
-            if(!commit.getSecondPrecedingSha1().isEmpty()) {
-                Difference secondDiff = findDiffBetweenCommits(i_RepoName, i_CommitSha1, commit.getSecondPrecedingSha1());
-                differences.add(secondDiff);
-            }
+        if(!commit.getSecondPrecedingSha1().isEmpty()) {
+            Difference secondDiff = findDiffBetweenCommits(i_RepoName, i_CommitSha1, commit.getSecondPrecedingSha1());
+            differences.add(secondDiff);
         }
 
         return differences;
@@ -964,20 +944,23 @@ public class Engine {
 
     private Difference findDiffBetweenCommits(String i_RepoName, String i_CurrentCommitSha1, String i_PrecedingSha1) {
         Repository repository = getRepository(i_RepoName);
-
         Commit currentCommit = repository.getCommits().get(i_CurrentCommitSha1);
         Map<String, String> currentCommitPathToSha1 = factory.createPathToSha1MapFromCommit(i_RepoName, currentCommit);
-        Commit firstPreceding = repository.getCommits().get(i_PrecedingSha1);
-        Map<String, String> precedingCommitPathToSha1 = factory.createPathToSha1MapFromCommit(i_RepoName, firstPreceding);
         Difference difference = new Difference();
+        Map<String, String> precedingCommitPathToSha1 = null;
+
+        if(!i_PrecedingSha1.isEmpty()) {
+            Commit firstPreceding = repository.getCommits().get(i_PrecedingSha1);
+            precedingCommitPathToSha1 = factory.createPathToSha1MapFromCommit(i_RepoName, firstPreceding);
+            List<Folder.Data> changedFiles = getChangedDiff(i_RepoName, difference, currentCommitPathToSha1, precedingCommitPathToSha1);
+            List<Folder.Data> deletedFiles = getDeletedDiff(i_RepoName, difference, currentCommitPathToSha1, precedingCommitPathToSha1);
+
+            difference.setChangedFiles(changedFiles);
+            difference.setDeletedFiles(deletedFiles);
+        }
 
         List<Folder.Data> newFiles = getNewDiff(i_RepoName, difference, currentCommitPathToSha1, precedingCommitPathToSha1);
-        List<Folder.Data> changedFiles = getChangedDiff(i_RepoName, difference, currentCommitPathToSha1, precedingCommitPathToSha1);
-        List<Folder.Data> deletedFiles = getDeletedDiff(i_RepoName, difference, currentCommitPathToSha1, precedingCommitPathToSha1);
-
         difference.setNewFiles(newFiles);
-        difference.setChangedFiles(changedFiles);
-        difference.setDeletedFiles(deletedFiles);
 
         return difference;
     }
@@ -1057,7 +1040,7 @@ public class Engine {
         Repository repository = getRepository(i_RepoName);
 
         for(Map.Entry<String, String> mapEntry: i_CurrentCommitPathToSha1.entrySet()) {
-            if(!i_PrecedingCommitPathToSha1.containsKey(mapEntry.getKey()) && !mapEntry.getKey().equals(repoLocation)) {
+            if((i_PrecedingCommitPathToSha1 == null || !i_PrecedingCommitPathToSha1.containsKey(mapEntry.getKey())) && !mapEntry.getKey().equals(repoLocation)) {
                 File thisFile = new File(mapEntry.getKey());
                 String parentSha1 = i_CurrentCommitPathToSha1.get(thisFile.getParent());
                 Folder parent = repository.getFolders().get(parentSha1);
@@ -1598,15 +1581,14 @@ public class Engine {
     }
 
     public void setCurrentUserName(String i_CurrentUserName) {
-        currentNameProperty.set(i_CurrentUserName);
+        currentName = i_CurrentUserName;
     }
 
     public String getCurrentUserName() {
-        return currentNameProperty.get();
+        return currentName;
     }
 
     public void createRepositoryAndFiles(String i_RepositoryName, String i_RepositoryLocation) throws RepositoryAlreadyExistsException, FolderInLocationAlreadyExistsException {
-        this.Clear();
         File repositoryFolder = new File(i_RepositoryLocation);
         File magit            = new File(repositoryFolder, ".magit");
 
@@ -1617,9 +1599,7 @@ public class Engine {
             throw new FolderInLocationAlreadyExistsException();
         }
         else {
-            loadedProperty.set(false);
-            factory.createRepositoryAndFiles(i_RepositoryName, i_RepositoryLocation, true);
-            loadedProperty.set(true);
+            factory.createRepositoryAndFiles(i_RepositoryName, i_RepositoryLocation, true).setOwner(getCurrentUserName());
         }
     }
 
@@ -1873,7 +1853,7 @@ public class Engine {
     public void Clear() {
         activeRepositoryName = null;
         activeRepositoryPath = null;
-        currentNameProperty.set("Administrator");
+        currentName = "Administrator";
         factory.clear();
     }
 
@@ -1989,10 +1969,8 @@ public class Engine {
                         }
                     }
 
-                    loadedProperty.set(false);
                     loadDataFromRepository(i_LocalRepositoryFullPath);
                     getRepository(i_LocalRepositoryName).setRemoteRepositoryLocation(remoteRepositoryLocation);
-                    loadedProperty.set(true);
                 } else {
                     throw new CollaborationException("Remote directory is not a magit repository.");
                 }
@@ -2210,7 +2188,18 @@ public class Engine {
 
         if(repositories != null) {
             repository = repositories.get(i_Name);
+
+            if(repository == null) {
+                try {
+                    loadDataFromRepository(Paths.get(Constants.DB_LOCATION, currentName, "repositories", i_Name).toString());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                repository = repositories.get(i_Name);
+            }
         }
+
         return repository;
     }
 

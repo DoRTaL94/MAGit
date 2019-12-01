@@ -3,6 +3,7 @@ package servlets;
 import MagitExceptions.RepositoryNotLoadedException;
 import MagitExceptions.xmlErrorsException;
 import data.structures.Repository;
+import magit.Constants;
 import magit.Engine;
 import utils.ServletsUtils;
 import utils.SessionUtils;
@@ -16,7 +17,6 @@ import java.nio.file.Paths;
 
 @WebServlet("/pages/download")
 public class DownloadServlet extends HttpServlet {
-    private static final String DATABASE_LOCATION = "c:/magit-ex3";
     private static final String XML_DIR_NAME = "xml files";
     private static final String PARAMETER_NAME = "repository";
     private static final String DEFAULT_MIME = "application/octet-stream";
@@ -67,7 +67,7 @@ public class DownloadServlet extends HttpServlet {
         Engine engine = ServletsUtils.getUsersManager(getServletContext()).getEngine(username);
 
         Repository repo = engine.getRepository(request.getParameter(PARAMETER_NAME));
-        String xmlFilesLocation = Paths.get(DATABASE_LOCATION, repo.getOwner(), XML_DIR_NAME).toString();
+        String xmlFilesLocation = Paths.get(Constants.DB_LOCATION, repo.getOwner(), XML_DIR_NAME).toString();
         File xmlFilesDir = new File(xmlFilesLocation);
 
         if(!xmlFilesDir.exists()) {

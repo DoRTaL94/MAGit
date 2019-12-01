@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import data.structures.Folder;
 import data.structures.Repository;
 import data.structures.eFileType;
+import magit.Constants;
 import magit.Engine;
 import users.PullRequestsManagerServlet;
 import users.UsersManager;
@@ -98,7 +99,7 @@ public class ServletsUtils {
     }
 
     public static Path getPathFromFolderNamesList(List<String> i_Names, Engine i_Engine, int i_CountOfNamesToIncludeInPath) {
-        Path path = Paths.get("c:/magit-ex3", i_Engine.getCurrentUserName(), "repositories");
+        Path path = Paths.get(Constants.DB_LOCATION, i_Engine.getCurrentUserName(), "repositories");
 
         for(int name = 0; name < i_CountOfNamesToIncludeInPath ; name++) {
             path = Paths.get(path.toString(), i_Names.get(name));

@@ -1,6 +1,10 @@
 package servlets;
 
+import IO.FileUtilities;
 import com.google.gson.Gson;
+import magit.Constants;
+import org.apache.commons.codec.digest.DigestUtils;
+import string.StringUtilities;
 import users.UsersManager;
 import utils.ServletsUtils;
 import utils.SessionUtils;
@@ -11,6 +15,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 

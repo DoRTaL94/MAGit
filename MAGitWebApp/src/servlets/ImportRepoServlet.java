@@ -1,11 +1,9 @@
 package servlets;
 
-import IO.FileUtilities;
 import MagitExceptions.FolderInLocationAlreadyExistsException;
 import MagitExceptions.RepositoryAlreadyExistsException;
 import MagitExceptions.xmlErrorsException;
 import com.google.gson.Gson;
-import javafx.beans.property.SimpleStringProperty;
 import magit.Engine;
 import utils.ServletsUtils;
 import utils.SessionUtils;
@@ -19,7 +17,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -48,7 +45,7 @@ public class ImportRepoServlet extends HttpServlet {
                 InputStream xmlStream = new ByteArrayInputStream(fileContent.toString().getBytes());
                 // This is a slighting different 'LoadRepositoryFromXml' function we will pass to it the input stream we've created and the username logged in to
                 // the server. We're passing the username because inside the xml file there is a username parameter that it might no be the current user whom logged in.
-                engine.LoadRepositoryFromXml(xmlStream, username, new SimpleStringProperty());
+                engine.LoadRepositoryFromXml(xmlStream, username);
                 engine.setCurrentUserName(username);
             } catch (RepositoryAlreadyExistsException e) {
                 errors.add(e.getMessage());
@@ -67,10 +64,11 @@ public class ImportRepoServlet extends HttpServlet {
                 out.print(toOut);
                 out.flush();
             } else {
+                response.setContentType("text/html;charset=UTF-8");
                 engine.getActiveRepository().setOwner(username);
+                PrintWriter out = response.getWriter();
+                out.print("Success");
             }
-        } else {
-            request.getRequestDispatcher("/pages/login.html").forward(request, response);
         }
     }
 

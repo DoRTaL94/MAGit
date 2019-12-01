@@ -161,7 +161,8 @@ div > .tab-content {
 }
 
 .Login-or-signup-form,
-.Import-container {
+.Import-container,
+.create-new-repo-container {
     margin: 0;
     position: absolute;
     top: 50%;
@@ -176,6 +177,7 @@ div > .tab-content {
     display: none;
 }
 
+#btn-create-repo,
 #btn-login-or-signup {
     width: 100%;
     height: 40px;
@@ -186,6 +188,7 @@ div > .tab-content {
     margin-top: 10px;
 }
 
+#btn-create-repo:hover,
 #btn-login-or-signup:hover {
     background-color: #51a9ff;
     border: 1px solid #0046ff;
@@ -194,6 +197,7 @@ div > .tab-content {
     margin-top: 10px;
 }
 
+.repo-name-input,
 .Username,
 .Password {
     margin: 15px auto;
@@ -1441,4 +1445,16 @@ html[xmlns] .clearfix {
     color: white;
     width: 100%;
     height: 120%;
+}
+
+.create-new-repo-form {
+    width: 100%;
+}
+
+.create-new-repo-form > input {
+    width: 100%;
+}
+
+#btn-create-repo {
+
 }

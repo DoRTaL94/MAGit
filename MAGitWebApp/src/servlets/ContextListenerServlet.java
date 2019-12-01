@@ -16,6 +16,6 @@ public class ContextListenerServlet implements ServletContextListener {
 
     @Override
     public void contextDestroyed(ServletContextEvent servletContextEvent) {
-        FileUtilities.removeFile(new File("c:/magit-ex3"));
+        //FileUtilities.removeFile(new File("c:/magit-ex3"));
     }
 }

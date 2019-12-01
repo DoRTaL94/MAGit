@@ -2,6 +2,7 @@ package servlets;
 
 import MagitExceptions.CollaborationException;
 import data.structures.Repository;
+import magit.Constants;
 import magit.Engine;
 import notifications.ForkNotification;
 import users.User;
@@ -36,7 +37,7 @@ public class ForkServlet extends HttpServlet {
 
         if(repository != null) {
             String newName = repository.getName();
-            String newPath = Paths.get("c:/magit-ex3", username, "repositories", newName).toString();
+            String newPath = Paths.get(Constants.DB_LOCATION, username, "repositories", newName).toString();
             try {
                 userEngine.Clone(newName, newPath, repository.getLocationPath());
                 userEngine.getRepository(newName).setOwner(username);

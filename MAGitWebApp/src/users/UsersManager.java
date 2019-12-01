@@ -4,50 +4,55 @@ import IO.FileUtilities;
 import data.structures.Branch;
 import data.structures.Difference;
 import data.structures.Repository;
+import magit.Constants;
 import magit.Engine;
-import notifications.INotification;
 import notifications.PullRequestNotification;
 import org.apache.commons.codec.digest.DigestUtils;
-import utils.SessionUtils;
+import sun.util.resources.cldr.uk.TimeZoneNames_uk;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.io.File;
 
 public class UsersManager {
     private final Map<String, User> nameToUserMap = new HashMap<>();
-    private final Map<String, Boolean> nameToLoggedInUsers = new HashMap<>();
     private final Map<String, Engine> nameToEngines = new HashMap<>();
+    private final Set<String> loggedInUsers = new HashSet<>();
 
     public void addUser(String i_Name, String i_Password) {
         User user = new User();
         user.setName(i_Name);
         user.setPassword(i_Password);
-        nameToUserMap.put(i_Name, user);
-        nameToEngines.put(i_Name, new Engine());
-        nameToLoggedInUsers.put(i_Name, true);
         saveToDB(user);
     }
 
     public List<String> getUsers(String i_CurrentUser) {
-        List<String> users = new ArrayList<>(nameToUserMap.keySet());
-        users.remove(i_CurrentUser);
+        File usersDir = new File(Constants.DB_LOCATION);
+        File[] usersFolders = usersDir.listFiles();
+        List<String> users = new ArrayList<>();
+
+        if(usersFolders != null) {
+            for (File folder : usersFolders) {
+                users.add(folder.getName());
+            }
+
+            users.remove(i_CurrentUser);
+        }
+
         return users;
     }
 
-    public void logoutUser(String i_Name) {
-        nameToLoggedInUsers.replace(i_Name, false);
+    public void logout(String i_Name) {
         nameToEngines.remove(i_Name);
+        nameToUserMap.remove(i_Name);
+        loggedInUsers.remove(i_Name);
     }
 
     public Engine getEngine(String i_Name) {
         if(nameToEngines.get(i_Name) == null) {
             nameToEngines.put(i_Name, new Engine());
+            nameToEngines.get(i_Name).setCurrentUserName(i_Name);
         }
 
         return nameToEngines.get(i_Name);
@@ -55,7 +60,7 @@ public class UsersManager {
 
     private void saveToDB(User i_User) {
         String authString = DigestUtils.sha1Hex(i_User.toString());
-        String path = Paths.get("c:/magit-ex3", i_User.getName(), "auth.txt").toString();
+        String path = Paths.get(Constants.DB_LOCATION, i_User.getName(), "auth.txt").toString();
         FileUtilities.createFoldersInPath(path);
         FileUtilities.WriteToFile(path, authString);
     }
@@ -64,7 +69,7 @@ public class UsersManager {
         boolean isExists = nameToUserMap.containsKey(i_Name);
 
         if(!isExists) {
-            isExists = new File(Paths.get("c:/magit-ex3", i_Name).toString()).exists();
+            isExists = new File(Paths.get(Constants.DB_LOCATION, i_Name).toString()).exists();
         }
 
         return isExists;
@@ -73,7 +78,7 @@ public class UsersManager {
     public void changePassword(String i_Name, String i_NewPassword) {
         nameToUserMap.get(i_Name).setPassword(i_NewPassword);
         String newAuth = getAuthString(i_Name, i_NewPassword);
-        FileUtilities.WriteToFile(Paths.get("c:/magit-ex3", i_Name, "auth.txt").toString(), newAuth);
+        FileUtilities.WriteToFile(Paths.get(Constants.DB_LOCATION, i_Name, "auth.txt").toString(), newAuth);
     }
 
     public User getUser(String i_Name) {
@@ -81,48 +86,38 @@ public class UsersManager {
     }
 
     public boolean isUserLoggedIn(String i_Name) {
-        return nameToLoggedInUsers.get(i_Name);
+        return loggedInUsers.contains(i_Name);
     }
 
-    public void setLoggedInUser(String i_Name) {
-        if(nameToLoggedInUsers.containsKey(i_Name)) {
-            nameToLoggedInUsers.replace(i_Name, true);
-        } else {
-            nameToLoggedInUsers.put(i_Name, true);
+    public boolean login(String i_Username, String i_Password) throws IOException {
+        boolean success = false;
+
+        if(!nameToUserMap.containsKey(i_Username)) {
+            String authFilePath = Paths.get(Constants.DB_LOCATION, i_Username, "auth.txt").toString();
+            User user = new User();
+            user.setPassword(i_Password);
+            user.setName(i_Username);
+
+            File authFile = new File(authFilePath);
+
+            if (authFile.exists()) {
+                String authString = FileUtilities.ReadTextFromFile(authFilePath);
+                success = DigestUtils.sha1Hex(user.toString()).equals(authString);
+
+                if (success) {
+                    nameToUserMap.put(i_Username, user);
+                    nameToEngines.put(i_Username, new Engine());
+                    nameToEngines.get(i_Username).setCurrentUserName(i_Username);
+                    loggedInUsers.add(i_Username);
+                }
+            }
         }
-    }
 
-//    public boolean loginFromDb(String i_Username, String i_Password) throws IOException {
-//        String authFilePath = Paths.get("c:/magit-ex3", i_Username, "auth.txt").toString();
-//        User user = new User();
-//        user.setPassword(i_Password);
-//        user.setName(i_Username);
-//
-//        File authFile = new File(authFilePath);
-//        boolean success = false;
-//
-//        if(authFile.exists()) {
-//            String authString = FileUtilities.ReadTextFromFile(authFilePath);
-//            success = DigestUtils.sha1Hex(user.toString()).equals(authString);
-//
-//            if(success) {
-//                addUser(user);
-//            }
-//        }
-//
-//        return success;
-//    }
+        return success;
+    }
 
     public String getAuthString(String i_Username, String i_Password) {
         return DigestUtils.sha1Hex(i_Username + ":" + i_Password);
-    }
-
-    private void addUser(User i_User) {
-        String name = i_User.getName();
-
-        if (!name.isEmpty() && !i_User.getPassword().isEmpty() && !nameToUserMap.containsKey(name)) {
-            nameToUserMap.put(name, i_User);
-        }
     }
 
     public boolean addPullRequest(PullRequest i_PullRequest, Engine i_PushingUserEngine, Engine i_PullingUserEngine) throws IOException {

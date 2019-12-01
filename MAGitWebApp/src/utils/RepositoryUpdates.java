@@ -84,26 +84,29 @@ public class RepositoryUpdates {
         Folder root = new Folder();
         File repoDir = new File(i_Path);
         File[] files = repoDir.listFiles();
-        List<File> filesList = Arrays.stream(Objects.requireNonNull(files)).filter(file -> !file.getName().contains(".magit")).collect(Collectors.toList());
 
-        for (File file : filesList) {
-            String sha1;
-            String filePath = file.getPath();
+        if(files != null) {
+            List<File> filesList = Arrays.stream(Objects.requireNonNull(files)).filter(file -> !file.getName().contains(".magit")).collect(Collectors.toList());
 
-            if(file.isDirectory()) {
-                Folder subFolder = createFolder(filePath, i_Engine);
-                sha1 = DigestUtils.sha1Hex(subFolder.toStringForSha1(Paths.get(i_Path)));
-                wc.addFolder(sha1, subFolder);
-            } else {
-                Blob blob = new Blob();
-                blob.setText(FileUtilities.ReadTextFromFile(filePath));
-                blob.setName(file.getName());
-                sha1 = DigestUtils.sha1Hex(blob.toStringForSha1());
-                wc.addBlob(sha1, blob);
+            for (File file : filesList) {
+                String sha1;
+                String filePath = file.getPath();
+
+                if (file.isDirectory()) {
+                    Folder subFolder = createFolder(filePath, i_Engine);
+                    sha1 = DigestUtils.sha1Hex(subFolder.toStringForSha1(Paths.get(i_Path)));
+                    wc.addFolder(sha1, subFolder);
+                } else {
+                    Blob blob = new Blob();
+                    blob.setText(FileUtilities.ReadTextFromFile(filePath));
+                    blob.setName(file.getName());
+                    sha1 = DigestUtils.sha1Hex(blob.toStringForSha1());
+                    wc.addBlob(sha1, blob);
+                }
+
+                Folder.Data data = Folder.Data.Parse(file, sha1, i_Engine.getCurrentUserName());
+                root.addFile(data);
             }
-
-            Folder.Data data = Folder.Data.Parse(file, sha1, i_Engine.getCurrentUserName());
-            root.addFile(data);
         }
 
         return root;
